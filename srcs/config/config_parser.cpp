@@ -2,7 +2,9 @@
 
 
 
-config_parser::config_parser()
+config_parser::config_parser(const char* s)
 {
     
+    parse(s, vect);
+
 }
