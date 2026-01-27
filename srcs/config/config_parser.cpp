@@ -43,4 +43,4 @@ config_parser::config_parser(const char* s)
     if(parse(s, &vect) == false)
         return ;
 
-}
+} 
