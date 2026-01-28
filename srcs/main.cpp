@@ -1,4 +1,5 @@
-#include "../includes/config/config_parser.hpp"
+#include "../includes/config/Tokenizer.hpp"
+#include "../includes/config/Parser.hpp"
 #include <exception>
 
 int main(int c, char **argv)
@@ -10,7 +11,11 @@ int main(int c, char **argv)
     }
     try{
         
-        config_parser y(argv[1]);
+        Tokenizer tokenizer(argv[1]);
+        std::vector<std::string> tokens = tokenizer.tokens;
+        Parser parser(tokens);
+        parser.parse();
+
     }
     catch(const std::exception& e)
     {

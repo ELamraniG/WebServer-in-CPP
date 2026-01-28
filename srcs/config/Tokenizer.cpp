@@ -1,4 +1,4 @@
-#include "../../includes/config/config_parser.hpp"
+#include "../../includes/config/Tokenizer.hpp"
 #include <climits>
 #include <cstddef>
 #include <stdexcept>
@@ -30,7 +30,7 @@ std::string trim(std::string s)
 
 }
 
- void config_parser::tokenize(std::string s)
+ void Tokenizer::tokenize(std::string s)
  {
     std::string current_token;
     for(size_t i = 0; i < s.size(); i++)
@@ -60,7 +60,7 @@ std::string trim(std::string s)
     }
  }
 
-void config_parser::parse(const char* file_path)
+void Tokenizer::parse(const char* file_path)
 {
     std::ifstream file(file_path);
     
@@ -89,7 +89,7 @@ void config_parser::parse(const char* file_path)
 
 }
 
-config_parser::config_parser(const char* s)
+Tokenizer::Tokenizer(const char* s)
 {
    parse(s);
 

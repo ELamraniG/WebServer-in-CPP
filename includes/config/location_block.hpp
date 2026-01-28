@@ -8,6 +8,7 @@ class location_block {
     public:
 
         std::string root;
+        std::string path;
         std::string index;
         std::vector<std::string> allowed_methods;
         bool autoindex;
