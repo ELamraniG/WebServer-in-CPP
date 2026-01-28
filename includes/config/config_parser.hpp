@@ -1,13 +1,16 @@
 #pragma once
 #include <map>
 #include <iostream>
-#include <ifstream>
+#include <string>
+#include <fstream>
+#include <vector>
+
 class config_parser {
 
     public:
-        std::vector<std::string> vect;
+        std::vector<std::string> tokens;
         config_parser(const char* file_path);
+        void parse(const char* file_path);
+        void tokenize(std::string s);
+       // bool has_only_space(std::string s);
     };
-    bool parse(const char* file_path, std::vector<std::string> &vect);
-    bool tokenize(std::ifstream &file, std::vector<std::string> &vect);
-    bool has_only_space(std::string s);
