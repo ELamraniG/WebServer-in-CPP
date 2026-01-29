@@ -10,7 +10,9 @@ class location_block {
         std::string root;
         std::string path;
         std::string index;
-        std::vector<std::string> allowed_methods;
+        bool GET;
+        bool POST;
+        bool DELETE;
         bool autoindex;
         std::string upload_pass;
         std::map<std::string, std::string> cgi_pass;

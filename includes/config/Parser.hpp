@@ -4,6 +4,7 @@
 #include "location_block.hpp"
 #include <string>
 #include <vector>
+#include <sstream>
 
 typedef enum{
     GLOBAL,
@@ -18,8 +19,8 @@ class Parser {
         block_type state;
         server_block*   current_server;
         location_block* current_location;
-        void parse_server_block();
-        void parse_location_block();
+        void parse_server_block(size_t &i);
+        void parse_location_block(size_t &i);
     public:
         Parser(std::vector<std::string> &tokens);
         ~Parser();
@@ -27,3 +28,7 @@ class Parser {
         std::vector<server_block> getServers() const;
      
 };
+bool isvalidport( std::string& port);
+bool isvalid_error_number( std::string& error_number);
+unsigned long isvalid_client_number( std::string& client_number);
+    

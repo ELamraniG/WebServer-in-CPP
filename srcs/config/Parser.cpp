@@ -10,6 +10,142 @@ Parser::~Parser() {}
 std::vector<server_block> Parser::getServers() const {
     return servers;
 }
+    void Parser::parse_server_block(size_t &i)
+    {
+        std::string key = _tokens[i];
+
+        if(key == "listen")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                    throw std::runtime_error("missing semicolon after 'listen'");
+            if(isvalidport(_tokens[i + 1]))
+                current_server->port = _tokens[i + 1];
+            else
+                throw std::runtime_error("invalid port number");
+            i += 2;
+
+        }
+        else if(key == "error_page")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 3] != ";")
+                    throw std::runtime_error("missing semicolon after 'error_page'");
+            if(isvalid_error_number(_tokens[i + 1]))
+                current_server->error_pages[atoi(_tokens[i + 1].c_str())] = _tokens[i + 2]; //maybe we need to use atoi from libft
+            else
+                throw std::runtime_error("invalid error page number");
+        }
+        else if(key == "client_max_body_size")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                    throw std::runtime_error("missing semicolon after 'client_max_body_size'");
+            unsigned long client_num = isvalid_client_number(_tokens[i + 1]);
+             if(client_num != -1)
+                current_server->client_max_body_size = client_num;
+            i += 2;
+        }
+        else if (key == "root")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                    throw std::runtime_error("missing semicolon after 'root'");
+            current_server->root = _tokens[i + 1];
+            i += 2;
+        }
+        else if (key == "index")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                    throw std::runtime_error("missing semicolon after 'index'");
+            current_server->index = _tokens[i + 1];
+            i += 2;
+        }
+        else if(key == "host")
+        {
+            if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                    throw std::runtime_error("missing semicolon after 'host'");
+            std::string ip;
+            ip = _tokens[i + 1];
+            if(ip == "localhost")
+                ip = "127.0.0.1";
+            current_server->host = ip;
+            i += 2;
+        }
+        else
+        {
+            throw std::runtime_error("uknown token");
+        }
+       
+
+    }
+     void Parser::parse_location_block(size_t &i)
+    {
+        std::string key = _tokens[i];
+
+            if(key == "root")
+            {
+
+                if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                        throw std::runtime_error("root in location missing value or semicolom");
+                    current_location->root = _tokens[i + 1];
+                i += 2;
+            }
+            else if(key == "index")
+            {
+
+                if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                        throw std::runtime_error("index in location missing value or semicolom");
+                    current_location->index = _tokens[i + 1];
+                i += 2;
+            }
+            else if(key == "autoindex")
+            {
+
+                if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                        throw std::runtime_error("autoindex in location missing value or semicolom");
+                    if(_tokens[i + 1] == "on")
+                        current_location->autoindex = true;
+                    else if(_tokens[i + 1] == "off")
+                        current_location->autoindex = false;
+                    else
+                        throw std::runtime_error("unknown token");
+                i += 2;
+            }
+            else if(key == "allowed_methods")
+            {
+
+                if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                        throw std::runtime_error("allowed_methods in location missing value or semicolom");
+                    while( i + 1 < _tokens.size() && _tokens[i + 1] != ";")
+                    {
+                        if(_tokens[i + 1] == "GET")
+                            current_location->GET = true;
+                        else if(_tokens[i + 1] == "POST" && (current_location->path == "/uploads" || current_location->path == "/bin-cgi"))
+                            current_location->POST = true;
+                        else if(_tokens[i + 1] == "DELETE" && current_location->path == "/uploads")
+                            current_location->DELETE = true;
+                        else
+                            throw std::runtime_error("unknown method");
+                        i++;
+                    }
+                i++;
+            }
+            else if(key == "upload_pass" && current_location->path == "/uploads")
+            {
+                 if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
+                        throw std::runtime_error("upload_pass in location missing value or semicolom");
+                current_location->upload_pass = _tokens[i + 1];
+                i += 2;
+            }
+            else if(key == "cgi_pass" && current_location->path == "/bin-cgi")
+            {
+                 if(i + 1 >= _tokens.size() || _tokens[i + 3] != ";")
+                        throw std::runtime_error("cgi_pass in location missing value or semicolom");
+                    std::string exetenction = _tokens[i + 1];
+                if(exetenction[0] != '.')
+                    throw std::runtime_error("CGI extenstion needs to start with '.'");
+                current_location->cgi_pass[exetenction] = _tokens[i + 2];
+                i += 2;
+            }
+
+        }
 
 void Parser::parse() {
    for(size_t i = 0; i < _tokens.size(); i++)
@@ -36,9 +172,35 @@ void Parser::parse() {
             location_block new_location;
             new_location.path = _tokens[i + 1];
             current_server->locations.push_back(new_location);
+            current_location = &(current_server->locations.back());
             state = LOCATION;
             i += 2;
             continue;
         }
+        if(token == "}")
+        {
+            if(state == GLOBAL)
+                throw std::runtime_error("unexpected '}' in global scope");
+            if(state == LOCATION)
+            {
+                state = SERVER;
+            }
+            else if(state == SERVER)
+            {
+                state = GLOBAL;
+                current_server = NULL;
+            }
+            continue;
+        }
+        if(token == ";")
+            continue;
+        if(state == SERVER)
+            parse_server_block(i);
+        else if(state == LOCATION)
+           parse_location_block(i);
+        else
+            throw std::runtime_error("unknown token");
    }
+   if(state != GLOBAL)
+        throw std::runtime_error("missing '}'");
 }
