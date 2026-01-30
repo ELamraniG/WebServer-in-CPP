@@ -84,8 +84,8 @@ void Tokenizer::parse(const char* file_path)
     }
     if(tokens.empty())
         throw std::runtime_error("config file is empty");
-    for(int i = 0; i < tokens.size(); i++)
-        std::cout<<"token number "<<i<<":  =>"<<tokens[i]<<std::endl;
+    //for(int i = 0; i < tokens.size(); i++)
+    //    std::cout<<"token number "<<i<<":  =>"<<tokens[i]<<std::endl;
 
 }
 

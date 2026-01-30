@@ -10,29 +10,34 @@ bool isvalidport( std::string& port)
         return false;
     return true;
 }
-bool isvalid_error_number( std::string& error_number)
+int isvalid_error_number( std::string& error_number)
 {
     std::stringstream s(error_number);
     int _error_number;
-    if(!(s>>error_number) || !s.eof())
-        return false;
+    if(!(s>>_error_number) || !s.eof())
+    {
+      return -1;
+    }
     if(_error_number < 300 || _error_number > 599)
-        return false;
-    return true;
+    {
+       return -1;
+    }
+    return _error_number;
 }
 unsigned long isvalid_client_number( std::string& client_number)
 {
     char identifier = client_number[client_number.size() - 1];
+    std::cout<<identifier;
     unsigned long t = 1;
     if(identifier == 'm' || identifier == 'M' )
     {
         t = 1024 * 1014;
     }
-    if(identifier == 'k' || identifier == 'K' )
+    else if(identifier == 'k' || identifier == 'K' )
     {
         t = 1024;
     }
-    if(identifier == 'g' || identifier == 'G' )
+    else if(identifier == 'g' || identifier == 'G' )
     {
         t = 1024 * 1024 * 1024;
     }

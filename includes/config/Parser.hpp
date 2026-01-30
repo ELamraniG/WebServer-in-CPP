@@ -29,6 +29,6 @@ class Parser {
      
 };
 bool isvalidport( std::string& port);
-bool isvalid_error_number( std::string& error_number);
+int isvalid_error_number( std::string& error_number);
 unsigned long isvalid_client_number( std::string& client_number);
-    
+void print_servers(const std::vector<server_block>& servers);

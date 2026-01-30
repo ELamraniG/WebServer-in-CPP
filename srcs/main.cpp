@@ -15,6 +15,8 @@ int main(int c, char **argv)
         std::vector<std::string> tokens = tokenizer.tokens;
         Parser parser(tokens);
         parser.parse();
+        std::vector<server_block> servers = parser.getServers();
+        print_servers(servers);
 
     }
     catch(const std::exception& e)

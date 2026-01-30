@@ -29,10 +29,13 @@ std::vector<server_block> Parser::getServers() const {
         {
             if(i + 1 >= _tokens.size() || _tokens[i + 3] != ";")
                     throw std::runtime_error("missing semicolon after 'error_page'");
-            if(isvalid_error_number(_tokens[i + 1]))
-                current_server->error_pages[atoi(_tokens[i + 1].c_str())] = _tokens[i + 2]; //maybe we need to use atoi from libft
+            int error = isvalid_error_number(_tokens[i + 1]);
+            std::cout<<error;
+            if(error != -1)
+                current_server->error_pages[error] = _tokens[i + 2]; 
             else
                 throw std::runtime_error("invalid error page number");
+            i += 3;
         }
         else if(key == "client_max_body_size")
         {
@@ -70,6 +73,7 @@ std::vector<server_block> Parser::getServers() const {
         }
         else
         {
+            std::cout<<key<<std::endl;
             throw std::runtime_error("uknown token");
         }
        
@@ -111,8 +115,6 @@ std::vector<server_block> Parser::getServers() const {
             else if(key == "allowed_methods")
             {
 
-                if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
-                        throw std::runtime_error("allowed_methods in location missing value or semicolom");
                     while( i + 1 < _tokens.size() && _tokens[i + 1] != ";")
                     {
                         if(_tokens[i + 1] == "GET")
@@ -125,7 +127,9 @@ std::vector<server_block> Parser::getServers() const {
                             throw std::runtime_error("unknown method");
                         i++;
                     }
-                i++;
+                    if(i + 1>= _tokens.size() || _tokens[i + 1] != ";")
+                        throw std::runtime_error("allowed_methods in location missing value or semicolom");
+                i+=1;
             }
             else if(key == "upload_pass" && current_location->path == "/uploads")
             {
@@ -161,6 +165,7 @@ void Parser::parse() {
             server_block new_server;
             servers.push_back(new_server);
             current_server = &(servers.back());
+            i++;
             continue;
         }
         if(token == "location")
@@ -203,4 +208,50 @@ void Parser::parse() {
    }
    if(state != GLOBAL)
         throw std::runtime_error("missing '}'");
+}
+
+void print_servers(const std::vector<server_block>& servers) {
+    
+    for (size_t i = 0; i < servers.size(); ++i) {
+        const server_block& s = servers[i];
+
+        std::cout << "SERVER [" << i << "]" << std::endl;
+        std::cout << "  Port: " << s.port << std::endl;
+        std::cout << "  Host: " << s.host << std::endl;
+        std::cout << "  Root: " << s.root << std::endl;
+        std::cout << "  Index: " << s.index << std::endl;
+        std::cout << "  Client Max Body Size: " << s.client_max_body_size << std::endl;
+        std::cout << "  Error Pages: " << std::endl;
+        if (s.error_pages.empty()) {
+            std::cout << "    (None)" << std::endl;
+        } else {
+            for (std::map<int, std::string>::const_iterator it = s.error_pages.begin(); it != s.error_pages.end(); ++it) {
+                std::cout << "    Code " << it->first << " -> " << it->second << std::endl;
+            }
+        }
+        std::cout << "  Locations (" << s.locations.size() << "):" << std::endl;
+        for (size_t j = 0; j < s.locations.size(); ++j) {
+            const location_block& loc = s.locations[j];
+            std::cout << "    [" << j << "] Path: " << loc.path << std::endl;
+            std::cout << "      Root: " << loc.root << std::endl;
+            std::cout << "      Index: " << loc.index << std::endl;
+            std::cout << "      Autoindex: " << (loc.autoindex ? "ON" : "OFF") << std::endl;
+            std::cout << "      Allowed Methods: ";
+            if (loc.GET) std::cout << "GET ";
+            if (loc.POST) std::cout << "POST ";
+            if (loc.DELETE) std::cout << "DELETE ";
+            std::cout << std::endl;
+            if (!loc.upload_pass.empty())
+                std::cout << "      Upload Pass: " << loc.upload_pass << std::endl;
+
+            if (!loc.cgi_pass.empty()) {
+                std::cout << "      CGI Pass: " << std::endl;
+                for (std::map<std::string, std::string>::const_iterator it = loc.cgi_pass.begin(); it != loc.cgi_pass.end(); ++it) {
+                    std::cout << "        " << it->first << " -> " << it->second << std::endl;
+                }
+            }
+            std::cout << "    --------------------------------" << std::endl;
+        }
+        std::cout << "========================================" << std::endl;
+    }
 }
