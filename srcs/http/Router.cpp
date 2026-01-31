@@ -76,6 +76,22 @@ location_block *Router::match_location(Request& req, server_block& server)
     }
     return best_loc;
 }
+std::string Router::get_error_path(server_block& server)
+{
+    //check for later if root is empty then set a default root
+    std::string error_path = "404.html";
+    if(server.error_pages.count(404))
+        error_path = server.error_pages[404];
+     std::string   root = server.root;
+    if(root[root.size() - 1] == '/' && error_path[0] == '/')
+        root+= error_path.substr(1);
+    else
+    {
+        root += error_path;
+    }
+    return root;
+
+}
 std::string Router::get_path(Request& req, server_block& server, location_block* location)
 {
     if (!location)

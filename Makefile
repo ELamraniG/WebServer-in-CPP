@@ -10,7 +10,7 @@ OBJS = $(SRCS:.cpp=.o)
 NAME = webserve
 
 INCLUDES = ./includes/config/location_block.hpp  ./includes/config/server_block.hpp ./includes/config/Tokenizer.hpp ./includes/config/Parser.hpp \
-		    ./includes/http/Request.hpp ./includes/http/Router.hpp
+		    ./includes/http/Request.hpp ./includes/http/Router.hpp ./includes/http/Respond.hpp
 all: $(NAME)
 
 $(NAME): $(OBJS)
