@@ -108,6 +108,7 @@ Respond Respond::generate_response(std::string &path, std::string &error_path, b
             resp.set_header("Content-Type", set_mimetype(path));
             return resp;
 
+            
         }
         resp.set_status(403);
         resp.set_body("<h1>403 forbeddin<h1/>"); //need to check if we should handle all types of error pages or its okey for some to be hardcoed
