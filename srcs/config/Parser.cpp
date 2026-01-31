@@ -41,7 +41,7 @@ std::vector<server_block> Parser::getServers() const {
         {
             if(i + 1 >= _tokens.size() || _tokens[i + 2] != ";")
                     throw std::runtime_error("missing semicolon after 'client_max_body_size'");
-            unsigned long client_num = isvalid_client_number(_tokens[i + 1]);
+            long client_num = isvalid_client_number(_tokens[i + 1]);
              if(client_num != -1)
                 current_server->client_max_body_size = client_num;
             i += 2;
@@ -66,8 +66,6 @@ std::vector<server_block> Parser::getServers() const {
                     throw std::runtime_error("missing semicolon after 'host'");
             std::string ip;
             ip = _tokens[i + 1];
-            if(ip == "localhost")
-                ip = "127.0.0.1";
             current_server->host = ip;
             i += 2;
         }
@@ -211,7 +209,7 @@ void Parser::parse() {
 }
 
 void print_servers(const std::vector<server_block>& servers) {
-    
+
     for (size_t i = 0; i < servers.size(); ++i) {
         const server_block& s = servers[i];
 

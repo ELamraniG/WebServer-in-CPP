@@ -4,7 +4,7 @@ bool isvalidport( std::string& port)
 {
     std::stringstream s(port);
     int _port;
-    if(!(s>>port) || !s.eof())
+    if(!(s>>_port) || !s.eof())
         return false;
     if(_port < 1 || _port > 65535)
         return false;

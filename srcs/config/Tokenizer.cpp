@@ -6,7 +6,7 @@
 std::string trim(std::string s)
 {
     size_t size = s.size();
-    for(int i = 0; i < size ; i++)
+    for(size_t i = 0; i < size ; i++)
     {
         if(s[i] != ' ' && s[i] != '\t' && s[i] != '\n' && s[i] != '\v' && s[i] != '\f' && s[i] != '\r')
         {
@@ -16,7 +16,7 @@ std::string trim(std::string s)
             break;
         }
     }
-    for(int i = size - 1; i >= 0; i--)
+    for(size_t i = size - 1; i >= 0; i--)
     {
         if(s[i] != ' ' && s[i] != '\t' && s[i] != '\n' && s[i] != '\v' && s[i] != '\f' && s[i] != '\r')
         {

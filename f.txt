@@ -1,70 +1,121 @@
-token number 0:  =>server
-token number 1:  =>{
-token number 2:  =>listen
-token number 3:  =>443
-token number 4:  =>;
-token number 5:  =>server_name
-token number 6:  =>webserve.42.fr
-token number 7:  =>;
-token number 8:  =>error_page
-token number 9:  =>404
-token number 10:  =>404.html
-token number 11:  =>;
-token number 12:  =>error_page
-token number 13:  =>502
-token number 14:  =>502.html
-token number 15:  =>;
-token number 16:  =>client_max_body_size
-token number 17:  =>10M
-token number 18:  =>;
-token number 19:  =>location
-token number 20:  =>/
-token number 21:  =>{
-token number 22:  =>root
-token number 23:  =>www/html
-token number 24:  =>;
-token number 25:  =>index
-token number 26:  =>index.html
-token number 27:  =>;
-token number 28:  =>autoindex
-token number 29:  =>on
-token number 30:  =>;
-token number 31:  =>allowed_methods
-token number 32:  =>GET
-token number 33:  =>;
-token number 34:  =>}
-token number 35:  =>location
-token number 36:  =>/uploads
-token number 37:  =>{
-token number 38:  =>root
-token number 39:  =>www/uploads
-token number 40:  =>;
-token number 41:  =>allowed_methods
-token number 42:  =>GET
-token number 43:  =>POST
-token number 44:  =>DELETE
-token number 45:  =>;
-token number 46:  =>upload_pass
-token number 47:  =>www/uploads
-token number 48:  =>;
-token number 49:  =>}
-token number 50:  =>location
-token number 51:  =>/bin-cgi
-token number 52:  =>{
-token number 53:  =>root
-token number 54:  =>www/bin-cgi
-token number 55:  =>;
-token number 56:  =>allowed_methods
-token number 57:  =>GET
-token number 58:  =>POST
-token number 59:  =>;
-token number 60:  =>cgi_pass
-token number 61:  =>.py
-token number 62:  =>/usr/bin/python3
-token number 63:  =>;
-token number 64:  =>cgi_pass
-token number 65:  =>.php
-token number 66:  =>/usr/bin/php-cgi
-token number 67:  =>;
-token number 68:  =>}
-token number 69:  =>}
+[36m--- LOADING CONFIG (router_test.conf) ---[0m
+Loaded 3 servers.
+
+SERVER [0]
+  Port: 8080
+  Host: 127.0.0.1
+  Root: /var/www/default
+  Index: 
+  Client Max Body Size: 1000000
+  Error Pages: 
+    (None)
+  Locations (3):
+    [0] Path: /
+      Root: /var/www/default/html
+      Index: 
+      Autoindex: OFF
+      Allowed Methods: 
+    --------------------------------
+    [1] Path: /images
+      Root: /var/www/default/photos
+      Index: 
+      Autoindex: OFF
+      Allowed Methods: 
+    --------------------------------
+    [2] Path: /images/png
+      Root: /var/www/default/photos/png
+      Index: 
+      Autoindex: OFF
+      Allowed Methods: 
+    --------------------------------
+========================================
+SERVER [1]
+  Port: 8080
+  Host: test.com
+  Root: /var/www/test_com
+  Index: 
+  Client Max Body Size: 1000000
+  Error Pages: 
+    (None)
+  Locations (1):
+    [0] Path: /
+      Root: /var/www/test_com/public
+      Index: 
+      Autoindex: OFF
+      Allowed Methods: 
+    --------------------------------
+========================================
+SERVER [2]
+  Port: 9090
+  Host: 127.0.0.1
+  Root: /var/www/api
+  Index: 
+  Client Max Body Size: 1000000
+  Error Pages: 
+    (None)
+  Locations (1):
+    [0] Path: /api
+      Root: 
+      Index: 
+      Autoindex: OFF
+      Allowed Methods: 
+    --------------------------------
+========================================
+[36m--- TEST GROUP 1: SERVER SELECTION ---[0m
+localhost8080
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Default Server Selection                       [32m[PASS][0m
+test.com8080
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Hostname Match (test.com)                      [32m[PASS][0m
+localhost9090
+
+
+
+
+
+
+
+
+
+
+
+
+
+3. Port Match (9090)                              [31m[FAIL][0m
+      Expected: /var/www/api
+      Actual:   /var/www/default
+
+[36m--- TEST GROUP 2: LOCATION MATCHING ---[0m
+4. Root Location /                                [32m[PASS][0m
+5. Prefix Match /images                           [32m[PASS][0m
+6. Longest Prefix /images/png                     [32m[PASS][0m
+
+[36m--- TEST GROUP 3: PHYSICAL PATHS & BUGS ---[0m
+7. Partial Word Safety (images_backup)            [32m[PASS][0m
+8. Physical Path Construction                     [32m[PASS][0m
+9. Root Inheritance                               [32m[PASS][0m
