@@ -7,11 +7,6 @@ location_block::location_block() {
     index = "";
     autoindex = false;
     upload_pass = "";
-    
-    GET = false;
-    POST = false;
-    DELETE = false;
-
 }
 
 location_block::~location_block() {

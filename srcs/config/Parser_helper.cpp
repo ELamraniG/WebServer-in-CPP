@@ -24,6 +24,20 @@ int isvalid_error_number( std::string& error_number)
     }
     return _error_number;
 }
+int isvalid_return_number( std::string& return_number)
+{
+    std::stringstream s(return_number);
+    int _return_number;
+    if(!(s>>_return_number) || !s.eof())
+    {
+      return -1;
+    }
+    if(_return_number < 300 || _return_number > 399)
+    {
+       return -1;
+    }
+    return _return_number;
+}
 unsigned long isvalid_client_number( std::string& client_number)
 {
     char identifier = client_number[client_number.size() - 1];

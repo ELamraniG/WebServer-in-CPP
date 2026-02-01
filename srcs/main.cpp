@@ -21,7 +21,7 @@ int main(int c, char **argv)
         parser.parse();
         std::vector<server_block> servers = parser.getServers();
         print_servers(servers);
-        Request req1("GET", "/inde.html");
+        Request req1("GET", "/index.html");
         Request req2("GET", "/");
         server_block s1 = Router::match_server(req1, servers);
         location_block* loc = Router::match_location(req1, s1);
@@ -31,11 +31,8 @@ int main(int c, char **argv)
         if(index.empty())
             index = s1.index;
         Respond res;
-        res = res.generate_response(path, error_path, loc->autoindex, index, req1.uri);
-       std::cout << "------ "  << " ------" << std::endl;
-    std::cout << "Status: " << res.get_status() << std::endl;
-    std::cout << "Type:   " << res.get_header("Content-Type") << std::endl;
-    std::cout << "content:   " << res.get_body() << std::endl;
+        res = res.generate_response(path, error_path, loc->autoindex, index, req1.uri, loc->methods,req1.method, loc->redirect);
+       std::cout<<res.to_string();
     }
     catch(const std::exception& e)
     {

@@ -1,9 +1,9 @@
 #include "../../includes/http/Respond.hpp"
 #include <dirent.h>
 #include <iterator>
+#include <sstream>
 Respond::Respond():_status(0), _body("")
 {
-    _headers[""] = "";
 }
 void Respond::set_status(int status)
 {
@@ -70,6 +70,7 @@ bool is_directory(std::string& path)
 }
 std::string generate_auto_index(std::string path, std::string uri)
 {
+    //NEEDS MORE TESTING
     //need to study more about opendi and dirent
     DIR* dir = opendir(path.c_str());
     if(dir == NULL) // needs to double check how should i handle no permession to open a dir
@@ -88,11 +89,33 @@ std::string generate_auto_index(std::string path, std::string uri)
     return html;
 
 }
-Respond Respond::generate_response(std::string &path, std::string &error_path, bool autoindex, std::string index, std::string uri)
+Respond Respond::generate_response(std::string &path,
+                                    std::string &error_path,
+                                    bool autoindex,
+                                    std::string index,
+                                    std::string uri,
+                                    std::map<std::string, bool> methods, std::string req_method, std::map<int, std::string> redirection)
 {
+
     std::string content;
     Respond resp;
-    if(is_directory(path))
+    if(!redirection.empty())
+    {
+        std::map<int, std::string>::const_iterator it = redirection.begin();
+        resp.set_status(it->first);
+        resp.set_header("Location", it->second);
+        std::stringstream ss;
+        ss << it->first;
+        resp.set_body("<h1>" + ss.str() + " Moved Permanently</h1>");
+        resp.set_header("Content-Type", "text/html");
+    }
+    else if(methods.count(req_method) == 0)
+    {
+        resp.set_status(405);
+        resp.set_body("<h1>405 Method Not Allowed</h1>");
+        resp.set_header("Content-Type", "text/html");
+    }
+    else if(is_directory(path))
     {
         
         std::string index_path = path + (path[path.size() - 1] =='/' ? "": "/") + index;
@@ -100,51 +123,55 @@ Respond Respond::generate_response(std::string &path, std::string &error_path, b
         {
             resp.set_status(200);
             resp.set_body(content);
-            resp.set_header("Content-Type", set_mimetype(path));
-            return resp;
+            resp.set_header("Content-Type", set_mimetype(index_path));
+
         }
-        if(autoindex)
+        else if(autoindex)
         {
             content = generate_auto_index(path, uri);
             resp.set_status(200);
             resp.set_body(content);
-            resp.set_header("Content-Type", set_mimetype(path));
-            return resp;
-
-            
+            resp.set_header("Content-Type", "text/html");
         }
-        resp.set_status(403);
-        resp.set_body("<h1>403 forbeddin<h1/>"); //need to check if we should handle all types of error pages or its okey for some to be hardcoed
-        resp.set_header("Content-Type", set_mimetype(path));
+        else
+        {
+            resp.set_status(403);
+            resp.set_body("<h1>403 Forbidden</h1>"); //need to check if we should handle all types of error pages or its okey for some to be hardcoed
+            resp.set_header("Content-Type", "text/html");
+        }
     }
-    if(readfile(path, content))
+    else if(readfile(path, content))
     {
         resp.set_status(200);
         resp.set_body(content);
         resp.set_header("Content-Type", set_mimetype(path));
-        return resp;
     }
     else
     {
-                        std::cout<<error_path<<std::endl;
-
          if(readfile(error_path, content))
          {
-            resp.set_status(404);
+            resp.set_status(404); //maybe needs to print exact status code we have
             resp.set_body(content);
             resp.set_header("Content-Type", "text/html");
-            return resp;
          }
          else
          {
             resp.set_body("<h1>404</h1><p>no file found. even the 404</p>");
-            return resp;
+            resp.set_header("Content-Type", "text/html");
          }
-        
     }
+    resp.set_headers_info();
     return resp;
 }
-
+void Respond::set_headers_info()
+{
+    //we skipped the date header because time function not allowed in external functions but not 100% sure
+    if(_headers.count("server") == 0)
+        _headers["Server"] = "Webserve/1.0";
+    std::stringstream ss;
+    ss<<_body.length();
+    _headers["Content-Length"] = ss.str();
+}
 int Respond::get_status() const
 {
     return _status;
@@ -161,6 +188,36 @@ std::string Respond::get_header(const std::string& key) const
 std::string Respond::get_body() const
 {
     return _body;
+}
+std::string get_status_message(int status)
+{
+    switch(status)
+    {
+        case 200:
+            return "OK";
+        case 301:
+            return "Moved Permanently";
+        case 403:
+            return "Forbidden";
+        case 404:
+            return "Not Found";
+        case 405:
+            return "Method Not Allowed";
+        default:
+            return "Internal Server Error";
+    }
+}
+std::string Respond::to_string() const
+{
+    std::stringstream ss;
+    ss << "HTTP/1.1 " << _status << " " << get_status_message(_status) << "\r\n";
+    std::map<std::string, std::string>::const_iterator it;
+    for (it = _headers.begin(); it != _headers.end(); ++it)
+    {
+        ss << it->first << ": " << it->second << "\r\n";
+    }
+    ss << "\r\n" << _body;
+    return ss.str();
 }
 
 Respond::~Respond()

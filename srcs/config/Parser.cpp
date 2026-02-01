@@ -30,7 +30,6 @@ std::vector<server_block> Parser::getServers() const {
             if(i + 1 >= _tokens.size() || _tokens[i + 3] != ";")
                     throw std::runtime_error("missing semicolon after 'error_page'");
             int error = isvalid_error_number(_tokens[i + 1]);
-            std::cout<<error;
             if(error != -1)
                 current_server->error_pages[error] = _tokens[i + 2]; 
             else
@@ -116,11 +115,11 @@ std::vector<server_block> Parser::getServers() const {
                     while( i + 1 < _tokens.size() && _tokens[i + 1] != ";")
                     {
                         if(_tokens[i + 1] == "GET")
-                            current_location->GET = true;
+                            current_location->methods["GET"] = true;
                         else if(_tokens[i + 1] == "POST" && (current_location->path == "/uploads" || current_location->path == "/bin-cgi"))
-                            current_location->POST = true;
+                            current_location->methods["POST"] = true;
                         else if(_tokens[i + 1] == "DELETE" && current_location->path == "/uploads")
-                            current_location->DELETE = true;
+                            current_location->methods["DELETE"] = true;
                         else
                             throw std::runtime_error("unknown method");
                         i++;
@@ -145,6 +144,24 @@ std::vector<server_block> Parser::getServers() const {
                     throw std::runtime_error("CGI extenstion needs to start with '.'");
                 current_location->cgi_pass[exetenction] = _tokens[i + 2];
                 i += 2;
+            }
+            else if(key == "return")
+            {
+                if(i + 1 >= _tokens.size() || _tokens[i + 3] != ";")
+                    throw std::runtime_error("missing semicolon after 'error_page'");
+                if(current_location->redirect.size() >= 1)
+                    throw std::runtime_error("only one return directive allowed per location");
+                int return_code = isvalid_return_number(_tokens[i + 1]);
+                if(return_code != -1)
+                    current_location->redirect[return_code] = _tokens[i + 2]; 
+                else
+                    throw std::runtime_error("invalid redirection number");
+                i += 3;
+            }
+            else
+            {
+                std::cout<<key<<std::endl;
+                throw std::runtime_error("uknown token in location block");
             }
 
         }
@@ -234,10 +251,25 @@ void print_servers(const std::vector<server_block>& servers) {
             std::cout << "      Root: " << loc.root << std::endl;
             std::cout << "      Index: " << loc.index << std::endl;
             std::cout << "      Autoindex: " << (loc.autoindex ? "ON" : "OFF") << std::endl;
+            std::cout << "      Redirect: " << std::endl;
+            if (!loc.redirect.empty()) {
+            std::map<int, std::string>::const_iterator it = loc.redirect.begin();
+
+            std::cout << "Key: " << it->first << std::endl;
+            std::cout << "Value: " << it->second << std::endl;
+            }
             std::cout << "      Allowed Methods: ";
-            if (loc.GET) std::cout << "GET ";
-            if (loc.POST) std::cout << "POST ";
-            if (loc.DELETE) std::cout << "DELETE ";
+            if (loc.methods.empty()) {
+                std::cout << "(None)";
+            } else {
+                if(loc.methods.count("GET"))
+                    std::cout<<"GET";
+                if(loc.methods.count("POST"))
+                    std::cout<<"POST";
+                if(loc.methods.count("DELETE"))
+                    std::cout<<"DELETE";
+                }
+            
             std::cout << std::endl;
             if (!loc.upload_pass.empty())
                 std::cout << "      Upload Pass: " << loc.upload_pass << std::endl;
