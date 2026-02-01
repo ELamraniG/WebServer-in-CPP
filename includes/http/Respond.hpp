@@ -17,6 +17,9 @@ class Respond {
         void set_status(int status);
         void set_header(const std::string& key, const std::string& value);
         void set_body(const std::string& body);
-         Respond generate_response(std::string &path, std::string& error_path, bool autoindex, std::string index, std::string uri);
+        int get_status() const;
+        std::string get_header(const std::string& key) const;
+        std::string get_body() const;
+        Respond generate_response(std::string &path, std::string& error_path, bool autoindex, std::string index, std::string uri);
 
 };

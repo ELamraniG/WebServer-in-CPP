@@ -1,5 +1,6 @@
 #include "../../includes/http/Respond.hpp"
 #include <dirent.h>
+#include <iterator>
 Respond::Respond():_status(0), _body("")
 {
     _headers[""] = "";
@@ -33,7 +34,9 @@ std::string set_mimetype(std::string& path)
 {
     size_t pos = path.find_last_of('.');
     if(pos == std::string::npos)
+    {
         return "text/plain";
+    }
     std::string mime = path.substr(pos);
     if(mime == ".html" || mime == ".htm")
         return "text/html";
@@ -123,6 +126,8 @@ Respond Respond::generate_response(std::string &path, std::string &error_path, b
     }
     else
     {
+                        std::cout<<error_path<<std::endl;
+
          if(readfile(error_path, content))
          {
             resp.set_status(404);
@@ -138,4 +143,26 @@ Respond Respond::generate_response(std::string &path, std::string &error_path, b
         
     }
     return resp;
+}
+
+int Respond::get_status() const
+{
+    return _status;
+}
+
+std::string Respond::get_header(const std::string& key) const
+{
+    std::map<std::string, std::string>::const_iterator it = _headers.find(key);
+    if (it != _headers.end())
+        return it->second;
+    return "";
+}
+
+std::string Respond::get_body() const
+{
+    return _body;
+}
+
+Respond::~Respond()
+{
 }

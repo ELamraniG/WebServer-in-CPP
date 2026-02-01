@@ -85,6 +85,11 @@ std::string Router::get_error_path(server_block& server)
      std::string   root = server.root;
     if(root[root.size() - 1] == '/' && error_path[0] == '/')
         root+= error_path.substr(1);
+    else if(root[root.size() - 1] != '/' && error_path[0] != '/')
+    {
+        root += '/';
+        root += error_path;
+    }
     else
     {
         root += error_path;

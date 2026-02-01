@@ -4,7 +4,7 @@ CPP = c++
 CPP_FLAGS = -Wall -Wextra -Werror
 
 SRCS = ./srcs/config/Parser_helper.cpp ./srcs/config/Parser.cpp ./srcs/config/server_block.cpp ./srcs/config/Tokenizer.cpp ./srcs/main.cpp \
-		./srcs/http/Router.cpp 
+		./srcs/http/Router.cpp  ./srcs/http/Respond.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 NAME = webserve
