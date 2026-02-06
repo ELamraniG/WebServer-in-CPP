@@ -1,0 +1,23 @@
+#pragma once
+
+#include <string>
+#include "ChunksDecoding.hpp"
+#include "HTTPRequest.hpp"
+
+class RequestParser {
+public:
+  enum ParsingStatus { P_SUCCESS, P_INCOMPLETE, P_ERROR };
+
+  RequestParser();
+
+  ParsingStatus parseRequest(const std::string &rawBytes, HTTPRequest &request);
+  bool parseOneRequestLine(const std::string &one_line, HTTPRequest &request);
+  bool parseHeaders(const std::string &theHeader, HTTPRequest &request);
+  bool parseBody(const std::string &theBody, HTTPRequest &request);
+
+  void resetEverything();
+
+private:
+  ChunksDecoding chunksDecoding;
+};
+
