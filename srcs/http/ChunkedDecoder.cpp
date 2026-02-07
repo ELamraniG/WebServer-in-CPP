@@ -52,6 +52,8 @@ DecodeResult ChunksDecoding::decode(const std::string &chunkedData,
       // we handle if there is optional trailer
       if (chunkedData[pos] != '\r' || chunkedData[pos + 1] != '\n') {
         // skip them all until we find empty line
+
+        // for when we read all the trailer but we didnt read the final /r/n of the body
         bool foundEnd = false;
         while (pos < chunkedData.size()) {
           size_t trailEndPos = chunkedData.find("\r\n", pos);
