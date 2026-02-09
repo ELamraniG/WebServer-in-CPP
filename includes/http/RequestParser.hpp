@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include "ChunksDecoding.hpp"
 #include "HTTPRequest.hpp"
+#include <string>
 
 class RequestParser {
 public:
@@ -11,13 +11,11 @@ public:
   RequestParser();
 
   ParsingStatus parseRequest(const std::string &rawBytes, HTTPRequest &request);
-  bool parseOneRequestLine(const std::string &one_line, HTTPRequest &request);
+  bool parseFirstLine(const std::string &one_line, HTTPRequest &request);
   bool parseHeaders(const std::string &theHeader, HTTPRequest &request);
-  bool parseBody(const std::string &theBody, HTTPRequest &request);
 
   void resetEverything();
 
 private:
   ChunksDecoding chunksDecoding;
 };
-
