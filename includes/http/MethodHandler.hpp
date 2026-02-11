@@ -3,9 +3,8 @@
 #include <string>
 
 #include "HTTPRequest.hpp"
-
-class RouteConfig;
-struct Response;
+#include "Response.hpp"
+#include "RouteConfig.hpp"
 
 class MethodHandler {
 public:
@@ -14,8 +13,5 @@ public:
   Response handleGET(const HTTPRequest &request, const RouteConfig &route);
   Response handlePOST(const HTTPRequest &request, const RouteConfig &route);
   Response handleDELETE(const HTTPRequest &request, const RouteConfig &route);
-
-private:
-  std::string getMimeType(const std::string &path) const;
+  std::string getTheFileType(const std::string &path) const;
 };
-

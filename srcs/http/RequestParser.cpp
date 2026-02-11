@@ -1,5 +1,4 @@
 #include "../../includes/http/RequestParser.hpp"
-#include <algorithm>
 #include <cstdlib>
 #include <sstream>
 /*
@@ -78,7 +77,8 @@ RequestParser::parseRequest(const std::string &rawBytes, HTTPRequest &request) {
   if (headersEnd == std::string::npos)
     return P_INCOMPLETE;
 
-  // headers are always between /r/n which is at the end of the first line, and /r/n/r/n end of headers
+  // headers are always between /r/n which is at the end of the first line, and
+  // /r/n/r/n end of headers
   std::string theHeader =
       rawBytes.substr(firstLineEnd + 2, headersEnd - firstLineEnd - 2);
   if (!parseHeaders(theHeader, request))
@@ -109,7 +109,8 @@ RequestParser::parseRequest(const std::string &rawBytes, HTTPRequest &request) {
   std::string contentLength = request.getHeader("content-length");
   if (!contentLength.empty()) {
     char *tmp = NULL;
-    unsigned long contentLengthValue = std::strtoul(contentLength.c_str(), &tmp, 10);
+    unsigned long contentLengthValue =
+        std::strtoul(contentLength.c_str(), &tmp, 10);
     if (tmp == contentLength.c_str())
       return P_ERROR; // not a valid number
 
@@ -160,7 +161,7 @@ bool RequestParser::parseFirstLine(const std::string &one_line,
   return true;
 }
 
-//each line of header if key:value /r/n at the end also couldbe no header
+// each line of header if key:value /r/n at the end also couldbe no header
 bool RequestParser::parseHeaders(const std::string &theHeader,
                                  HTTPRequest &request) {
   if (theHeader.empty())
@@ -181,7 +182,7 @@ bool RequestParser::parseHeaders(const std::string &theHeader,
     // split with the first: key : value
     size_t posOfDots = line.find(':');
     if (posOfDots == std::string::npos)
-      return false; 
+      return false;
 
     std::string key = strTrim(line.substr(0, posOfDots));
     std::string value = strTrim(line.substr(posOfDots + 1));
