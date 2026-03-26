@@ -14,8 +14,9 @@
 #include <poll.h>
 #include <fcntl.h>
 
-#define BUFFER_SIZE 1024
-#define TIMEOUT 5
+#define BUFFER_SIZE 4096
+#define TIMEOUT 50
+#define MAX_HEADER_SIZE 8192
 
 std::string response("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
 
@@ -109,11 +110,9 @@ int main()
 					last_activity.erase(fds[i].fd);
 					cleanup(receivers, senders, fds, i);
 					std::cout << "Client timed out" << std::endl;
+					continue;
 				}
 			}
-		}
-		for (int i=0; i<fds.size(); i++)
-		{
 			if (!server_fds.count(fds[i].fd) && (fds[i].revents & (POLLERR | POLLHUP)))
 				cleanup(receivers, senders, fds, i);
 			else if (fds[i].revents & POLLIN)
@@ -145,6 +144,11 @@ int main()
 					int bytes = read(fds[i].fd, &buffer[0], BUFFER_SIZE);
 					if (bytes > 0)
 					{
+						if (receivers[fds[i].fd].size() + bytes > MAX_HEADER_SIZE)
+						{
+							cleanup(receivers, senders, fds, i);
+							continue ;
+						}
 						receivers[fds[i].fd].append(buffer.c_str(), bytes);
 						if (receivers[fds[i].fd].find("\r\n\r\n") != std::string::npos)
 						{
