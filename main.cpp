@@ -1,6 +1,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <map>
 #include <netinet/in.h>
 #include <iostream>
@@ -14,7 +15,7 @@
 #include <fcntl.h>
 
 #define BUFFER_SIZE 1024
-#define TIMEOUT 1000
+#define TIMEOUT 5
 
 std::string response("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
 
@@ -89,14 +90,27 @@ int main()
 
 	std::map<int, std::string> receivers;
 	std::map<int, std::string> senders;
+	std::map<int, time_t> last_activity;
 	while (true)
 	{
-		int ret = poll(fds.data(), fds.size(), -1);
+		int ret = poll(fds.data(), fds.size(), 5000);
 		if (ret < 0)
 		{
 			for (int i=0; i<fds.size(); i++)
 				close(fds[i].fd);
 			return (error("poll"));
+		}
+		for (int i=0; i<fds.size(); i++)
+		{
+			if (!server_fds.count(fds[i].fd))
+			{
+				if (time(NULL) - last_activity[fds[i].fd] > TIMEOUT)
+				{
+					last_activity.erase(fds[i].fd);
+					cleanup(receivers, senders, fds, i);
+					std::cout << "Client timed out" << std::endl;
+				}
+			}
 		}
 		for (int i=0; i<fds.size(); i++)
 		{
@@ -123,6 +137,7 @@ int main()
 					client_poll.events = POLLIN;
 					fds.push_back(client_poll);
 					receivers[client_fd] = "";
+					last_activity[client_fd] = time(NULL);
 					std::cout << "Client connect" << std::endl;
 				}
 				else
@@ -135,9 +150,8 @@ int main()
 						{
 							fds[i].events = POLLOUT;
 							senders[fds[i].fd] = response;
-							// write(fds[i].fd, response.c_str(), response.size());
-							// cleanup(receivers, fds, i);
 						}
+						last_activity[fds[i].fd] = time(NULL);
 					}
 					else if (bytes == 0)
 					{
