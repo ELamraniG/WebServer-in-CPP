@@ -14,6 +14,8 @@
 #include <poll.h>
 #include <fcntl.h>
 
+// TODO: i should get ports and body_size_max from config file
+
 #define BUFFER_SIZE 4096
 #define TIMEOUT 50
 #define MAX_HEADER_SIZE 8192
