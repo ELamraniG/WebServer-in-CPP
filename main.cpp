@@ -57,6 +57,7 @@ int main()
 	pollfd server_poll;
 	for (int i=0; i<ports.size(); i++)
 	{
+		// 1- create socket
 		server_fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (server_fd < 0)
 			return (error("socket"));
@@ -66,23 +67,27 @@ int main()
 			return (error("fcntl(F_SETFL)"));
 		}
 		setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	
+
+		// 2- bind it
 		std::memset(&server_addr, 0, sizeof(server_addr));
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_port = htons(ports[i]);
 		server_addr.sin_addr.s_addr = INADDR_ANY;
-	
+
 		if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 		{
 			close(server_fd);
 			return (error("bind"));
 		}
-	
-		if (listen(server_fd, 10) < 0)
+
+		// 3- start listening
+		if (listen(server_fd, SOMAXCONN) < 0)
 		{
 			close(server_fd);
 			return (error("listen"));
 		}
+
+		// 4- add it to server_fds and all_fds
 		server_fds.insert(server_fd);
 		server_poll.fd = server_fd;
 		server_poll.events = POLLIN;
