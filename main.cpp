@@ -17,7 +17,7 @@
 // TODO: i should get ports and body_size_max from config file
 
 #define BUFFER_SIZE 4096
-#define TIMEOUT 50
+#define TIMEOUT 55
 #define MAX_HEADER_SIZE 8192
 
 std::string response("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
@@ -57,7 +57,6 @@ int main()
 	pollfd server_poll;
 	for (int i=0; i<ports.size(); i++)
 	{
-		// 1- create socket
 		server_fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (server_fd < 0)
 			return (error("socket"));
@@ -68,7 +67,6 @@ int main()
 		}
 		setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-		// 2- bind it
 		std::memset(&server_addr, 0, sizeof(server_addr));
 		server_addr.sin_family = AF_INET;
 		server_addr.sin_port = htons(ports[i]);
@@ -80,14 +78,12 @@ int main()
 			return (error("bind"));
 		}
 
-		// 3- start listening
 		if (listen(server_fd, SOMAXCONN) < 0)
 		{
 			close(server_fd);
 			return (error("listen"));
 		}
 
-		// 4- add it to server_fds and all_fds
 		server_fds.insert(server_fd);
 		server_poll.fd = server_fd;
 		server_poll.events = POLLIN;
