@@ -8,7 +8,6 @@
 
 const int Client::TIMEOUT = 55;
 const int Client::BUFFER_SIZE = 4096;
-const int Client::MAX_HEADER_SIZE = 8192;
 
 ssize_t Client::receive()
 {
@@ -17,7 +16,10 @@ ssize_t Client::receive()
 
 	bytes = read(_fd, &buffer[0], BUFFER_SIZE);
 	if (bytes > 0)
+	{
 		bytes += _receiver.size();
+		_receiver += buffer;
+	}
 	return (bytes);
 }
 
@@ -29,13 +31,26 @@ ssize_t Client::send()
 	response_size = _sender.size();
 	bytes = write(_fd, _sender.c_str(), response_size);
 	if (bytes > 0)
+	{
+		_sender.erase(0, bytes);
 		_bytesSent += bytes;
+	}
 	return (_bytesSent);
 }
 
 int Client::getFd() const
 {
 	return (_fd);
+}
+
+int Client::getSenderSize() const
+{
+	return (_sender.size());
+}
+
+void Client::setResponse(const std::string &response)
+{
+	_sender = response;
 }
 
 bool Client::isTimedOut()

@@ -7,6 +7,8 @@
 #include <vector>
 
 const bool VERBOSE = true;
+const int BUFFER_SIZE = 4096;
+const std::string RESPONSE("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
 
 class EventLoop
 {
@@ -20,8 +22,8 @@ class EventLoop
 		EventLoop& operator=(const EventLoop &obj);
 		void handleNewConnection(int fd);
 		void handleClientDisconnected(int fd, int &i);
-		void handleRead(int fd);
-		void handleWrite();
+		void handleRead(int fd, int &i);
+		void handleWrite(int fd, int &i);
 		bool isServer(int fd) const;
 		void handleError();
 		void log(const std::string msg) const;

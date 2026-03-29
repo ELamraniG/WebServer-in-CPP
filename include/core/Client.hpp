@@ -20,13 +20,14 @@ class Client
 		Client(int fd);
 		static const int TIMEOUT;
 		static const int BUFFER_SIZE;
-		static const int MAX_HEADER_SIZE;
 		int		getFd() const;
+		int		getSenderSize() const;
 		ssize_t	receive();
 		ssize_t	send();
 		bool	isTimedOut();
 		bool	isReqCompleted();
 		void	eraseConsumedData();
 		void	updateLastActivity();
+		void	setResponse(const std::string &response);
 		~Client();
 };

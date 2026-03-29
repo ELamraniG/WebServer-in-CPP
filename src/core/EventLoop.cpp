@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sys/poll.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 
@@ -35,7 +36,7 @@ void EventLoop::handleNewConnection(int fd)
 
 void EventLoop::handleClientDisconnected(int fd, int &i)
 {
-	close(fd);
+	// close(fd);
 	delete _clients[fd];
 	_clients.erase(fd);
 	_servers.erase(_servers.begin() + i);
@@ -44,22 +45,54 @@ void EventLoop::handleClientDisconnected(int fd, int &i)
 	i--;
 }
 
-void EventLoop::handleRead(int fd)
+void EventLoop::handleRead(int fd, int &i)
 {
-	int					clientFd;
-	struct sockaddr_in	clientAddr;
-	socklen_t			clientLen;
-	pollfd				clientPoll;
+	ssize_t	bytes;
 
 	if (isServer(fd))
 		handleNewConnection(fd);
 	else
-		
+	{
+		bytes = _clients[fd]->receive();
+		if (bytes < 0)
+		{
+			log("Error: read");
+			handleClientDisconnected(fd, i);
+		}
+		else if (bytes == 0)
+		{
+			log("Client disconnected");
+			handleClientDisconnected(fd, i);
+		}
+		else
+		{
+			if (_clients[fd]->isReqCompleted())
+			{
+				_fds[i].events = POLLOUT;
+				_clients[fd]->setResponse(RESPONSE);
+			}
+			_clients[fd]->updateLastActivity();
+		}
+	}
 }
 
-void EventLoop::handleWrite()
+void EventLoop::handleWrite(int fd, int &i)
 {
-	
+	ssize_t	bytes;
+
+	bytes = _clients[i]->send();
+	if (bytes < 0)
+	{
+		log("Error: read");
+		handleClientDisconnected(fd, i);
+	}
+	else if (bytes == 0)
+	{
+		log("Client disconnected");
+		handleClientDisconnected(fd, i);
+	}
+	else if (bytes == _clients[fd]->getSenderSize())
+		handleClientDisconnected(fd, i);
 }
 
 bool EventLoop::isServer(int fd) const
@@ -110,9 +143,9 @@ void EventLoop::run()
 				handleClientDisconnected(_fds[i].fd, i);
 			}
 			else if (isReadable(_fds[i].revents))
-			{
-				handleRead(_fds[i].fd);
-			}
+				handleRead(_fds[i].fd, i);
+			else if (isWritable(_fds[i].revents))
+				handleWrite(_fds[i].fd, i);
 		}
 	}
 }
