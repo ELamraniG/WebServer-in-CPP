@@ -13,11 +13,11 @@ class Client
 		ssize_t		_bytesSent;
 		time_t		_lastActivity;
 		Client();
-		Client(int fd);
 		Client(const Client &obj);
 		Client& operator=(const Client &obj);
 		
 	public:
+		Client(int fd);
 		static const int TIMEOUT;
 		static const int BUFFER_SIZE;
 		static const int MAX_HEADER_SIZE;
