@@ -6,27 +6,27 @@
 #include <unistd.h>
 #include <ctime>
 
-const int Client::TIMEOUT = 5;
+const int Client::TIMEOUT = 55;
 const int Client::BUFFER_SIZE = 4096;
 
-ssize_t Client::receive()
+ssize_t Client::readFromSocket()
 {
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes;
 
 	bytes = read(_fd, buffer, BUFFER_SIZE);
 	if (bytes > 0)
-		_receiver.append(buffer, bytes);
+		_requestBuffer.append(buffer, bytes);
 	return (bytes);
 }
 
-ssize_t Client::send()
+ssize_t Client::writeToSocket()
 {
 	size_t	responseSize;
 	ssize_t	bytes;
 
-	responseSize = _sender.size();
-	bytes = write(_fd, _sender.c_str(), responseSize);
+	responseSize = _responseBuffer.size();
+	bytes = write(_fd, _responseBuffer.c_str(), responseSize);
 	if (bytes > 0)
 		eraseConsumedData(bytes);
 	return (bytes);
@@ -37,14 +37,14 @@ int Client::getFd() const
 	return (_fd);
 }
 
-bool Client::isEmpty() const
+bool Client::hasNoPendingWrite() const
 {
-	return (_sender.size() == 0);
+	return (_responseBuffer.size() == 0);
 }
 
 void Client::setResponse(const std::string &response)
 {
-	_sender = response;
+	_responseBuffer = response;
 }
 
 bool Client::isTimedOut() const
@@ -54,12 +54,12 @@ bool Client::isTimedOut() const
 
 bool Client::isReqCompleted() const
 {
-	return (_receiver.find("\r\n\r\n") != std::string::npos);
+	return (_requestBuffer.find("\r\n\r\n") != std::string::npos);
 }
 
 void Client::eraseConsumedData(int bytes)
 {
-	_sender.erase(0, bytes);
+	_responseBuffer.erase(0, bytes);
 }
 
 void Client::updateLastActivity()
@@ -71,7 +71,7 @@ Client::Client() {}
 
 Client::Client(int fd) :
 	_fd(fd),
-	_receiver(""),
+	_requestBuffer(""),
 	_lastActivity(time(NULL))
 {}
 
@@ -88,6 +88,6 @@ Client& Client::operator=(const Client &obj)
 
 Client::~Client()
 {
-	if (_fd > 0)
+	if (_fd >= 0)
 		close(_fd);
 }

@@ -6,9 +6,9 @@
 class Client
 {
 	private:
-		int _fd;
-		std::string	_receiver;
-		std::string	_sender;
+		int 		_fd;
+		std::string	_requestBuffer;
+		std::string	_responseBuffer;
 		time_t		_lastActivity;
 		Client();
 		Client(const Client &obj);
@@ -19,9 +19,9 @@ class Client
 		static const int TIMEOUT;
 		static const int BUFFER_SIZE;
 		int		getFd() const;
-		ssize_t	receive();
-		ssize_t	send();
-		bool	isEmpty() const;
+		ssize_t	readFromSocket();
+		ssize_t	writeToSocket();
+		bool	hasNoPendingWrite() const;
 		bool	isTimedOut() const;
 		bool	isReqCompleted() const;
 		void	eraseConsumedData(int bytes);

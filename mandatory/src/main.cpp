@@ -6,17 +6,20 @@
 
 int main()
 {
+	std::vector<Server*>	serverList;
+
 	try
 	{
-		std::vector<Server*>	servers;
-
-		servers.push_back(new Server(8080));
-		EventLoop eventloop(servers);
+		serverList.push_back(new Server(8080));
+		serverList.push_back(new Server(8000));
+		EventLoop eventloop(serverList);
 		eventloop.run();
 	}
 	catch (std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
 	}
+	for (size_t i=0; i<serverList.size(); i++)
+		delete serverList[i];
 	return (0);
 }

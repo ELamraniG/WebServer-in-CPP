@@ -16,21 +16,21 @@ const std::string RESPONSE("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, 
 class EventLoop
 {
 	private:
-		std::vector<pollfd>		_fds;
-		std::vector<Server*>	_servers;
-		std::set<int>			_serverFds;
-		std::map<int, Client*>	_clients;
+		std::vector<pollfd>		_pollFds;
+		std::vector<Server*>	_serverList;
+		std::set<int>			_listeningFds;
+		std::map<int, Client*>	_clientMap;
 		EventLoop();
 		EventLoop(const EventLoop &obj);
 		EventLoop& operator=(const EventLoop &obj);
 		void addToPoll(int fd);
-		void handleNewConnection(int fd);
+		void handleNewClient(int fd);
 		void handleClientDisconnected(int fd, size_t &i);
-		void handleRead(int fd, size_t &i);
-		void handleWrite(int fd, size_t &i);
+		void handleReadEvent(int fd, size_t &i);
+		void handleWriteEvent(int fd, size_t &i);
 		bool isServer(int fd) const;
 		void handleError();
-		void log(const std::string msg) const;
+		void logEvent(const std::string msg) const;
 		bool isError(const short revents) const;
 		bool isReadable(const short revents) const;
 		bool isWritable(const short revents) const;

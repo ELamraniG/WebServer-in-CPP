@@ -10,7 +10,7 @@ int Server::accept() const
 	struct sockaddr_in clientAddr;
 	socklen_t clientLen;
 
-	clientLen = sizeof(clientLen);
+	clientLen = sizeof(clientAddr);
 	clientFd = ::accept(_fd, (struct sockaddr *)&clientAddr, &clientLen);
 	if (clientFd < 0)
 	{
@@ -87,6 +87,6 @@ Server& Server::operator=(const Server &obj)
 
 Server::~Server()
 {
-	if (_fd > 0)
+	if (_fd >= 0)
 		close(_fd);
 }

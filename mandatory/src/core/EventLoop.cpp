@@ -17,88 +17,88 @@ void EventLoop::addToPoll(int fd)
 
 	pollFd.fd = fd;
 	pollFd.events = POLLIN;
-	_fds.push_back(pollFd);
+	_pollFds.push_back(pollFd);
 }
 
-void EventLoop::handleNewConnection(int serverFd)
+void EventLoop::handleNewClient(int serverFd)
 {
 	int	clientFd = -1;
 
-	for (size_t i=0; i<_servers.size(); i++)
+	for (size_t i=0; i<_serverList.size(); i++)
 	{
-		if (_servers[i]->getFd() == serverFd)
+		if (_serverList[i]->getFd() == serverFd)
 		{
-			clientFd = _servers[i]->accept();
+			clientFd = _serverList[i]->accept();
 			break ;
 		}
 	}
 	if (clientFd != -1)
 	{
 		addToPoll(clientFd);
-		_clients[clientFd] = new Client(clientFd);
+		_clientMap[clientFd] = new Client(clientFd);
 		std::cout << "Client connected" << std::endl;
 	}
 }
 
 void EventLoop::handleClientDisconnected(int fd, size_t &i)
 {
-	delete _clients[fd];
-	_clients.erase(fd);
-	_fds.erase(_fds.begin() + i);
+	delete _clientMap[fd];
+	_clientMap.erase(fd);
+	_pollFds.erase(_pollFds.begin() + i);
 	i--;
 }
 
-void EventLoop::handleRead(int fd, size_t &i)
+void EventLoop::handleReadEvent(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
 	if (isServer(fd))
-		handleNewConnection(fd);
+		handleNewClient(fd);
 	else
 	{
-		bytes = _clients[fd]->receive();
+		bytes = _clientMap[fd]->readFromSocket();
 		if (bytes < 0)
 		{
-			log("Error: read");
+			logEvent("Error: read");
 			handleClientDisconnected(fd, i);
 		}
 		else if (bytes == 0)
 		{
-			log("Client disconnected");
+			logEvent("Client disconnected");
 			handleClientDisconnected(fd, i);
 		}
 		else
 		{
-			if (_clients[fd]->isReqCompleted())
+			if (_clientMap[fd]->isReqCompleted())
 			{
-				_fds[i].events = POLLOUT;
-				_clients[fd]->setResponse(RESPONSE);
+				_pollFds[i].events = POLLOUT;
+				_clientMap[fd]->setResponse(RESPONSE);
 			}
-			_clients[fd]->updateLastActivity();
+			_clientMap[fd]->updateLastActivity();
 		}
 	}
 }
 
-void EventLoop::handleWrite(int fd, size_t &i)
+void EventLoop::handleWriteEvent(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
-	bytes = _clients[fd]->send();
+	bytes = _clientMap[fd]->writeToSocket();
 	if (bytes < 0)
 	{
-		log("Error: read");
+		logEvent("Error: write");
 		handleClientDisconnected(fd, i);
 	}
-	else if (_clients[fd]->isEmpty())
+	else if (_clientMap[fd]->hasNoPendingWrite())
 		handleClientDisconnected(fd, i);
 }
 
 bool EventLoop::isServer(int fd) const
 {
-	return (_serverFds.count(fd));
+	return (_listeningFds.count(fd));
 }
 
-void EventLoop::log(const std::string msg) const
+void EventLoop::logEvent(const std::string msg) const
 {
 	if (VERBOSE)
 		std::cerr << "[webserv] " << msg << "." << std::endl;
@@ -125,40 +125,40 @@ void EventLoop::run()
 
 	while (true)
 	{
-		ret = poll(_fds.data(), _fds.size(), POLL_TIMEOUT);
+		ret = poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT);
 		if (ret < 0)
 			throw std::runtime_error("Error: poll.");
-		for (size_t i=0; i<_fds.size(); i++)
+		for (size_t i=0; i<_pollFds.size(); i++)
 		{
-			if (!isServer(_fds[i].fd) && _clients[_fds[i].fd]->isTimedOut())
+			if (!isServer(_pollFds[i].fd) && _clientMap.count(_pollFds[i].fd) && _clientMap[_pollFds[i].fd]->isTimedOut())
 			{
-				log("Client timed out");
-				handleClientDisconnected(_fds[i].fd, i);
+				logEvent("Client timed out");
+				handleClientDisconnected(_pollFds[i].fd, i);
 			}
-			else if (!isServer(_fds[i].fd) && isError(_fds[i].revents))
+			else if (!isServer(_pollFds[i].fd) && isError(_pollFds[i].revents))
 			{
-				log("Client disconnected");
-				handleClientDisconnected(_fds[i].fd, i);
+				logEvent("Client disconnected");
+				handleClientDisconnected(_pollFds[i].fd, i);
 			}
-			else if (isReadable(_fds[i].revents))
-				handleRead(_fds[i].fd, i);
-			else if (isWritable(_fds[i].revents))
-				handleWrite(_fds[i].fd, i);
+			else if (isReadable(_pollFds[i].revents))
+				handleReadEvent(_pollFds[i].fd, i);
+			else if (isWritable(_pollFds[i].revents))
+				handleWriteEvent(_pollFds[i].fd, i);
 		}
 	}
 }
 
 EventLoop::EventLoop() {}
 
-EventLoop::EventLoop(const std::vector<Server*> &servers) :
-	_servers(servers)
+EventLoop::EventLoop(const std::vector<Server*> &serverList) :
+	_serverList(serverList)
 {
 	int	fd;
 
-	for (size_t i=0; i<servers.size(); i++)
+	for (size_t i=0; i<serverList.size(); i++)
 	{
-		fd = servers[i]->getFd();
-		_serverFds.insert(fd);
+		fd = serverList[i]->getFd();
+		_listeningFds.insert(fd);
 		addToPoll(fd);
 	}
 }
@@ -178,8 +178,6 @@ EventLoop::~EventLoop()
 {
 	std::map<int, Client*>::iterator	it;
 
-	for (it = _clients.begin(); it != _clients.end(); it++)
+	for (it = _clientMap.begin(); it != _clientMap.end(); it++)
 		delete it->second;
-	for (size_t i=0; i<_servers.size(); i++)
-		delete _servers[i];
 }
