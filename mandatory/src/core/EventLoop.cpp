@@ -82,7 +82,8 @@ void EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &m
 	delete _clientMap[fd];
 	_clientMap.erase(fd);
 	_pollFds.erase(_pollFds.begin() + i);
-	i--;
+	if (i > 0)
+		i--;
 }
 
 void EventLoop::handleReadEvent(int fd, size_t &i)
