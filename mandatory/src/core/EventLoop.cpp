@@ -1,4 +1,5 @@
 #include "../../include/core/EventLoop.hpp"
+#include <cstddef>
 #include <iostream>
 #include <netinet/in.h>
 #include <stdexcept>
@@ -8,14 +9,22 @@
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 
-void EventLoop::handleNewConnection(int fd)
+void EventLoop::addToPoll(int fd)
+{
+	pollfd	pollFd;
+
+	pollFd.fd = fd;
+	pollFd.events = POLLIN;
+	_fds.push_back(pollFd);
+}
+
+void EventLoop::handleNewConnection(int serverFd)
 {
 	int					clientFd;
 	struct sockaddr_in	clientAddr;
 	socklen_t			clientLen;
-	pollfd				clientPoll;
 
-	clientFd = accept(fd,  (struct sockaddr *)&clientAddr, &clientLen);
+	clientFd = accept(serverFd,  (struct sockaddr *)&clientAddr, &clientLen);
 	if (clientFd < 0)
 	{
 		log("Error: accept");
@@ -27,25 +36,20 @@ void EventLoop::handleNewConnection(int fd)
 		close(clientFd);
 		return ;
 	}
-	clientPoll.fd = clientFd;
-	clientPoll.events = POLLIN;
-	_fds.push_back(clientPoll);
-	_clients[clientFd] = new Client(fd);
+	addToPoll(clientFd);
+	_clients[clientFd] = new Client(clientFd);
 	std::cout << "Client connected" << std::endl;
 }
 
-void EventLoop::handleClientDisconnected(int fd, int &i)
+void EventLoop::handleClientDisconnected(int fd, size_t &i)
 {
-	// close(fd);
 	delete _clients[fd];
 	_clients.erase(fd);
-	_servers.erase(_servers.begin() + i);
-	_serverFds.erase(fd);
 	_fds.erase(_fds.begin() + i);
 	i--;
 }
 
-void EventLoop::handleRead(int fd, int &i)
+void EventLoop::handleRead(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
@@ -76,11 +80,11 @@ void EventLoop::handleRead(int fd, int &i)
 	}
 }
 
-void EventLoop::handleWrite(int fd, int &i)
+void EventLoop::handleWrite(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
-	bytes = _clients[i]->send();
+	bytes = _clients[fd]->send();
 	if (bytes < 0)
 	{
 		log("Error: read");
@@ -130,9 +134,9 @@ void EventLoop::run()
 		ret = poll(_fds.data(), _fds.size(), POLL_TIMEOUT);
 		if (ret < 0)
 			throw std::runtime_error("Error: poll.");
-		for (int i=0; i<_fds.size(); i++)
+		for (size_t i=0; i<_fds.size(); i++)
 		{
-			if (isServer(_fds[i].fd) && _clients[i]->isTimedOut())
+			if (!isServer(_fds[i].fd) && _clients[_fds[i].fd]->isTimedOut())
 			{
 				log("Client timed out");
 				handleClientDisconnected(_fds[i].fd, i);
@@ -152,6 +156,13 @@ void EventLoop::run()
 
 EventLoop::EventLoop() {}
 
+EventLoop::EventLoop(const std::set<int> &serverFds) :
+	_serverFds(serverFds)
+{
+	for (std::set<int>::iterator it=serverFds.begin(); it != serverFds.end(); it++)
+		addToPoll(*it);
+}
+
 EventLoop::EventLoop(const EventLoop &obj)
 {
 	(void)obj;
@@ -165,7 +176,6 @@ EventLoop& EventLoop::operator=(const EventLoop &obj)
 
 EventLoop::~EventLoop()
 {
-	for (int i=0; i<_fds.size(); i++)
-		close(_fds[i].fd);
-	// need to close all remaining clients in _client map with delete.
+	for (size_t i=0; i<_clients.size(); i++)
+		delete _clients[i];
 }
