@@ -65,10 +65,10 @@ void Server::createSocket()
 
 Server::Server() {}
 
-Server::Server(int port)
+Server::Server(int port) :
+	_fd(-1),
+	_port(port)
 {
-	_port = port;
-	_fd = -1;
 	createSocket();
 	bindToPort();
 	startListening();

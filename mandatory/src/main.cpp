@@ -1,12 +1,22 @@
 #include "../include/core/Server.hpp"
 #include "../include/core/EventLoop.hpp"
-#include <set>
+#include <exception>
+#include <iostream>
+#include <vector>
 
 int main()
 {
-	Server server(8080);
-	std::set<int> serverFds;
-	serverFds.insert(server.getFd());
-	EventLoop eventloop(serverFds);
+	try
+	{
+		std::vector<Server*>	servers;
+
+		servers.push_back(new Server(8080));
+		EventLoop eventloop(servers);
+		eventloop.run();
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 	return (0);
 }

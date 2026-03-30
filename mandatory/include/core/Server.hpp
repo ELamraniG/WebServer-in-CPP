@@ -17,10 +17,10 @@ class Server
 		void	createSocket();
 		void	bindToPort();
 		void	startListening() const;
-		int		accept() const;
 		
 	public:
 		~Server();
 		Server(int port);
+		int	accept() const;
 		int	getFd() const;
 };

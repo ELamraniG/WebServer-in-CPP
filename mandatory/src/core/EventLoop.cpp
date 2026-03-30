@@ -1,11 +1,13 @@
 #include "../../include/core/EventLoop.hpp"
 #include <cstddef>
 #include <iostream>
+#include <map>
 #include <netinet/in.h>
 #include <stdexcept>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <vector>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 
@@ -20,25 +22,22 @@ void EventLoop::addToPoll(int fd)
 
 void EventLoop::handleNewConnection(int serverFd)
 {
-	int					clientFd;
-	struct sockaddr_in	clientAddr;
-	socklen_t			clientLen;
+	int	clientFd = -1;
 
-	clientFd = accept(serverFd,  (struct sockaddr *)&clientAddr, &clientLen);
-	if (clientFd < 0)
+	for (size_t i=0; i<_servers.size(); i++)
 	{
-		log("Error: accept");
-		return ;
+		if (_servers[i]->getFd() == serverFd)
+		{
+			clientFd = _servers[i]->accept();
+			break ;
+		}
 	}
-	else if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
+	if (clientFd != -1)
 	{
-		log("Error: fcntl(F_SETFL)");
-		close(clientFd);
-		return ;
+		addToPoll(clientFd);
+		_clients[clientFd] = new Client(clientFd);
+		std::cout << "Client connected" << std::endl;
 	}
-	addToPoll(clientFd);
-	_clients[clientFd] = new Client(clientFd);
-	std::cout << "Client connected" << std::endl;
 }
 
 void EventLoop::handleClientDisconnected(int fd, size_t &i)
@@ -90,12 +89,7 @@ void EventLoop::handleWrite(int fd, size_t &i)
 		log("Error: read");
 		handleClientDisconnected(fd, i);
 	}
-	else if (bytes == 0)
-	{
-		log("Client disconnected");
-		handleClientDisconnected(fd, i);
-	}
-	else if (bytes == _clients[fd]->getSenderSize())
+	else if (_clients[fd]->isEmpty())
 		handleClientDisconnected(fd, i);
 }
 
@@ -156,11 +150,17 @@ void EventLoop::run()
 
 EventLoop::EventLoop() {}
 
-EventLoop::EventLoop(const std::set<int> &serverFds) :
-	_serverFds(serverFds)
+EventLoop::EventLoop(const std::vector<Server*> &servers) :
+	_servers(servers)
 {
-	for (std::set<int>::iterator it=serverFds.begin(); it != serverFds.end(); it++)
-		addToPoll(*it);
+	int	fd;
+
+	for (size_t i=0; i<servers.size(); i++)
+	{
+		fd = servers[i]->getFd();
+		_serverFds.insert(fd);
+		addToPoll(fd);
+	}
 }
 
 EventLoop::EventLoop(const EventLoop &obj)
@@ -176,6 +176,10 @@ EventLoop& EventLoop::operator=(const EventLoop &obj)
 
 EventLoop::~EventLoop()
 {
-	for (size_t i=0; i<_clients.size(); i++)
-		delete _clients[i];
+	std::map<int, Client*>::iterator	it;
+
+	for (it = _clients.begin(); it != _clients.end(); it++)
+		delete it->second;
+	for (size_t i=0; i<_servers.size(); i++)
+		delete _servers[i];
 }

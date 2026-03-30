@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Client.hpp"
-// #include "Server.hpp"
+#include "Server.hpp"
 #include <sys/poll.h>
 #include <map>
 #include <set>
@@ -17,7 +17,7 @@ class EventLoop
 {
 	private:
 		std::vector<pollfd>		_fds;
-		// std::vector<Server>		_servers;
+		std::vector<Server*>	_servers;
 		std::set<int>			_serverFds;
 		std::map<int, Client*>	_clients;
 		EventLoop();
@@ -37,7 +37,7 @@ class EventLoop
 
 	public:
 		static const int POLL_TIMEOUT;
-		EventLoop(const std::set<int> &severFds);
+		EventLoop(const std::vector<Server*> &servers);
 		~EventLoop();
 		void run();
 };

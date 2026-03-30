@@ -14,6 +14,7 @@ CXX      := c++
 CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP
 RM       := rm -rf
 NAME     := webserv
+VAL 	 := valgrind --leak-check=full --track-origins=yes
 
 # ==========================================
 # ============ Mandatory Paths =============
@@ -43,13 +44,17 @@ DEPS := $(OBJS:.o=.d)
 # ==========================================
 all: $(NAME)
 
+valgrind: $(NAME)
+	@printf "$(GREEN)  Execute with VALGRIND$(RESET)\n"
+	@$(VAL) ./$(NAME)
+	@make clean
+
 $(NAME): $(OBJS)
 	@printf "$(GRN)  Linking $(NAME)...$(RESET)\n"
 	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 	@printf "$(GRN)  Successfully built $(NAME)$(RESET)\n"
 
-# Compile .cpp → .o
-%.o: %.cpp
+%.o: %.cpp 
 	@printf "$(BLUE)  Compiling $<...$(RESET)\n"
 	@$(CXX) $(CXXFLAGS) -I$(MANDO_INC) -c $< -o $@
 
@@ -66,7 +71,6 @@ fclean: clean
 re: fclean all
 	@printf "$(YEL)  Rebuilding project...$(RESET)\n"
 
-# Include auto-generated dependency files
 -include $(DEPS)
 
 .PHONY: all clean fclean re

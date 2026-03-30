@@ -6,36 +6,30 @@
 #include <unistd.h>
 #include <ctime>
 
-const int Client::TIMEOUT = 55;
+const int Client::TIMEOUT = 5;
 const int Client::BUFFER_SIZE = 4096;
 
 ssize_t Client::receive()
 {
-	std::string	buffer;
-	ssize_t		bytes;
+	char	buffer[BUFFER_SIZE];
+	ssize_t	bytes;
 
-	bytes = read(_fd, &buffer[0], BUFFER_SIZE);
+	bytes = read(_fd, buffer, BUFFER_SIZE);
 	if (bytes > 0)
-	{
-		bytes += _receiver.size();
-		_receiver += buffer;
-	}
+		_receiver.append(buffer, bytes);
 	return (bytes);
 }
 
 ssize_t Client::send()
 {
-	size_t	response_size;
+	size_t	responseSize;
 	ssize_t	bytes;
 
-	response_size = _sender.size();
-	bytes = write(_fd, _sender.c_str(), response_size);
+	responseSize = _sender.size();
+	bytes = write(_fd, _sender.c_str(), responseSize);
 	if (bytes > 0)
-	{
-		_sender.erase(0, bytes);
-		_bytesSent += bytes;
-	}
-	return (_bytesSent);
+		eraseConsumedData(bytes);
+	return (bytes);
 }
 
 int Client::getFd() const
@@ -43,9 +37,9 @@ int Client::getFd() const
 	return (_fd);
 }
 
-int Client::getSenderSize() const
+bool Client::isEmpty() const
 {
-	return (_sender.size());
+	return (_sender.size() == 0);
 }
 
 void Client::setResponse(const std::string &response)
@@ -53,19 +47,19 @@ void Client::setResponse(const std::string &response)
 	_sender = response;
 }
 
-bool Client::isTimedOut()
+bool Client::isTimedOut() const
 {
 	return ((time(NULL) - _lastActivity) > TIMEOUT);
 }
 
-bool Client::isReqCompleted()
+bool Client::isReqCompleted() const
 {
 	return (_receiver.find("\r\n\r\n") != std::string::npos);
 }
 
-void Client::eraseConsumedData()
+void Client::eraseConsumedData(int bytes)
 {
-	_sender.erase(0, _bytesSent);
+	_sender.erase(0, bytes);
 }
 
 void Client::updateLastActivity()
@@ -78,7 +72,6 @@ Client::Client() {}
 Client::Client(int fd) :
 	_fd(fd),
 	_receiver(""),
-	_bytesSent(0),
 	_lastActivity(time(NULL))
 {}
 

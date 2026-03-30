@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <string>
 #include <sys/types.h>
 
@@ -10,7 +9,6 @@ class Client
 		int _fd;
 		std::string	_receiver;
 		std::string	_sender;
-		ssize_t		_bytesSent;
 		time_t		_lastActivity;
 		Client();
 		Client(const Client &obj);
@@ -21,12 +19,12 @@ class Client
 		static const int TIMEOUT;
 		static const int BUFFER_SIZE;
 		int		getFd() const;
-		int		getSenderSize() const;
 		ssize_t	receive();
 		ssize_t	send();
-		bool	isTimedOut();
-		bool	isReqCompleted();
-		void	eraseConsumedData();
+		bool	isEmpty() const;
+		bool	isTimedOut() const;
+		bool	isReqCompleted() const;
+		void	eraseConsumedData(int bytes);
 		void	updateLastActivity();
 		void	setResponse(const std::string &response);
 		~Client();
