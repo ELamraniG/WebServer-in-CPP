@@ -4,6 +4,11 @@
 #include <stdexcept>
 #include <iostream>
 
+int Server::getFd() const
+{
+	return (_fd);
+}
+
 int Server::accept() const
 {
 	int	clientFd;
@@ -24,11 +29,6 @@ int Server::accept() const
 		return (-1);
 	}
 	return (clientFd);
-}
-
-int Server::getFd() const
-{
-	return (_fd);
 }
 
 void Server::startListening() const

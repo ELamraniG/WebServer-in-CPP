@@ -11,6 +11,42 @@
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 
+bool EventLoop::isServer(int fd) const
+{
+	return (_listeningFds.count(fd));
+}
+
+void EventLoop::logEvent(const std::string msg) const
+{
+	if (VERBOSE && !msg.empty())
+		std::cerr << "[webserv] " << msg << "." << std::endl;
+}
+
+bool EventLoop::isError(const short revents) const
+{
+	return (revents & (POLLERR | POLLHUP));
+}
+
+bool EventLoop::isReadable(const short revents) const
+{
+	return (revents & POLLIN);
+}
+
+bool EventLoop::isWritable(const short revents) const
+{
+	return (revents & POLLOUT);
+}
+
+bool EventLoop::handleTimeout(int i)
+{
+	return (!isServer(_pollFds[i].fd) && _clientMap.count(_pollFds[i].fd) && _clientMap[_pollFds[i].fd]->isTimedOut());
+}
+
+bool EventLoop::handleErrorEvent(int i)
+{
+	return (!isServer(_pollFds[i].fd) && isError(_pollFds[i].revents));
+}
+
 void EventLoop::addToPoll(int fd)
 {
 	pollfd	pollFd;
@@ -40,8 +76,9 @@ void EventLoop::handleNewClient(int serverFd)
 	}
 }
 
-void EventLoop::handleClientDisconnected(int fd, size_t &i)
+void EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &msg)
 {
+	logEvent(msg);
 	delete _clientMap[fd];
 	_clientMap.erase(fd);
 	_pollFds.erase(_pollFds.begin() + i);
@@ -58,15 +95,9 @@ void EventLoop::handleReadEvent(int fd, size_t &i)
 	{
 		bytes = _clientMap[fd]->readFromSocket();
 		if (bytes < 0)
-		{
-			logEvent("Error: read");
-			handleClientDisconnected(fd, i);
-		}
+			handleClientDisconnected(fd, i, "Error: read");
 		else if (bytes == 0)
-		{
-			logEvent("Client disconnected");
-			handleClientDisconnected(fd, i);
-		}
+			handleClientDisconnected(fd, i, "Client disconnected");
 		else
 		{
 			if (_clientMap[fd]->isReqCompleted())
@@ -85,38 +116,9 @@ void EventLoop::handleWriteEvent(int fd, size_t &i)
 
 	bytes = _clientMap[fd]->writeToSocket();
 	if (bytes < 0)
-	{
-		logEvent("Error: write");
-		handleClientDisconnected(fd, i);
-	}
+		handleClientDisconnected(fd, i, "Error: write");
 	else if (_clientMap[fd]->hasNoPendingWrite())
-		handleClientDisconnected(fd, i);
-}
-
-bool EventLoop::isServer(int fd) const
-{
-	return (_listeningFds.count(fd));
-}
-
-void EventLoop::logEvent(const std::string msg) const
-{
-	if (VERBOSE)
-		std::cerr << "[webserv] " << msg << "." << std::endl;
-}
-
-bool EventLoop::isError(const short revents) const
-{
-	return (revents & (POLLERR | POLLHUP));
-}
-
-bool EventLoop::isReadable(const short revents) const
-{
-	return (revents & POLLIN);
-}
-
-bool EventLoop::isWritable(const short revents) const
-{
-	return (revents & POLLOUT);
+		handleClientDisconnected(fd, i, "");
 }
 
 void EventLoop::run()
@@ -130,16 +132,10 @@ void EventLoop::run()
 			throw std::runtime_error("Error: poll.");
 		for (size_t i=0; i<_pollFds.size(); i++)
 		{
-			if (!isServer(_pollFds[i].fd) && _clientMap.count(_pollFds[i].fd) && _clientMap[_pollFds[i].fd]->isTimedOut())
-			{
-				logEvent("Client timed out");
-				handleClientDisconnected(_pollFds[i].fd, i);
-			}
-			else if (!isServer(_pollFds[i].fd) && isError(_pollFds[i].revents))
-			{
-				logEvent("Client disconnected");
-				handleClientDisconnected(_pollFds[i].fd, i);
-			}
+			if (handleTimeout(i))
+				handleClientDisconnected(_pollFds[i].fd, i, "Client timed out");
+			else if (handleErrorEvent(i))
+				handleClientDisconnected(_pollFds[i].fd, i, "Client disconnected");
 			else if (isReadable(_pollFds[i].revents))
 				handleReadEvent(_pollFds[i].fd, i);
 			else if (isWritable(_pollFds[i].revents))

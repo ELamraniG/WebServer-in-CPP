@@ -9,29 +9,6 @@
 const int Client::TIMEOUT = 55;
 const int Client::BUFFER_SIZE = 4096;
 
-ssize_t Client::readFromSocket()
-{
-	char	buffer[BUFFER_SIZE];
-	ssize_t	bytes;
-
-	bytes = read(_fd, buffer, BUFFER_SIZE);
-	if (bytes > 0)
-		_requestBuffer.append(buffer, bytes);
-	return (bytes);
-}
-
-ssize_t Client::writeToSocket()
-{
-	size_t	responseSize;
-	ssize_t	bytes;
-
-	responseSize = _responseBuffer.size();
-	bytes = write(_fd, _responseBuffer.c_str(), responseSize);
-	if (bytes > 0)
-		eraseConsumedData(bytes);
-	return (bytes);
-}
-
 int Client::getFd() const
 {
 	return (_fd);
@@ -65,6 +42,29 @@ void Client::eraseConsumedData(int bytes)
 void Client::updateLastActivity()
 {
 	_lastActivity = time(NULL);
+}
+
+ssize_t Client::readFromSocket()
+{
+	char	buffer[BUFFER_SIZE];
+	ssize_t	bytes;
+
+	bytes = read(_fd, buffer, BUFFER_SIZE);
+	if (bytes > 0)
+		_requestBuffer.append(buffer, bytes);
+	return (bytes);
+}
+
+ssize_t Client::writeToSocket()
+{
+	size_t	responseSize;
+	ssize_t	bytes;
+
+	responseSize = _responseBuffer.size();
+	bytes = write(_fd, _responseBuffer.c_str(), responseSize);
+	if (bytes > 0)
+		eraseConsumedData(bytes);
+	return (bytes);
 }
 
 Client::Client() {}

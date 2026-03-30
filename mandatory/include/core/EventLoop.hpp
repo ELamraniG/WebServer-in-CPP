@@ -25,9 +25,11 @@ class EventLoop
 		EventLoop& operator=(const EventLoop &obj);
 		void addToPoll(int fd);
 		void handleNewClient(int fd);
-		void handleClientDisconnected(int fd, size_t &i);
+		void handleClientDisconnected(int fd, size_t &i, const std::string &msg);
 		void handleReadEvent(int fd, size_t &i);
 		void handleWriteEvent(int fd, size_t &i);
+		bool handleTimeout(int i);
+		bool handleErrorEvent(int i);
 		bool isServer(int fd) const;
 		void handleError();
 		void logEvent(const std::string msg) const;
