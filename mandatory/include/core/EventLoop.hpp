@@ -11,7 +11,7 @@
 
 const bool VERBOSE = true;
 const int BUFFER_SIZE = 4096;
-const std::string RESPONSE("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
+// const std::string RESPONSE("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
 
 class EventLoop
 {
@@ -28,12 +28,11 @@ class EventLoop
 		void handleClientDisconnected(int fd, size_t &i, const std::string &msg);
 		void handleReadEvent(int fd, size_t &i);
 		void handleWriteEvent(int fd, size_t &i);
-		bool handleTimeout(int i);
-		bool handleErrorEvent(int i);
+		bool isTimeout(int i);
+		bool isError(int i) const;
 		bool isServer(int fd) const;
 		void handleError();
 		void logEvent(const std::string msg) const;
-		bool isError(const short revents) const;
 		bool isReadable(const short revents) const;
 		bool isWritable(const short revents) const;
 
