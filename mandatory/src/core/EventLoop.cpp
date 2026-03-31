@@ -11,6 +11,7 @@
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 
+// TODO: remove this one after
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -32,6 +33,7 @@ std::string readFile(const std::string& path)
     ss << file.rdbuf();
     return ss.str();
 }
+// TODO: ending
 
 std::string buildResponse()
 {

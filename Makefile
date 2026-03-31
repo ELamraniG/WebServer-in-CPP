@@ -1,24 +1,18 @@
-# ==========================================
-# ============ Color Definitions ===========
-# ==========================================
+# ------------ Color Definitions ------------
 RED     := \033[0;31m
 GRN     := \033[0;32m
 YEL     := \033[0;33m
 BLUE    := \033[38;2;35;177;239m
 RESET   := \033[0m
 
-# ==========================================
-# ============ Compiler Settings ===========
-# ==========================================
+# ------------ Compiler Settings ------------
 CXX      := c++
 CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP
 RM       := rm -rf
 NAME     := webserv
 VAL 	 := valgrind --leak-check=full --track-origins=yes
 
-# ==========================================
-# ============ Mandatory Paths =============
-# ==========================================
+# ------------ Mandatory Paths ------------
 MANDO       := mandatory
 MANDO_SRC   := $(MANDO)/src
 MANDO_INC   := $(MANDO)/include
@@ -26,9 +20,7 @@ MANDO_INC   := $(MANDO)/include
 CORE_PATH := $(MANDO_SRC)/core
 CGI_PATH  := $(MANDO_SRC)/cgi
 
-# ==========================================
-# ============ Mandatory Sources ===========
-# ==========================================
+# ------------ Mandatory Sources ------------
 CORE := $(CORE_PATH)/Client.cpp \
         $(CORE_PATH)/EventLoop.cpp \
         $(CORE_PATH)/Server.cpp
@@ -39,9 +31,7 @@ SRC  := $(CORE) $(CGI) $(MANDO_SRC)/main.cpp
 OBJS := $(SRC:.cpp=.o)
 DEPS := $(OBJS:.o=.d)
 
-# ==========================================
-# =============== Rules ====================
-# ==========================================
+# ------------ Rules ------------
 all: $(NAME)
 
 valgrind: $(NAME)
