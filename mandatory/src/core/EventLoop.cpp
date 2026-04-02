@@ -1,15 +1,9 @@
 #include "../../include/core/EventLoop.hpp"
-#include <cstddef>
 #include <iostream>
-#include <map>
-#include <netinet/in.h>
 #include <stdexcept>
-#include <sys/poll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <vector>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
+extern bool g_running;
 
 // TODO: remove this one after
 #include <fstream>
@@ -18,27 +12,30 @@ const int EventLoop::POLL_TIMEOUT = 5000;
 
 std::string toString(size_t n)
 {
-    std::stringstream ss;
+    std::stringstream	ss;
+
     ss << n;
-    return ss.str();
+    return (ss.str());
 }
 
 std::string readFile(const std::string& path)
 {
-    std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-    if (!file)
-        return ""; // or handle error properly
+	std::ifstream		file(path.c_str(), std::ios::in | std::ios::binary);
+    std::ostringstream	ss;
 
-    std::ostringstream ss;
+    if (!file)
+        return ("");
     ss << file.rdbuf();
-    return ss.str();
+    return (ss.str());
 }
 // TODO: ending
 
 std::string buildResponse()
 {
-    std::string body = readFile("mandatory/www/index.html");
+    std::string	body;
+	std::string	response;
 
+	body = readFile("mandatory/www/pages/index.html");
     if (body.empty())
     {
         body = "<html><body><h1>404 Not Found</h1></body></html>";
@@ -48,15 +45,13 @@ std::string buildResponse()
 				"\r\n" +
 				body;
     }
-
-    std::string response =
+    response =
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/html\r\n"
         "Content-Length: " + toString(body.size()) + "\r\n"
         "\r\n" +
         body;
-
-    return response;
+    return (response);
 }
 
 bool EventLoop::isServer(int fd) const
@@ -94,6 +89,7 @@ void EventLoop::addToPoll(int fd)
 {
 	pollfd	pollFd;
 
+	std::memset(&pollFd, 0, sizeof(pollFd));
 	pollFd.fd = fd;
 	pollFd.events = POLLIN;
 	_pollFds.push_back(pollFd);
@@ -147,7 +143,6 @@ void EventLoop::handleReadEvent(int fd, size_t &i)
 			if (_clientMap[fd]->isReqCompleted())
 			{
 				_pollFds[i].events = POLLOUT;
-				// _clientMap[fd]->setResponse(RESPONSE);
 				_clientMap[fd]->setResponse(buildResponse());
 			}
 			_clientMap[fd]->updateLastActivity();
@@ -170,11 +165,15 @@ void EventLoop::run()
 {
 	int	ret;
 
-	while (true)
+	while (g_running)
 	{
 		ret = poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT);
 		if (ret < 0)
+		{
+			if (!g_running)
+				break ;
 			throw std::runtime_error("Error: poll.");
+		}
 		for (size_t i=0; i<_pollFds.size(); i++)
 		{
 			if (isTimeout(i))

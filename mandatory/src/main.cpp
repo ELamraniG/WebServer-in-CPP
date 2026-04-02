@@ -2,12 +2,21 @@
 #include "../include/core/EventLoop.hpp"
 #include <exception>
 #include <iostream>
-#include <vector>
+#include <signal.h>
+#include <cstdlib>
+
+bool g_running = true;
+
+void handleSigint(int)
+{
+	g_running = false;
+}
 
 int main()
 {
 	std::vector<Server*>	serverList;
 
+	signal(SIGINT, handleSigint);
 	try
 	{
 		serverList.push_back(new Server(8080));

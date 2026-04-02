@@ -2,12 +2,11 @@
 
 #include "Client.hpp"
 #include "Server.hpp"
-#include <sys/poll.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <fcntl.h>
-#include <unistd.h>
+#include <cstddef>
+#include <cstring>
 
 const bool VERBOSE = true;
 const int BUFFER_SIZE = 4096;

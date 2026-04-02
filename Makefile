@@ -7,10 +7,10 @@ RESET   := \033[0m
 
 # ------------ Compiler Settings ------------
 CXX      := c++
-CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP
+CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP #-fsanitize=address
 RM       := rm -rf
 NAME     := webserv
-VAL 	 := valgrind --leak-check=full --track-origins=yes
+VAL 	 := valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all
 
 # ------------ Mandatory Paths ------------
 MANDO       := mandatory
@@ -37,7 +37,6 @@ all: $(NAME)
 valgrind: $(NAME)
 	@printf "$(GREEN)  Execute with VALGRIND$(RESET)\n"
 	@$(VAL) ./$(NAME)
-	@make clean
 
 $(NAME): $(OBJS)
 	@printf "$(GRN)  Linking $(NAME)...$(RESET)\n"
