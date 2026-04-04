@@ -7,7 +7,7 @@ RESET   := \033[0m
 
 # ------------ Compiler Settings ------------
 CXX      := c++
-CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP #-fsanitize=address
+CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP
 RM       := rm -rf
 NAME     := webserv
 VAL 	 := valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all
@@ -34,7 +34,7 @@ DEPS := $(OBJS:.o=.d)
 # ------------ Rules ------------
 all: $(NAME)
 
-valgrind: $(NAME)
+valgrind: $(NAME) clean
 	@printf "$(GREEN)  Execute with VALGRIND$(RESET)\n"
 	@$(VAL) ./$(NAME)
 

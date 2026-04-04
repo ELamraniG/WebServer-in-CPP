@@ -10,7 +10,6 @@
 
 const bool VERBOSE = true;
 const int BUFFER_SIZE = 4096;
-// const std::string RESPONSE("HTTP/1.0 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!");
 
 class EventLoop
 {
