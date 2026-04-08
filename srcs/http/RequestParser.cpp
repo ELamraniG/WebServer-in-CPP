@@ -193,5 +193,3 @@ bool RequestParser::parseHeaders(const std::string &theHeader,
   }
   return true;
 }
-
-void RequestParser::resetEverything() { chunksDecoding.reset(); }

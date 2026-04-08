@@ -11,7 +11,6 @@ public:
 
   DecodeResult decode(const std::string &chunkedData, std::string &decodedBody);
   bool isComplete() const;
-  void reset();
 
 private:
   bool completed;

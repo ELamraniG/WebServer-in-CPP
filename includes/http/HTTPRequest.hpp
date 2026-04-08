@@ -38,7 +38,4 @@ public:
   void setCompleted(bool complete);
   void setChunked(bool chunked);
   void setContentLength(size_t length);
-  void clearEverything();
 };
-
-

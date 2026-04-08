@@ -80,15 +80,3 @@ HTTPRequest::HTTPRequest()
   {
       contentLength = length;
   }
-  void HTTPRequest::clearEverything()
-  {
-      method.clear();
-      uri.clear();
-      vers.clear();
-      headers.clear();
-      body.clear();
-      querString.clear();
-      isComplete = false;
-      isChunked = false;
-      contentLength = 0;
-  }

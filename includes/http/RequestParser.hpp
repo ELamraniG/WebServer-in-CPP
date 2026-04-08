@@ -14,8 +14,6 @@ public:
   bool parseFirstLine(const std::string &one_line, HTTPRequest &request);
   bool parseHeaders(const std::string &theHeader, HTTPRequest &request);
 
-  void resetEverything();
-
 private:
   ChunksDecoding chunksDecoding;
 };

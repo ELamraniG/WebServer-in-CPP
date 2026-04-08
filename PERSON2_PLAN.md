@@ -565,3 +565,7 @@ Content-Type: text/html\r\n
 
 - Calls: `CGIHandler::execute(request, route_config)`
 - Returns: CGI output (headers + body as strings)
+
+
+note CGI HAS MOVED TO BE PERSON 1 plan no longer of person 2
+another note we are doing http 1.0 not 1.1

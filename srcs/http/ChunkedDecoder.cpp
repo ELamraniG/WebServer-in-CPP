@@ -93,5 +93,3 @@ DecodeResult ChunksDecoding::decode(const std::string &chunkedData,
 }
 
 bool ChunksDecoding::isComplete() const { return completed; }
-
-void ChunksDecoding::reset() { completed = false; }
