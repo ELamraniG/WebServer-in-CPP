@@ -34,8 +34,38 @@ static std::string stripQuery(const std::string &uri) {
   return (pos != std::string::npos) ? uri.substr(0, pos) : uri;
 }
 
+// Decode percent-encoded characters (%20 -> ' ', + -> ' ', etc.)
+static std::string urlDecode(const std::string &src) {
+  std::string result;
+  result.reserve(src.size());
+  for (size_t i = 0; i < src.size(); i++) {
+    if (src[i] == '%' && i + 2 < src.size()) {
+      char hi = src[i + 1];
+      char lo = src[i + 2];
+      int hiVal = -1, loVal = -1;
+      if (hi >= '0' && hi <= '9')      hiVal = hi - '0';
+      else if (hi >= 'A' && hi <= 'F') hiVal = hi - 'A' + 10;
+      else if (hi >= 'a' && hi <= 'f') hiVal = hi - 'a' + 10;
+      if (lo >= '0' && lo <= '9')      loVal = lo - '0';
+      else if (lo >= 'A' && lo <= 'F') loVal = lo - 'A' + 10;
+      else if (lo >= 'a' && lo <= 'f') loVal = lo - 'a' + 10;
+      if (hiVal >= 0 && loVal >= 0) {
+        result += static_cast<char>(hiVal * 16 + loVal);
+        i += 2;
+        continue;
+      }
+    }
+    if (src[i] == '+') {
+      result += ' ';
+      continue;
+    }
+    result += src[i];
+  }
+  return result;
+}
+
 static std::string cleanURI(const std::string &uri) {
-  return stripQuery(uri);
+  return urlDecode(stripQuery(uri));
 }
 
 static bool hasUnsafePath(const std::string &uri) {
@@ -236,8 +266,11 @@ static std::string buildAutoindex(const std::string &dirPath,
 // ─────────────────────────────────────────────
 
 std::string MethodHandler::getTheFileType(const std::string &path) const {
+  size_t slashPos = path.find_last_of('/');
   size_t dotPos = path.find_last_of('.');
-  if (dotPos == std::string::npos)
+  // Dot must exist and appear after the last slash to be a real extension
+  if (dotPos == std::string::npos ||
+      (slashPos != std::string::npos && dotPos < slashPos))
     return "application/octet-stream";
 
   std::string ext = path.substr(dotPos);
