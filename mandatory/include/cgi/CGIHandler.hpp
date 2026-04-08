@@ -3,8 +3,11 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-extern char **environ;
+extern char	**environ;
 
 class CGIHandler
 {
@@ -12,20 +15,37 @@ class CGIHandler
 		CGIHandler();
 		CGIHandler(const CGIHandler &obj);
 		CGIHandler& operator=(const CGIHandler &obj);
+
 		int									_pipeIn[2];
-		int 								_pipeOut[2];
+		int									_pipeOut[2];
+		pid_t								_pid;
+		bool								_done;
 		std::string							_output;
 		std::string							_scriptPath;
 		std::string							_method;
 		std::string							_queryString;
 		std::string							_body;
+		std::map<std::string, std::string>  _headers;
 		std::vector<std::string>			_envStrings;
-		std::map<std::string, std::string>	_headers;
-		void buildEnv();
+		std::vector<char*>					_envp;
+
+		void        buildEnv();
+		bool        openPipes();
+		void        writeBody();
+		std::string getPathEnv() const;
+		void		runChild();
+		void		runParent();
 
 	public:
-		CGIHandler(std::string &path, std::string &method, std::string &queryString, std::string &body, std::map<std::string, std::string> headers);
-		bool isCGIRequest() const;
-		
+		CGIHandler(const std::string &path, const std::string &method,
+					const std::string &queryString, const std::string &body,
+					const std::map<std::string, std::string> &headers);
 		~CGIHandler();
+
+		bool		start();
+		int			getReadFd() const;
+		int			getWriteFd() const;
+		bool		isDone() const;
+		std::string	readOutput();
+		void		cleanup();
 };

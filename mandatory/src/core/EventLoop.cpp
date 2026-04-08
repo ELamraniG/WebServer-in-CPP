@@ -1,6 +1,7 @@
 #include "../../include/core/EventLoop.hpp"
 #include <iostream>
 #include <stdexcept>
+#include <sys/poll.h>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 extern bool g_running;
@@ -85,13 +86,50 @@ bool EventLoop::isError(int i) const
 	return (!isServer(_pollFds[i].fd) && (_pollFds[i].revents & (POLLERR | POLLHUP)));
 }
 
-void EventLoop::addToPoll(int fd)
+void EventLoop::startCGI(int clientFd)
+{
+	int									writeFd;
+	int									readFd;
+    std::string 						path = "./cgi-bin/test.py";
+    std::string 						method = "GET";
+    std::string							queryString = "";
+    std::string							body = "";
+    std::map<std::string, std::string>	headers;
+	CGIHandler 							*cgi;
+
+	cgi = new CGIHandler(path, method, queryString, body, headers);
+	if (!cgi->start())
+		return ;
+	readFd = cgi->getReadFd();
+	if (fcntl(readFd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		std::cerr << "Error: fcntl failed." << std::endl;
+		delete cgi;
+		return ;
+	}
+	writeFd = cgi->getWriteFd();
+	addToPoll(readFd, POLLIN);
+	if (writeFd != -1)
+	{
+		if (fcntl(readFd, F_SETFL, O_NONBLOCK) == -1)
+		{
+			std::cerr << "Error: fcntl failed." << std::endl;
+			delete cgi;
+			return ;
+		}
+		addToPoll(writeFd, POLLOUT);
+	}
+	_cgiFdToHandler[readFd] = cgi;
+	_cgiFdToClient[readFd] = _clientMap[clientFd];
+}
+
+void EventLoop::addToPoll(int fd, short event)
 {
 	pollfd	pollFd;
 
 	std::memset(&pollFd, 0, sizeof(pollFd));
 	pollFd.fd = fd;
-	pollFd.events = POLLIN;
+	pollFd.events = event;
 	_pollFds.push_back(pollFd);
 }
 
@@ -109,7 +147,7 @@ void EventLoop::handleNewClient(int serverFd)
 	}
 	if (clientFd != -1)
 	{
-		addToPoll(clientFd);
+		addToPoll(clientFd, POLLIN);
 		_clientMap[clientFd] = new Client(clientFd);
 		std::cout << "Client connected" << std::endl;
 	}
@@ -142,8 +180,17 @@ void EventLoop::handleReadEvent(int fd, size_t &i)
 		{
 			if (_clientMap[fd]->isReqCompleted())
 			{
-				_pollFds[i].events = POLLOUT;
-				_clientMap[fd]->setResponse(buildResponse());
+                bool isCGI = true; // TODO: get it from parser
+				if (isCGI)
+				{
+                    startCGI(fd);
+					_pollFds[i].events = 0;
+				}
+				else
+				{
+					_pollFds[i].events = POLLOUT;
+					_clientMap[fd]->setResponse(buildResponse());
+				}
 			}
 			_clientMap[fd]->updateLastActivity();
 		}
@@ -199,7 +246,7 @@ EventLoop::EventLoop(const std::vector<Server*> &serverList) :
 	{
 		fd = serverList[i]->getFd();
 		_listeningFds.insert(fd);
-		addToPoll(fd);
+		addToPoll(fd, POLLIN);
 	}
 }
 
