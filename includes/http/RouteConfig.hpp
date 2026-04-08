@@ -22,14 +22,15 @@ private:
   std::vector<std::string> allowedMethods;
   std::string uploadStore;
   std::string cgiPass;
+  std::string redirect;
   size_t maxBodySize;
   std::string index;
   bool autoindex;
 
 public:
   RouteConfig()
-      : root(""), uploadStore(""), cgiPass(""), maxBodySize(0), index(""),
-        autoindex(false) {}
+      : root(""), uploadStore(""), cgiPass(""), redirect(""), maxBodySize(0),
+        index(""), autoindex(false) {}
 
   // getters
   const std::string &getRoot() const { return root; }
@@ -38,6 +39,7 @@ public:
   }
   const std::string &getUploadStore() const { return uploadStore; }
   const std::string &getCGIPass() const { return cgiPass; }
+  const std::string &getRedirect() const { return redirect; }
   size_t getMaxBodySize() const { return maxBodySize; }
   const std::string &getIndex() const { return index; }
   bool getAutoindex() const { return autoindex; }
@@ -47,6 +49,7 @@ public:
   void addAllowedMethod(const std::string &m) { allowedMethods.push_back(m); }
   void setUploadStore(const std::string &u) { uploadStore = u; }
   void setCGIPass(const std::string &c) { cgiPass = c; }
+  void setRedirect(const std::string &r) { redirect = r; }
   void setMaxBodySize(size_t s) { maxBodySize = s; }
   void setIndex(const std::string &i) { index = i; }
   void setAutoindex(bool a) { autoindex = a; }

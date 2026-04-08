@@ -183,7 +183,7 @@ bool RequestParser::parseHeaders(const std::string &theHeader,
     size_t posOfDots = line.find(':');
     if (posOfDots == std::string::npos)
       return false;
-
+    
     std::string key = strTrim(line.substr(0, posOfDots));
     std::string value = strTrim(line.substr(posOfDots + 1));
 
