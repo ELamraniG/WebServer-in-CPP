@@ -28,58 +28,31 @@ static bool isAllowed(const std::string &method, const RouteConfig &route) {
   return false;
 }
 
-// Strip query string (?foo=bar) before filesystem use
-static std::string stripQuery(const std::string &uri) {
+
+static std::string RemoveQueryString(const std::string &uri) {
   size_t pos = uri.find('?');
-  return (pos != std::string::npos) ? uri.substr(0, pos) : uri;
-}
-
-// Decode percent-encoded characters (%20 -> ' ', + -> ' ', etc.)
-static std::string urlDecode(const std::string &src) {
-  std::string result;
-  result.reserve(src.size());
-  for (size_t i = 0; i < src.size(); i++) {
-    if (src[i] == '%' && i + 2 < src.size()) {
-      char hi = src[i + 1];
-      char lo = src[i + 2];
-      int hiVal = -1, loVal = -1;
-      if (hi >= '0' && hi <= '9')      hiVal = hi - '0';
-      else if (hi >= 'A' && hi <= 'F') hiVal = hi - 'A' + 10;
-      else if (hi >= 'a' && hi <= 'f') hiVal = hi - 'a' + 10;
-      if (lo >= '0' && lo <= '9')      loVal = lo - '0';
-      else if (lo >= 'A' && lo <= 'F') loVal = lo - 'A' + 10;
-      else if (lo >= 'a' && lo <= 'f') loVal = lo - 'a' + 10;
-      if (hiVal >= 0 && loVal >= 0) {
-        result += static_cast<char>(hiVal * 16 + loVal);
-        i += 2;
-        continue;
-      }
-    }
-    if (src[i] == '+') {
-      result += ' ';
-      continue;
-    }
-    result += src[i];
+  if (pos != std::string::npos) {
+    return uri.substr(0, pos);
+  } else {
+    return uri;
   }
-  return result;
 }
 
-static std::string cleanURI(const std::string &uri) {
-  return urlDecode(stripQuery(uri));
-}
-
-static bool hasUnsafePath(const std::string &uri) {
-  std::string clean = cleanURI(uri);
-  if (clean.find('\\') != std::string::npos)
+static bool isItUnsafe(const std::string &uri) {
+  std::string tmpcheck = RemoveQueryString(uri);
+  if (tmpcheck.find('\\') != std::string::npos)
     return true;
 
   size_t start = 0;
-  while (start <= clean.size()) {
-    size_t slash = clean.find('/', start);
-    std::string part = (slash == std::string::npos)
-                           ? clean.substr(start)
-                           : clean.substr(start, slash - start);
-    if (part == "..")
+  while (start <= tmpcheck.size()) {
+    size_t slash = tmpcheck.find('/', start); 
+    std::string issafe;
+    if (slash == std::string::npos) {
+      issafe = tmpcheck.substr(start);
+    } else {
+      issafe = tmpcheck.substr(start, slash - start);
+    }
+    if (issafe == "..")
       return true;
     if (slash == std::string::npos)
       break;
@@ -90,7 +63,7 @@ static bool hasUnsafePath(const std::string &uri) {
 
 static std::string makeThePath(const std::string &root,
                                const std::string &uri) {
-  std::string clean = cleanURI(uri);
+  std::string clean = RemoveQueryString(uri);
   std::string path = root;
   if (!path.empty() && path[path.size() - 1] == '/' && !clean.empty() &&
       clean[0] == '/')
@@ -162,7 +135,7 @@ static bool commonChecks(const std::string &method, const HTTPRequest &request,
     resp = makeError(405, "Method Not Allowed");
     return true;
   }
-  if (hasUnsafePath(request.getURI())) {
+  if (isItUnsafe(request.getURI())) {
     resp = makeError(403, "Forbidden");
     return true;
   }
@@ -206,8 +179,11 @@ static bool tryCGI(const HTTPRequest &request, const RouteConfig &route,
 
   std::map<std::string, std::string>::const_iterator it =
       cgiResult.headers.find("content-type");
-  resp.contentType =
-      (it != cgiResult.headers.end()) ? it->second : "text/html";
+  if (it != cgiResult.headers.end()) {
+    resp.contentType = it->second;
+  } else {
+    resp.contentType = "text/html";
+  }
   return true;
 }
 
@@ -358,9 +334,9 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
   // 3. Directory handling
   if (isDirectory(ourFilePath)) {
     // 3a. Redirect bare directory path without trailing slash
-    std::string rawURI = cleanURI(request.getURI());
-    if (!rawURI.empty() && rawURI[rawURI.size() - 1] != '/')
-      return makeRedirect(rawURI + "/");
+    std::string currentUri = RemoveQueryString(request.getURI());
+    if (!currentUri.empty() && currentUri[currentUri.size() - 1] != '/')
+      return makeRedirect(currentUri + "/");
 
     // 3b. Try configured index file
     std::string indexFile = route.getIndex();
@@ -371,6 +347,30 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
       indexPath += indexFile;
 
       if (fileExists(indexPath)) {
+        // Construct a new URI including the index file for CGI check
+        std::string baseURI = request.getURI();
+        size_t queryPos = baseURI.find('?');
+        std::string justPath;
+        std::string queryPart;
+        if (queryPos != std::string::npos) {
+          justPath = baseURI.substr(0, queryPos);
+          queryPart = baseURI.substr(queryPos);
+        } else {
+          justPath = baseURI;
+          queryPart = "";
+        }
+        
+        if (!justPath.empty() && justPath[justPath.size() - 1] != '/')
+            justPath += "/";
+            
+        std::string indexedURI = justPath + indexFile + queryPart;
+        
+        HTTPRequest indexReq = request;
+        indexReq.setURI(indexedURI);
+        
+        if (tryCGI(indexReq, route, resp))
+          return resp;
+
         if (!isReadable(indexPath))
           return makeError(403, "Forbidden");
 
@@ -388,7 +388,7 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
     // 3c. Autoindex
     if (route.getAutoindex()) {
       std::string listing =
-          buildAutoindex(ourFilePath, cleanURI(request.getURI()));
+          buildAutoindex(ourFilePath, RemoveQueryString(request.getURI()));
       if (listing.empty())
         return makeError(500, "Internal Server Error");
 
@@ -481,10 +481,14 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
     }
     res << "</ul>\n</body></html>\n";
 
-    resp.statusCode = allSaved ? 201 : 500;
+    if (allSaved) {
+      resp.statusCode = 201;
+    } else {
+      resp.statusCode = 500;
+    }
     resp.contentType = "text/html";
     if (allSaved) {
-      std::string location = cleanURI(request.getURI());
+      std::string location = RemoveQueryString(request.getURI());
       if (location.empty())
         location = "/";
       else if (location[0] != '/')
