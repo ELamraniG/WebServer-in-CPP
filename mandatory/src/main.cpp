@@ -5,14 +5,14 @@
 #include <signal.h>
 #include <cstdlib>
 
-bool g_running = true;
+bool	g_running = true;
 
-void handleSigint(int)
+void	handleSigint(int)
 {
 	g_running = false;
 }
 
-int main()
+int	main()
 {
 	std::vector<Server*>	serverList;
 

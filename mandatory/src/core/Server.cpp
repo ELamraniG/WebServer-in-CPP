@@ -4,16 +4,16 @@
 #include <stdexcept>
 #include <iostream>
 
-int Server::getFd() const
+int	Server::getFd() const
 {
 	return (_fd);
 }
 
-int Server::accept() const
+int	Server::accept() const
 {
-	int	clientFd;
-	struct sockaddr_in clientAddr;
-	socklen_t clientLen;
+	int					clientFd;
+	struct sockaddr_in	clientAddr;
+	socklen_t			clientLen;
 
 	clientLen = sizeof(clientAddr);
 	clientFd = ::accept(_fd, (struct sockaddr *)&clientAddr, &clientLen);
@@ -31,16 +31,16 @@ int Server::accept() const
 	return (clientFd);
 }
 
-void Server::startListening() const
+void	Server::startListening() const
 {
 	if (listen(_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: listen failed.");
 	std::cout << "Server listening on port: " << _port << std::endl;
 }
 
-void Server::bindToPort()
+void	Server::bindToPort()
 {
-	struct sockaddr_in server_addr;
+	struct sockaddr_in	server_addr;
 
 	std::memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
@@ -50,7 +50,7 @@ void Server::bindToPort()
 		throw std::runtime_error("Error: bind failed.");
 }
 
-void Server::createSocket()
+void	Server::createSocket()
 {
 	int	opt;
 

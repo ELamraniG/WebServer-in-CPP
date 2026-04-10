@@ -9,18 +9,21 @@
 class Server
 {
 	private:
-		int	_fd;
-		int	_port;
 		Server();
 		Server(const Server &obj);
 		Server& operator=(const Server &obj);
+
+		int	_fd;
+		int	_port;
+
 		void	createSocket();
 		void	bindToPort();
 		void	startListening() const;
-		
+
 	public:
 		~Server();
 		Server(int port);
+
 		int	accept() const;
 		int	getFd() const;
 };

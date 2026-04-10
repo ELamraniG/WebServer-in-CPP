@@ -12,6 +12,7 @@ CGIHandler::CGIHandler(const std::string &path, const std::string &method,
 						const std::map<std::string, std::string> &headers) :
 	_pid(-1),
 	_done(false),
+	_error(false),
 	_scriptPath(path),
 	_method(method),
 	_queryString(queryString),
@@ -92,17 +93,36 @@ void	CGIHandler::writeBody()
 {
 	ssize_t	bytes;
 
-    if (_pipeIn[1] == -1 || _body.empty())
-        return ;
-    bytes = write(_pipeIn[1], _body.c_str(), _body.size());
-    if (bytes < 0)
-        return ;
-    _body.erase(0, bytes);
-    if (_body.empty())
-    {
-        close(_pipeIn[1]);
-        _pipeIn[1] = -1;
-    }
+	if (_pipeIn[1] == -1 || _body.empty())
+		return ;
+	bytes = write(_pipeIn[1], _body.c_str(), _body.size());
+	if (bytes < 0)
+		return ;
+	_body.erase(0, bytes);
+	if (_body.empty())
+	{
+		close(_pipeIn[1]);
+		_pipeIn[1] = -1;
+	}
+}
+
+void	CGIHandler::readOutput()
+{
+	char	buffer[BUFFER_SIZE];
+	ssize_t	bytes;
+
+	bytes = read(_pipeOut[0], buffer, BUFFER_SIZE);
+	if (bytes > 0)
+		_output.append(buffer, bytes);
+	else if (bytes == 0 || bytes < 0)
+	{
+		if (bytes == 0)
+			_done = true;
+		else
+			_error = true;
+		close(_pipeOut[0]);
+		_pipeOut[0] = -1;
+	}
 }
 
 void	CGIHandler::runChild()
@@ -150,34 +170,22 @@ bool	CGIHandler::start()
 
 int	CGIHandler::getReadFd() const
 {
-    return (_pipeOut[0]);
+	return (_pipeOut[0]);
 }
 
 int	CGIHandler::getWriteFd() const
 {
-    return (_pipeIn[1]);
+	return (_pipeIn[1]);
 }
 
 bool	CGIHandler::isDone() const
 {
-    return (_done);
+	return (_done);
 }
 
-std::string	CGIHandler::readOutput()
+bool	CGIHandler::isError() const
 {
-	char	buffer[BUFFER_SIZE];
-	ssize_t	bytes;
-
-	bytes = read(_pipeOut[0], buffer, BUFFER_SIZE);
-	if (bytes > 0)
-		_output.append(buffer, bytes);
-	else if (bytes == 0)
-	{
-		_done = true;
-		close(_pipeOut[0]);
-		_pipeOut[0] = -1;
-	}
-	return (_output);
+	return (_error);
 }
 
 void	CGIHandler::cleanup()

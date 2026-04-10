@@ -6,45 +6,45 @@
 #include <unistd.h>
 #include <ctime>
 
-const int Client::TIMEOUT = 55;
-const int Client::BUFFER_SIZE = 4096;
+const int	Client::TIMEOUT = 55;
+const int	Client::BUFFER_SIZE = 4096;
 
-int Client::getFd() const
+int	Client::getFd() const
 {
 	return (_fd);
 }
 
-bool Client::hasNoPendingWrite() const
+bool	Client::hasNoPendingWrite() const
 {
 	return (_responseBuffer.size() == 0);
 }
 
-void Client::setResponse(const std::string &response)
+void	Client::setResponse(const std::string &response)
 {
 	_responseBuffer = response;
 }
 
-bool Client::isTimedOut() const
+bool	Client::isTimedOut() const
 {
 	return ((time(NULL) - _lastActivity) > TIMEOUT);
 }
 
-bool Client::isReqCompleted() const
+bool	Client::isRequestCompleted() const
 {
 	return (_requestBuffer.find("\r\n\r\n") != std::string::npos);
 }
 
-void Client::eraseConsumedData(int bytes)
+void	Client::eraseConsumedData(int bytes)
 {
 	_responseBuffer.erase(0, bytes);
 }
 
-void Client::updateLastActivity()
+void	Client::updateLastActivity()
 {
 	_lastActivity = time(NULL);
 }
 
-ssize_t Client::readFromSocket()
+ssize_t	Client::readFromSocket()
 {
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes;
@@ -55,7 +55,7 @@ ssize_t Client::readFromSocket()
 	return (bytes);
 }
 
-ssize_t Client::writeToSocket()
+ssize_t	Client::writeToSocket()
 {
 	size_t	responseSize;
 	ssize_t	bytes;

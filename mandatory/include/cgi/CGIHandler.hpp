@@ -20,6 +20,7 @@ class CGIHandler
 		int									_pipeOut[2];
 		pid_t								_pid;
 		bool								_done;
+		bool								_error;
 		std::string							_output;
 		std::string							_scriptPath;
 		std::string							_method;
@@ -46,6 +47,8 @@ class CGIHandler
 		int			getReadFd() const;
 		int			getWriteFd() const;
 		bool		isDone() const;
-		std::string	readOutput();
+		bool		isError() const;
+		void		readOutput();
 		void		cleanup();
+		std::string	getOutput();
 };

@@ -1,4 +1,5 @@
 #include "../../include/core/EventLoop.hpp"
+#include <cstddef>
 #include <iostream>
 #include <stdexcept>
 #include <sys/poll.h>
@@ -29,7 +30,30 @@ std::string readFile(const std::string& path)
     ss << file.rdbuf();
     return (ss.str());
 }
-// TODO: ending
+
+std::string build500Response()
+{
+    std::string	body;
+	std::string	response;
+
+	body = readFile("mandatory/www/errors/500.html");
+    if (body.empty())
+    {
+		body = readFile("mandatory/www/errors/404.html");
+        return "HTTP/1.0 404 Not Found\r\n"
+				"Content-Type: text/html\r\n"
+				"Content-Length: " + toString(body.size()) + "\r\n"
+				"\r\n" +
+				body;
+    }
+    response =
+        "HTTP/1.0 500 Internal Server Error\r\n"
+        "Content-Type: text/html\r\n"
+        "Content-Length: " + toString(body.size()) + "\r\n"
+        "\r\n" +
+        body;
+    return (response);
+}
 
 std::string buildResponse()
 {
@@ -39,8 +63,8 @@ std::string buildResponse()
 	body = readFile("mandatory/www/pages/index.html");
     if (body.empty())
     {
-        body = "<html><body><h1>404 Not Found</h1></body></html>";
-        return "HTTP/1.1 404 Not Found\r\n"
+		body = readFile("mandatory/www/errors/404.html");
+        return "HTTP/1.0 404 Not Found\r\n"
 				"Content-Type: text/html\r\n"
 				"Content-Length: " + toString(body.size()) + "\r\n"
 				"\r\n" +
@@ -54,39 +78,40 @@ std::string buildResponse()
         body;
     return (response);
 }
+// TODO: ending
 
-bool EventLoop::isServer(int fd) const
+bool	EventLoop::isServer(int fd) const
 {
 	return (_listeningFds.count(fd));
 }
 
-void EventLoop::logEvent(const std::string msg) const
+void	EventLoop::logEvent(const std::string msg) const
 {
 	if (VERBOSE && !msg.empty())
 		std::cerr << "[webserv] " << msg << "." << std::endl;
 }
 
-bool EventLoop::isReadable(const short revents) const
+bool	EventLoop::isReadable(const short revents) const
 {
 	return (revents & POLLIN);
 }
 
-bool EventLoop::isWritable(const short revents) const
+bool	EventLoop::isWritable(const short revents) const
 {
 	return (revents & POLLOUT);
 }
 
-bool EventLoop::isTimeout(int i)
+bool	EventLoop::isTimeout(int i)
 {
 	return (!isServer(_pollFds[i].fd) && _clientMap.count(_pollFds[i].fd) && _clientMap[_pollFds[i].fd]->isTimedOut());
 }
 
-bool EventLoop::isError(int i) const
+bool	EventLoop::isError(int i) const
 {
 	return (!isServer(_pollFds[i].fd) && (_pollFds[i].revents & (POLLERR | POLLHUP)));
 }
 
-void EventLoop::startCGI(int clientFd)
+void	EventLoop::startCGI(int clientFd)
 {
 	int									writeFd;
 	int									readFd;
@@ -123,7 +148,7 @@ void EventLoop::startCGI(int clientFd)
 	_cgiFdToClient[readFd] = _clientMap[clientFd];
 }
 
-void EventLoop::addToPoll(int fd, short event)
+void	EventLoop::addToPoll(int fd, short event)
 {
 	pollfd	pollFd;
 
@@ -133,7 +158,7 @@ void EventLoop::addToPoll(int fd, short event)
 	_pollFds.push_back(pollFd);
 }
 
-void EventLoop::handleNewClient(int serverFd)
+void	EventLoop::handleNewClient(int serverFd)
 {
 	int	clientFd = -1;
 
@@ -153,7 +178,7 @@ void EventLoop::handleNewClient(int serverFd)
 	}
 }
 
-void EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &msg)
+void	EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &msg)
 {
 	logEvent(msg);
 	delete _clientMap[fd];
@@ -163,12 +188,59 @@ void EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &m
 		i--;
 }
 
-void EventLoop::handleReadEvent(int fd, size_t &i)
+void	EventLoop::handleCGIRead(int fd, size_t &i)
+{
+	int	clientFd;
+
+	_cgiFdToHandler[fd]->readOutput();
+	if (_cgiFdToHandler[fd]->isDone())
+	{
+		clientFd = _cgiFdToClient[fd]->getFd();
+		if (_cgiFdToHandler[fd]->isError())
+			_clientMap[clientFd]->setResponse(build500Response());
+		else
+			_clientMap[clientFd]->setResponse(_cgiFdToHandler[fd]->getOutput());
+		_pollFds.erase(_pollFds.begin() + i);
+		i--;
+		delete _cgiFdToHandler[fd];
+		_cgiFdToHandler.erase(fd);
+		_cgiFdToClient.erase(fd);
+		for (int i = 0; i < _pollFds.size(); i++)
+		{
+			if (_pollFds[i].fd == clientFd)
+			{
+				_pollFds[i].events = POLLOUT;
+				break ;
+			}
+		}
+	}
+}
+
+void	EventLoop::handleRequestComplete(int fd, size_t i)
+{
+	bool	isCGI;
+
+	isCGI = true; // TODO: get it from parser
+	if (isCGI)
+	{
+		startCGI(fd);
+		_pollFds[i].events = 0;
+	}
+	else
+	{
+		_pollFds[i].events = POLLOUT;
+		_clientMap[fd]->setResponse(buildResponse());
+	}
+}
+
+void	EventLoop::handleReadEvent(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
 	if (isServer(fd))
 		handleNewClient(fd);
+	else if (_cgiFdToHandler.count(fd))
+		handleCGIRead(fd, i);
 	else
 	{
 		bytes = _clientMap[fd]->readFromSocket();
@@ -178,44 +250,39 @@ void EventLoop::handleReadEvent(int fd, size_t &i)
 			handleClientDisconnected(fd, i, "Client disconnected");
 		else
 		{
-			if (_clientMap[fd]->isReqCompleted())
-			{
-                bool isCGI = true; // TODO: get it from parser
-				if (isCGI)
-				{
-                    startCGI(fd);
-					_pollFds[i].events = 0;
-				}
-				else
-				{
-					_pollFds[i].events = POLLOUT;
-					_clientMap[fd]->setResponse(buildResponse());
-				}
-			}
+			if (_clientMap[fd]->isRequestCompleted())
+				handleRequestComplete(fd, i);
 			_clientMap[fd]->updateLastActivity();
 		}
 	}
 }
 
-void EventLoop::handleWriteEvent(int fd, size_t &i)
+void	EventLoop::handleCGIWrite(int fd, size_t &i)
+{
+	// TODO:
+}
+
+void	EventLoop::handleWriteEvent(int fd, size_t &i)
 {
 	ssize_t	bytes;
 
-	bytes = _clientMap[fd]->writeToSocket();
-	if (bytes < 0)
-		handleClientDisconnected(fd, i, "Error: write");
-	else if (_clientMap[fd]->hasNoPendingWrite())
-		handleClientDisconnected(fd, i, "");
+	if (_cgiFdToHandler.count(fd))
+		handleCGIWrite(fd, i);
+	else
+	{
+		bytes = _clientMap[fd]->writeToSocket();
+		if (bytes < 0)
+			handleClientDisconnected(fd, i, "Error: write");
+		else if (_clientMap[fd]->hasNoPendingWrite())
+			handleClientDisconnected(fd, i, "");
+	}
 }
 
-void EventLoop::run()
+void	EventLoop::run()
 {
-	int	ret;
-
 	while (g_running)
 	{
-		ret = poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT);
-		if (ret < 0)
+		if (poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT) < 0)
 		{
 			if (!g_running)
 				break ;
