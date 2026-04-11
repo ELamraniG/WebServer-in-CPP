@@ -188,31 +188,28 @@ void	EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &m
 		i--;
 }
 
-void	EventLoop::handleCGIRead(int fd, size_t &i)
+void	EventLoop::handleCGIRead(int readFd, size_t &i)
 {
-	int	clientFd;
-
-	_cgiFdToHandler[fd]->readOutput();
-	if (_cgiFdToHandler[fd]->isDone())
+	_cgiFdToHandler[readFd]->readOutput();
+	if (_cgiFdToHandler[readFd]->isDone() || _cgiFdToHandler[readFd]->isError())
 	{
-		clientFd = _cgiFdToClient[fd]->getFd();
-		if (_cgiFdToHandler[fd]->isError())
-			_clientMap[clientFd]->setResponse(build500Response());
+		if (_cgiFdToHandler[readFd]->isError())
+			_cgiFdToClient[readFd]->setResponse(build500Response());
 		else
-			_clientMap[clientFd]->setResponse(_cgiFdToHandler[fd]->getOutput());
+			_cgiFdToClient[readFd]->setResponse(_cgiFdToHandler[readFd]->getOutput());
 		_pollFds.erase(_pollFds.begin() + i);
 		i--;
-		delete _cgiFdToHandler[fd];
-		_cgiFdToHandler.erase(fd);
-		_cgiFdToClient.erase(fd);
+		delete _cgiFdToHandler[readFd];
+		_cgiFdToHandler.erase(readFd);
 		for (int i = 0; i < _pollFds.size(); i++)
 		{
-			if (_pollFds[i].fd == clientFd)
+			if (_pollFds[i].fd == _cgiFdToClient[readFd]->getFd())
 			{
 				_pollFds[i].events = POLLOUT;
 				break ;
 			}
 		}
+		_cgiFdToClient.erase(readFd);
 	}
 }
 
@@ -220,7 +217,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t i)
 {
 	bool	isCGI;
 
-	isCGI = true; // TODO: get it from parser
+	isCGI = true; // TODO: get it from parser of moel
 	if (isCGI)
 	{
 		startCGI(fd);
@@ -229,7 +226,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t i)
 	else
 	{
 		_pollFds[i].events = POLLOUT;
-		_clientMap[fd]->setResponse(buildResponse());
+		_clientMap[fd]->setResponse(buildResponse()); // TODO: also i need it from moel sba3
 	}
 }
 

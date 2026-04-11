@@ -168,6 +168,11 @@ bool	CGIHandler::start()
 	return (true);
 }
 
+std::string	CGIHandler::getOutput() const
+{
+	return (_output);
+}
+
 int	CGIHandler::getReadFd() const
 {
 	return (_pipeOut[0]);

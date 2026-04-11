@@ -50,5 +50,5 @@ class CGIHandler
 		bool		isError() const;
 		void		readOutput();
 		void		cleanup();
-		std::string	getOutput();
+		std::string	getOutput() const;
 };

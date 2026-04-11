@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <cstdlib>
 
-bool	g_running = true;
+bool	g_running;
 
 void	handleSigint(int)
 {
@@ -16,6 +16,7 @@ int	main()
 {
 	std::vector<Server*>	serverList;
 
+	g_running = true;
 	signal(SIGINT, handleSigint);
 	try
 	{
