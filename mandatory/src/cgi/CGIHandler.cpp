@@ -223,6 +223,10 @@ void	CGIHandler::cleanup()
 		kill(_pid, SIGKILL);
 		waitpid(_pid, NULL, 0);
 		_pid = -1;
+		closePipe(_pipeIn[0]);
+		closePipe(_pipeIn[1]);
+		closePipe(_pipeOut[0]);
+		closePipe(_pipeOut[1]);
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "Server.hpp"
 #include "../cgi/CGIHandler.hpp"
 
+#include <ctime>
 #include <map>
 #include <set>
 #include <vector>
@@ -24,6 +25,7 @@ class EventLoop
 		std::map<int, Client*>		_clientMap;
 		std::map<int, CGIHandler*>	_cgiFdToHandler;
 		std::map<int, Client*>		_cgiFdToClient;
+		std::map<int, time_t>		_cgiStartTime;
 
 		EventLoop();
 		EventLoop(const EventLoop &obj);
@@ -35,8 +37,8 @@ class EventLoop
 		void	handleClientDisconnected(int fd, size_t &i, const std::string &msg);
 		void	handleReadEvent(int fd, size_t &i);
 		void	handleWriteEvent(int fd, size_t &i);
-		bool	isTimeout(int i);
-		bool	isError(int i) const;
+		bool	isTimeout(int fd);
+		bool	isError(int fd, short revents) const;
 		bool	isServer(int fd) const;
 		void	handleError();
 		void	logEvent(const std::string msg) const;
@@ -46,13 +48,15 @@ class EventLoop
 		void	handleCGIRead(int readFd, size_t &i);
 		void	handleCGIWrite(int writeFd, size_t &i);
 		void	handleRequestComplete(int fd, size_t &i);
-		void	handleCGITimeout();
+		bool	isCGITimeout(int fd) const;
+		void	handleCGITimeout(int fd, size_t &i);
 
 	public:
 		EventLoop(const std::vector<Server*> &servers);
 		~EventLoop();
 
 		static const int	POLL_TIMEOUT;
+		static const int	CGI_TIMEOUT;
 
 		void	run();
 };

@@ -1,8 +1,12 @@
 #include "../../include/core/EventLoop.hpp"
+#include <cstddef>
+#include <ctime>
 #include <iostream>
 #include <stdexcept>
+#include <sys/poll.h>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
+const int EventLoop::CGI_TIMEOUT = 5;
 extern bool g_running;
 
 // TODO: remove this one after
@@ -99,20 +103,19 @@ bool	EventLoop::isWritable(const short revents) const
 	return (revents & POLLOUT);
 }
 
-bool	EventLoop::isTimeout(int i)
+bool	EventLoop::isTimeout(int fd)
 {
-	int	fd;
-
-	fd = _pollFds[i].fd;
 	return (!isServer(fd) && _clientMap.count(fd) && _clientMap[fd]->isTimedOut());
 }
 
-bool	EventLoop::isError(int i) const
+bool	EventLoop::isCGITimeout(int fd) const
 {
-	int	fd;
+	return (_cgiStartTime.count(fd) && (time(NULL) - _cgiStartTime.at(fd)) > CGI_TIMEOUT);
+}
 
-	fd = _pollFds[i].fd;
-	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (_pollFds[i].revents & (POLLERR | POLLHUP)));
+bool	EventLoop::isError(int fd, short revents) const
+{
+	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (revents & (POLLERR | POLLHUP)));
 }
 
 void	EventLoop::startCGI(int clientFd)
@@ -136,6 +139,7 @@ void	EventLoop::startCGI(int clientFd)
 	}
 	readFd = cgi->getReadFd();
 	writeFd = cgi->getWriteFd();
+	_cgiStartTime[readFd] = time(NULL);
 	_cgiFdToHandler[readFd] = cgi;
 	_cgiFdToClient[readFd] = _clientMap[clientFd];
 	addToPoll(readFd, POLLIN);
@@ -190,6 +194,25 @@ void	EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &m
 	delete _clientMap[fd];
 	_clientMap.erase(fd);
 	removeFromPoll(i);
+}
+
+void	EventLoop::handleCGITimeout(int fd, size_t &i)
+{
+	_cgiFdToHandler[fd]->cleanup();
+	_cgiFdToClient[fd]->setResponse(build500Response());
+	delete _cgiFdToHandler[fd];
+	_cgiFdToHandler.erase(fd);
+	_cgiStartTime.erase(fd);
+	removeFromPoll(i);
+	for (size_t j = 0; j < _pollFds.size(); j++)
+	{
+		if (_cgiFdToClient[fd]->getFd() == _pollFds[i].fd)
+		{
+			_pollFds[i].events = POLLOUT;
+			break ;
+		}
+	}
+	_cgiFdToClient.erase(fd);
 }
 
 void	EventLoop::handleCGIRead(int readFd, size_t &i)
@@ -287,6 +310,9 @@ void	EventLoop::handleWriteEvent(int fd, size_t &i)
 
 void	EventLoop::run()
 {
+	int		fd;
+	short	revents;
+
 	while (g_running)
 	{
 		if (poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT) < 0)
@@ -297,14 +323,18 @@ void	EventLoop::run()
 		}
 		for (size_t i=0; i<_pollFds.size(); i++)
 		{
-			if (isTimeout(i))
-				handleClientDisconnected(_pollFds[i].fd, i, "Client timed out");
-			else if (isError(i))
-				handleClientDisconnected(_pollFds[i].fd, i, "Client disconnected");
-			else if (isReadable(_pollFds[i].revents))
-				handleReadEvent(_pollFds[i].fd, i);
-			else if (isWritable(_pollFds[i].revents))
-				handleWriteEvent(_pollFds[i].fd, i);
+			fd = _pollFds[i].fd;
+			revents = _pollFds[i].revents;
+			if (isCGITimeout(fd))
+				handleCGITimeout(fd, i);
+			else if (isTimeout(fd))
+				handleClientDisconnected(fd, i, "Client timed out");
+			else if (isError(fd, revents))
+				handleClientDisconnected(fd, i, "Client disconnected");
+			else if (isReadable(revents))
+				handleReadEvent(fd, i);
+			else if (isWritable(revents))
+				handleWriteEvent(fd, i);
 		}
 	}
 }
