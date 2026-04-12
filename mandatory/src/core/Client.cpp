@@ -1,10 +1,6 @@
 #include "../../include/core/Client.hpp"
 
 #include <cstddef>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <ctime>
 
 const int	Client::TIMEOUT = 55;
 const int	Client::BUFFER_SIZE = 4096;

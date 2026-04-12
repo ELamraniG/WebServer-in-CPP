@@ -1,8 +1,6 @@
 #include "../../include/core/EventLoop.hpp"
-#include <cstddef>
 #include <iostream>
 #include <stdexcept>
-#include <sys/poll.h>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 extern bool g_running;
@@ -340,20 +338,18 @@ EventLoop& EventLoop::operator=(const EventLoop &obj)
 EventLoop::~EventLoop()
 {
 	std::map<int, Client*>::iterator		it;
-	// std::map<int, CGIHandler*>::iterator	cit;
+	std::map<int, CGIHandler*>::iterator	cit;
+	std::set<CGIHandler*>					deleted;
 
 	for (it = _clientMap.begin(); it != _clientMap.end(); it++)
 		delete it->second;
-	// for (cit = _cgiFdToHandler.begin(); cit != _cgiFdToHandler.end(); cit++)
-	// 	delete cit->second;
-    std::set<CGIHandler*> deleted;
-    std::map<int, CGIHandler*>::iterator cit;
-    for (cit = _cgiFdToHandler.begin(); cit != _cgiFdToHandler.end(); cit++)
-    {
-        if (deleted.count(cit->second) == 0)
-        {
-            deleted.insert(cit->second);
-            delete cit->second;
-        }
-    }
+	for (cit = _cgiFdToHandler.begin(); cit != _cgiFdToHandler.end(); cit++)
+	{
+		if (!deleted.count(cit->second))
+		{
+			deleted.insert(cit->second);
+			delete cit->second;
+		}
+	}
+	// TODO: i may thinking about create writeFds set to track them instead of store cgi for write and read both
 }

@@ -1,8 +1,7 @@
 #include "../../include/core/Server.hpp"
 #include <cstring>
-#include <netinet/in.h>
 #include <stdexcept>
-#include <iostream>
+#include <iostream> // TODO: log instead of std::cerr
 
 int	Server::getFd() const
 {

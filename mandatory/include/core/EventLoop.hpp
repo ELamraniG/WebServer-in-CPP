@@ -3,11 +3,13 @@
 #include "Client.hpp"
 #include "Server.hpp"
 #include "../cgi/CGIHandler.hpp"
+
 #include <map>
 #include <set>
 #include <vector>
 #include <cstddef>
 #include <cstring>
+#include <sys/poll.h>
 
 const bool	VERBOSE = true;
 const int	BUFFER_SIZE = 4096;

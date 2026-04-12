@@ -1,9 +1,7 @@
 #include "../include/core/Server.hpp"
 #include "../include/core/EventLoop.hpp"
-#include <exception>
+
 #include <iostream>
-#include <signal.h>
-#include <cstdlib>
 
 bool	g_running;
 

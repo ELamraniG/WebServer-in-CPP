@@ -1,11 +1,8 @@
 #include "../../include/cgi/CGIHandler.hpp"
+
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
-#include <fcntl.h>
-#include <string>
-#include <sys/types.h>
-#include <unistd.h>
 
 static const int	BUFFER_SIZE = 4096;
 
@@ -45,7 +42,7 @@ void	CGIHandler::buildEnv()
 	_envStrings.push_back("QUERY_STRING=" + _queryString);
 	_envStrings.push_back("SCRIPT_FILENAME=" + _scriptPath);
 	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
-	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_envStrings.push_back("PATH=" + getPathEnv());
 	if (_method == "POST")
@@ -142,8 +139,10 @@ void	CGIHandler::readOutput()
 void	CGIHandler::closePipe(int &pipe)
 {
 	if (pipe != -1)
+	{
 		close(pipe);
-	pipe = -1;
+		pipe = -1;
+	}
 }
 
 void	CGIHandler::runChild()
