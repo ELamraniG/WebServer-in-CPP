@@ -1,0 +1,231 @@
+==53522== Memcheck, a memory error detector
+==53522== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==53522== Using Valgrind-3.26.0 and LibVEX; rerun with -h for copyright info
+==53522== Command: ./webserv
+==53522== 
+==53558== 
+==53558== HEAP SUMMARY:
+==53558==     in use at exit: 1,406 bytes in 21 blocks
+==53558==   total heap usage: 44 allocs, 23 frees, 77,200 bytes allocated
+==53558== 
+==53558== 8 bytes in 1 blocks are still reachable in loss record 1 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x410245: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 8 bytes in 1 blocks are still reachable in loss record 2 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x41028F: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 16 bytes in 1 blocks are still reachable in loss record 3 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40AD7B: std::__new_allocator<Server*>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x409288: std::_Vector_base<Server*, std::allocator<Server*> >::_M_allocate(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x41065E: std::vector<Server*, std::allocator<Server*> >::_M_realloc_append(Server* const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x410509: std::vector<Server*, std::allocator<Server*> >::push_back(Server* const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102C2: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 16 bytes in 1 blocks are still reachable in loss record 4 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40AD7B: std::__new_allocator<Server*>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x409288: std::_Vector_base<Server*, std::allocator<Server*> >::_M_allocate(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4080A4: std::_Vector_base<Server*, std::allocator<Server*> >::_M_create_storage(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40683E: std::_Vector_base<Server*, std::allocator<Server*> >::_Vector_base(unsigned long, std::allocator<Server*> const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405354: std::vector<Server*, std::allocator<Server*> >::vector(std::vector<Server*, std::allocator<Server*> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404095: EventLoop::EventLoop(std::vector<Server*, std::allocator<Server*> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102E5: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 21 bytes in 1 blocks are still reachable in loss record 5 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401669: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<char const*>(char const*, char const*, std::forward_iterator_tag) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401072: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(char const*, std::allocator<char> const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402ABF: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 21 bytes in 1 blocks are still reachable in loss record 6 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405798: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<true>(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404722: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B8EE: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 25 bytes in 1 blocks are still reachable in loss record 7 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405798: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<true>(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404722: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D9B4: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::_M_realloc_append(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D0B5: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::push_back(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40BD5C: CGIHandler::buildEnv() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B9B1: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 26 bytes in 1 blocks are still reachable in loss record 8 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405798: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<true>(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404722: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D058: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::push_back(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40BDC3: CGIHandler::buildEnv() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B9B1: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 32 bytes in 1 blocks are still reachable in loss record 9 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40A2A9: std::__new_allocator<pollfd>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40755A: std::_Vector_base<pollfd, std::allocator<pollfd> >::_M_allocate(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40605A: std::vector<pollfd, std::allocator<pollfd> >::_M_realloc_append(pollfd const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404E9D: std::vector<pollfd, std::allocator<pollfd> >::push_back(pollfd const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402EF9: EventLoop::addToPoll(int, short) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40303F: EventLoop::handleNewClient(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4036CB: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 48 bytes in 1 blocks are still reachable in loss record 10 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40B2D2: std::__new_allocator<std::_Rb_tree_node<std::pair<int const, Client*> > >::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B021: std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_M_get_node() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40AF85: std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_M_create_node(std::pair<int const, Client*> const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40A82B: std::_Rb_tree_node<std::pair<int const, Client*> >* std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_Alloc_node::operator()<std::pair<int const, Client*> >(std::pair<int const, Client*> const&) const (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x409B6B: std::_Rb_tree_iterator<std::pair<int const, Client*> > std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_M_insert_<std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_Alloc_node>(std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::pair<int const, Client*> const&, std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_Alloc_node&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x408A30: std::_Rb_tree_iterator<std::pair<int const, Client*> > std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_M_insert_unique_<std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_Alloc_node>(std::_Rb_tree_const_iterator<std::pair<int const, Client*> >, std::pair<int const, Client*> const&, std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_Alloc_node&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x407180: std::_Rb_tree<int, std::pair<int const, Client*>, std::_Select1st<std::pair<int const, Client*> >, std::less<int>, std::allocator<std::pair<int const, Client*> > >::_M_insert_unique_(std::_Rb_tree_const_iterator<std::pair<int const, Client*> >, std::pair<int const, Client*> const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405C4C: std::map<int, Client*, std::less<int>, std::allocator<std::pair<int const, Client*> > >::insert(std::_Rb_tree_iterator<std::pair<int const, Client*> >, std::pair<int const, Client*> const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404BA3: std::map<int, Client*, std::less<int>, std::allocator<std::pair<int const, Client*> > >::operator[](int const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40307C: EventLoop::handleNewClient(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4036CB: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 64 bytes in 1 blocks are still reachable in loss record 11 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40FAA1: std::__new_allocator<char*>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40EAAA: std::_Vector_base<char*, std::allocator<char*> >::_M_allocate(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40E02E: std::vector<char*, std::allocator<char*> >::_M_realloc_append(char* const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D59B: std::vector<char*, std::allocator<char*> >::push_back(char* const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40C35C: CGIHandler::buildEnv() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B9B1: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 80 bytes in 1 blocks are still reachable in loss record 12 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x403049: EventLoop::handleNewClient(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4036CB: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 80 bytes in 2 blocks are still reachable in loss record 13 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40B1F3: std::__new_allocator<std::_Rb_tree_node<int> >::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40ADE1: std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_M_get_node() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40A53F: std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_M_create_node(int const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x409431: std::_Rb_tree_node<int>* std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_Alloc_node::operator()<int>(int const&) const (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40833D: std::_Rb_tree_iterator<int> std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_M_insert_<std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_Alloc_node>(std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, int const&, std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_Alloc_node&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x406957: std::_Rb_tree<int, int, std::_Identity<int>, std::less<int>, std::allocator<int> >::_M_insert_unique(int const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405446: std::set<int, std::less<int>, std::allocator<int> >::insert(int const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40411B: EventLoop::EventLoop(std::vector<Server*, std::allocator<Server*> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102E5: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 89 bytes in 3 blocks are still reachable in loss record 14 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405798: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<true>(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404722: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40FF91: void std::_Construct<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40FE4A: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >* std::__do_uninit_copy<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*>(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40FB64: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >* std::__uninitialized_copy<false>::__uninit_copy<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*>(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40F424: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >* std::uninitialized_copy<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*>(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40ED38: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >* std::__uninitialized_copy_a<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40E60E: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >* std::__uninitialized_move_if_noexcept_a<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >*, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 108 bytes in 1 blocks are still reachable in loss record 15 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4019E2: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_mutate(unsigned long, unsigned long, char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4014F9: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_append(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x400EEA: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::append(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x400A00: Client::readFromSocket() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403745: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 228 bytes in 1 blocks are still reachable in loss record 16 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x401D6A: std::__new_allocator<char>::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401CEF: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_S_allocate(std::allocator<char>&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x401C26: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_create(unsigned long&, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x405798: void std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::_M_construct<true>(char const*, unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x404722: std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >::basic_string(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D058: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::push_back(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40BE36: CGIHandler::buildEnv() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B9B1: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 256 bytes in 1 blocks are still reachable in loss record 17 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x40F3F3: std::__new_allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::allocate(unsigned long, void const*) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40E55C: std::_Vector_base<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::_M_allocate(unsigned long) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D914: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::_M_realloc_append(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40D0B5: std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >::push_back(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40BD5C: CGIHandler::buildEnv() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x40B9B1: CGIHandler::CGIHandler(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > const&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x402BAC: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== 280 bytes in 1 blocks are still reachable in loss record 18 of 18
+==53558==    at 0x48412AC: operator new(unsigned long) (vg_replace_malloc.c:488)
+==53558==    by 0x402B72: EventLoop::startCGI(int) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4035DC: EventLoop::handleRequestComplete(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403856: EventLoop::handleReadEvent(int, unsigned long&) (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x403E23: EventLoop::run() (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558==    by 0x4102F4: main (in /home/redadgh/Desktop/1337/Webserv/webserv)
+==53558== 
+==53558== LEAK SUMMARY:
+==53558==    definitely lost: 0 bytes in 0 blocks
+==53558==    indirectly lost: 0 bytes in 0 blocks
+==53558==      possibly lost: 0 bytes in 0 blocks
+==53558==    still reachable: 1,406 bytes in 21 blocks
+==53558==         suppressed: 0 bytes in 0 blocks
+==53558== 
+==53558== For lists of detected and suppressed errors, rerun with: -s
+==53558== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==53522== 
+==53522== HEAP SUMMARY:
+==53522==     in use at exit: 0 bytes in 0 blocks
+==53522==   total heap usage: 62 allocs, 62 frees, 143,181 bytes allocated
+==53522== 
+==53522== All heap blocks were freed -- no leaks are possible
+==53522== 
+==53522== For lists of detected and suppressed errors, rerun with: -s
+==53522== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

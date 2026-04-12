@@ -2,6 +2,8 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <fcntl.h>
+#include <string>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -76,13 +78,26 @@ bool	CGIHandler::openPipes()
 {
 	if (pipe(_pipeOut) == -1)
 		return (false);
+	if (fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) == -1 || fcntl(_pipeOut[1], F_SETFL, O_NONBLOCK) == -1)
+	{
+		closePipe(_pipeOut[0]);
+		closePipe(_pipeOut[1]);
+		return (false);
+	}
 	if (_method == "POST")
 	{
 		if (pipe(_pipeIn) == -1)
 		{
-			close(_pipeOut[0]);
-			close(_pipeOut[1]);
-			_pipeOut[0] = _pipeOut[1] = -1;
+			closePipe(_pipeOut[0]);
+			closePipe(_pipeOut[1]);
+			return (false);
+		}
+		if (fcntl(_pipeIn[0], F_SETFL, O_NONBLOCK) == -1 || fcntl(_pipeIn[1], F_SETFL, O_NONBLOCK) == -1)
+		{
+			closePipe(_pipeOut[0]);
+			closePipe(_pipeOut[1]);
+			closePipe(_pipeIn[0]);
+			closePipe(_pipeIn[1]);
 			return (false);
 		}
 	}
@@ -97,15 +112,15 @@ void	CGIHandler::writeBody()
 		return ;
 	bytes = write(_pipeIn[1], _body.c_str(), _body.size());
 	if (bytes < 0)
+	{
+		_error = true;
+		closePipe(_pipeIn[1]);
 		return ;
+	}
 	_body.erase(0, bytes);
 	if (_body.empty())
-	{
-		close(_pipeIn[1]);
-		_pipeIn[1] = -1;
-	}
+		closePipe(_pipeIn[1]);
 }
-
 void	CGIHandler::readOutput()
 {
 	char	buffer[BUFFER_SIZE];
@@ -120,17 +135,24 @@ void	CGIHandler::readOutput()
 			_done = true;
 		else
 			_error = true;
-		close(_pipeOut[0]);
-		_pipeOut[0] = -1;
+		closePipe(_pipeOut[0]);
 	}
+}
+
+void	CGIHandler::closePipe(int &pipe)
+{
+	if (pipe != -1)
+		close(pipe);
+	pipe = -1;
 }
 
 void	CGIHandler::runChild()
 {
 	char	*argv[2];
 
-	close(_pipeIn[1]);
-	close(_pipeOut[0]);
+	
+	closePipe(_pipeIn[1]);
+	closePipe(_pipeOut[0]);
 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
 		exit(1);
 	if (_method == "POST")
@@ -138,8 +160,8 @@ void	CGIHandler::runChild()
 		if (dup2(_pipeIn[0], STDIN_FILENO) == -1)
 			exit(1);
 	}
-	close(_pipeOut[1]);
-	close(_pipeIn[0]);
+	closePipe(_pipeOut[1]);
+	closePipe(_pipeIn[0]);
 	argv[0] = const_cast<char *>(_scriptPath.c_str());
 	argv[1] = NULL;
 	execve(_scriptPath.c_str(), argv, _envp.data());
@@ -148,17 +170,14 @@ void	CGIHandler::runChild()
 
 void	CGIHandler::runParent()
 {
-	close(_pipeIn[0]);
-	close(_pipeOut[1]);
-	_pipeIn[0] = _pipeOut[1] = -1;
+	closePipe(_pipeIn[0]);
+	closePipe(_pipeOut[1]);
 	if (_method == "POST")
 		writeBody();
 }
 
 bool	CGIHandler::start()
 {
-	char	*argv[2];
-
 	if (!openPipes() || (_pid = fork()) == -1)
 		return (false);
 	if (_pid == 0)
@@ -171,6 +190,11 @@ bool	CGIHandler::start()
 std::string	CGIHandler::getOutput() const
 {
 	return (_output);
+}
+
+bool	CGIHandler::isWriteBodyDone() const
+{
+	return (_body.empty());
 }
 
 int	CGIHandler::getReadFd() const
@@ -197,7 +221,8 @@ void	CGIHandler::cleanup()
 {
 	if (_pid > 0)
 	{
-		waitpid(_pid, NULL, WNOHANG);
+		kill(_pid, SIGKILL);
+		waitpid(_pid, NULL, 0);
 		_pid = -1;
 	}
 }
@@ -206,12 +231,8 @@ CGIHandler::~CGIHandler()
 {
 	if (_pid > 0)
 		waitpid(_pid, NULL, WNOHANG);
-	if (_pipeIn[0]  != -1)
-		close(_pipeIn[0]);
-	if (_pipeIn[1]  != -1)
-		close(_pipeIn[1]);
-	if (_pipeOut[0] != -1)
-		close(_pipeOut[0]);
-	if (_pipeOut[1] != -1)
-		close(_pipeOut[1]);
+	closePipe(_pipeIn[0]);
+	closePipe(_pipeIn[1]);
+	closePipe(_pipeOut[0]);
+	closePipe(_pipeOut[1]);
 }

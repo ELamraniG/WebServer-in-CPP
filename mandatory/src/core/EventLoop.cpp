@@ -93,7 +93,7 @@ void	EventLoop::logEvent(const std::string msg) const
 
 bool	EventLoop::isReadable(const short revents) const
 {
-	return (revents & POLLIN);
+	return (revents & (POLLIN | POLLHUP));
 }
 
 bool	EventLoop::isWritable(const short revents) const
@@ -103,19 +103,27 @@ bool	EventLoop::isWritable(const short revents) const
 
 bool	EventLoop::isTimeout(int i)
 {
-	return (!isServer(_pollFds[i].fd) && _clientMap.count(_pollFds[i].fd) && _clientMap[_pollFds[i].fd]->isTimedOut());
+	int	fd;
+
+	fd = _pollFds[i].fd;
+	return (!isServer(fd) && _clientMap.count(fd) && _clientMap[fd]->isTimedOut());
 }
 
 bool	EventLoop::isError(int i) const
 {
-	return (!isServer(_pollFds[i].fd) && (_pollFds[i].revents & (POLLERR | POLLHUP)));
+	int	fd;
+
+	fd = _pollFds[i].fd;
+	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (_pollFds[i].revents & (POLLERR | POLLHUP)));
 }
 
 void	EventLoop::startCGI(int clientFd)
 {
+	// all this from moel l'asad
 	int									writeFd;
 	int									readFd;
-    std::string 						path = "./cgi-bin/test.py";
+    std::string 						path = "./mandatory/www/cgi-bin/test.py"; // correct path
+    // std::string 						path = "./www/cgi-bin/test.py"; // wrong path
     std::string 						method = "GET";
     std::string							queryString = "";
     std::string							body = "";
@@ -124,28 +132,21 @@ void	EventLoop::startCGI(int clientFd)
 
 	cgi = new CGIHandler(path, method, queryString, body, headers);
 	if (!cgi->start())
-		return ;
-	readFd = cgi->getReadFd();
-	if (fcntl(readFd, F_SETFL, O_NONBLOCK) == -1)
 	{
-		std::cerr << "Error: fcntl failed." << std::endl;
 		delete cgi;
 		return ;
 	}
+	readFd = cgi->getReadFd();
 	writeFd = cgi->getWriteFd();
+	_cgiFdToHandler[readFd] = cgi;
+	_cgiFdToClient[readFd] = _clientMap[clientFd];
 	addToPoll(readFd, POLLIN);
 	if (writeFd != -1)
 	{
-		if (fcntl(readFd, F_SETFL, O_NONBLOCK) == -1)
-		{
-			std::cerr << "Error: fcntl failed." << std::endl;
-			delete cgi;
-			return ;
-		}
+		_cgiFdToHandler[writeFd] = cgi;
+		_cgiFdToClient[writeFd] = _clientMap[clientFd];
 		addToPoll(writeFd, POLLOUT);
 	}
-	_cgiFdToHandler[readFd] = cgi;
-	_cgiFdToClient[readFd] = _clientMap[clientFd];
 }
 
 void	EventLoop::addToPoll(int fd, short event)
@@ -156,6 +157,13 @@ void	EventLoop::addToPoll(int fd, short event)
 	pollFd.fd = fd;
 	pollFd.events = event;
 	_pollFds.push_back(pollFd);
+}
+
+void	EventLoop::removeFromPoll(size_t &i)
+{
+	_pollFds.erase(_pollFds.begin() + i);
+	if (i > 0)
+		i--;
 }
 
 void	EventLoop::handleNewClient(int serverFd)
@@ -183,9 +191,7 @@ void	EventLoop::handleClientDisconnected(int fd, size_t &i, const std::string &m
 	logEvent(msg);
 	delete _clientMap[fd];
 	_clientMap.erase(fd);
-	_pollFds.erase(_pollFds.begin() + i);
-	if (i > 0)
-		i--;
+	removeFromPoll(i);
 }
 
 void	EventLoop::handleCGIRead(int readFd, size_t &i)
@@ -193,27 +199,26 @@ void	EventLoop::handleCGIRead(int readFd, size_t &i)
 	_cgiFdToHandler[readFd]->readOutput();
 	if (_cgiFdToHandler[readFd]->isDone() || _cgiFdToHandler[readFd]->isError())
 	{
-		if (_cgiFdToHandler[readFd]->isError())
+		if (_cgiFdToHandler[readFd]->isError() || _cgiFdToHandler[readFd]->getOutput().empty())
 			_cgiFdToClient[readFd]->setResponse(build500Response());
 		else
-			_cgiFdToClient[readFd]->setResponse(_cgiFdToHandler[readFd]->getOutput());
-		_pollFds.erase(_pollFds.begin() + i);
-		i--;
-		delete _cgiFdToHandler[readFd];
-		_cgiFdToHandler.erase(readFd);
-		for (int i = 0; i < _pollFds.size(); i++)
+			_cgiFdToClient[readFd]->setResponse("HTTP/1.0 200 OK\r\n" + _cgiFdToHandler[readFd]->getOutput());
+		for (size_t j = 0; j < _pollFds.size(); j++)
 		{
-			if (_pollFds[i].fd == _cgiFdToClient[readFd]->getFd())
+			if (_pollFds[j].fd == _cgiFdToClient[readFd]->getFd())
 			{
-				_pollFds[i].events = POLLOUT;
+				_pollFds[j].events = POLLOUT;
 				break ;
 			}
 		}
+		removeFromPoll(i);
+		delete _cgiFdToHandler[readFd];
+		_cgiFdToHandler.erase(readFd);
 		_cgiFdToClient.erase(readFd);
 	}
 }
 
-void	EventLoop::handleRequestComplete(int fd, size_t i)
+void	EventLoop::handleRequestComplete(int fd, size_t &i)
 {
 	bool	isCGI;
 
@@ -221,7 +226,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t i)
 	if (isCGI)
 	{
 		startCGI(fd);
-		_pollFds[i].events = 0;
+		_pollFds[i].events = PAUSE;
 	}
 	else
 	{
@@ -254,9 +259,16 @@ void	EventLoop::handleReadEvent(int fd, size_t &i)
 	}
 }
 
-void	EventLoop::handleCGIWrite(int fd, size_t &i)
+void	EventLoop::handleCGIWrite(int writeFd, size_t &i)
 {
-	// TODO:
+	if (_cgiFdToHandler[writeFd]->isError() || _cgiFdToHandler[writeFd]->isWriteBodyDone())
+	{
+		_cgiFdToHandler.erase(writeFd);
+		_cgiFdToClient.erase(writeFd);
+		removeFromPoll(i);
+	}
+	else
+		_cgiFdToHandler[writeFd]->writeBody();
 }
 
 void	EventLoop::handleWriteEvent(int fd, size_t &i)
@@ -327,8 +339,21 @@ EventLoop& EventLoop::operator=(const EventLoop &obj)
 
 EventLoop::~EventLoop()
 {
-	std::map<int, Client*>::iterator	it;
+	std::map<int, Client*>::iterator		it;
+	// std::map<int, CGIHandler*>::iterator	cit;
 
 	for (it = _clientMap.begin(); it != _clientMap.end(); it++)
 		delete it->second;
+	// for (cit = _cgiFdToHandler.begin(); cit != _cgiFdToHandler.end(); cit++)
+	// 	delete cit->second;
+    std::set<CGIHandler*> deleted;
+    std::map<int, CGIHandler*>::iterator cit;
+    for (cit = _cgiFdToHandler.begin(); cit != _cgiFdToHandler.end(); cit++)
+    {
+        if (deleted.count(cit->second) == 0)
+        {
+            deleted.insert(cit->second);
+            delete cit->second;
+        }
+    }
 }

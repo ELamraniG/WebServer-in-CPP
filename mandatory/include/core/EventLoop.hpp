@@ -11,6 +11,7 @@
 
 const bool	VERBOSE = true;
 const int	BUFFER_SIZE = 4096;
+const int	PAUSE = 0;
 
 class EventLoop
 {
@@ -27,6 +28,7 @@ class EventLoop
 		EventLoop& operator=(const EventLoop &obj);
 
 		void	addToPoll(int fd, short event);
+		void	removeFromPoll(size_t &i);
 		void	handleNewClient(int fd);
 		void	handleClientDisconnected(int fd, size_t &i, const std::string &msg);
 		void	handleReadEvent(int fd, size_t &i);
@@ -39,9 +41,10 @@ class EventLoop
 		bool	isReadable(const short revents) const;
 		bool	isWritable(const short revents) const;
 		void	startCGI(int clientFd);
-		void	handleCGIRead(int fd, size_t &i);
-		void	handleCGIWrite(int fd, size_t &i);
-		void	handleRequestComplete(int fd, size_t i);
+		void	handleCGIRead(int readFd, size_t &i);
+		void	handleCGIWrite(int writeFd, size_t &i);
+		void	handleRequestComplete(int fd, size_t &i);
+		void	handleCGITimeout();
 
 	public:
 		EventLoop(const std::vector<Server*> &servers);

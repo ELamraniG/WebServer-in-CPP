@@ -32,7 +32,7 @@ class CGIHandler
 
 		void        buildEnv();
 		bool        openPipes();
-		void        writeBody();
+		void		closePipe(int &pipe);
 		std::string getPathEnv() const;
 		void		runChild();
 		void		runParent();
@@ -46,9 +46,11 @@ class CGIHandler
 		bool		start();
 		int			getReadFd() const;
 		int			getWriteFd() const;
+		bool		isWriteBodyDone() const;
 		bool		isDone() const;
 		bool		isError() const;
 		void		readOutput();
+		void        writeBody();
 		void		cleanup();
 		std::string	getOutput() const;
 };
