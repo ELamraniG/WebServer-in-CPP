@@ -63,6 +63,7 @@ std::string buildResponse()
 	std::string	response;
 
 	body = readFile("mandatory/www/pages/index.html");
+	// body = readFile("mandatory/www/pages/form.html");
     if (body.empty())
     {
 		body = readFile("mandatory/www/errors/404.html");
@@ -124,13 +125,18 @@ void	EventLoop::startCGI(int clientFd)
 	int									writeFd;
 	int									readFd;
     std::string 						path = "./mandatory/www/cgi-bin/test.py"; // correct path
+    // std::string 						path = "./mandatory/www/cgi-bin/post_test.py"; // post test script
     // std::string 						path = "./www/cgi-bin/test.py"; // wrong path
     std::string 						method = "GET";
+    // std::string 						method = "POST";
     std::string							queryString = "";
     std::string							body = "";
+    // std::string							body = "name=REDA";
     std::map<std::string, std::string>	headers;
 	CGIHandler 							*cgi;
 
+	// headers["content-type"] = "application/x-www-form-urlencoded";
+	// headers["content-length"] = "9";
 	cgi = new CGIHandler(path, method, queryString, body, headers);
 	if (!cgi->start())
 	{
@@ -243,7 +249,8 @@ void	EventLoop::handleRequestComplete(int fd, size_t &i)
 {
 	bool	isCGI;
 
-	isCGI = true; // TODO: get it from parser of moel
+    std::string &buffer = _clientMap[fd]->getRequestBuffer();
+    isCGI = (buffer.find(".py") != std::string::npos); // TODO: get it from parser of moel
 	if (isCGI)
 	{
 		startCGI(fd);

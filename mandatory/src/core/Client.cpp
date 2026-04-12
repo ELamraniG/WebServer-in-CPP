@@ -5,6 +5,12 @@
 const int	Client::TIMEOUT = 55;
 const int	Client::BUFFER_SIZE = 4096;
 
+// TODO: need it only from check is it CGi or not, need to remove it after
+std::string &Client::getRequestBuffer()
+{
+    return (_requestBuffer);
+}
+
 int	Client::getFd() const
 {
 	return (_fd);

@@ -35,4 +35,5 @@ class Client
 		void	eraseConsumedData(int bytes);
 		void	updateLastActivity();
 		void	setResponse(const std::string &response);
+		std::string	&getRequestBuffer(); // TODO: need it only from check is it CGi or not, need to remove it after
 };
