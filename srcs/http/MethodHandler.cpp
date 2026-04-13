@@ -455,7 +455,7 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
                 << "\n";
       return applySession(request, makeError(500, "Internal Server Error"));
     }
-    
+
     std::ostringstream res;
     res << "<!DOCTYPE html>\n<html><body>\n"
         << "<h1>Upload Complete</h1>\n<ul>\n";

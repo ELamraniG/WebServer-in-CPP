@@ -4,7 +4,6 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <sys/stat.h>
 
 FileUpload::FileUpload() {}
@@ -100,10 +99,8 @@ bool FileUpload::parseTheThing(const HTTPRequest &request,
                                FileData &parsedFile) {
   std::string contentType = request.getHeader("content-type");
   std::string boundary = extractBoundary(contentType);
-  if (boundary.empty()) {
-    std::cerr << "no boundary in content-type" << std::endl;
+  if (boundary.empty()) 
     return false;
-  }
 
   const std::string &body = request.getBody();
   std::string delimiter = "--" + boundary;
@@ -167,10 +164,8 @@ bool FileUpload::parseTheThing(const HTTPRequest &request,
 
 bool FileUpload::saveTheThing(const FileData &file,
                               const std::string &uploadDir) {
-  if (file.filename.empty()) {
-    std::cerr << "error in the filename" << std::endl;
+  if (file.filename.empty()) 
     return false;
-  }
 
   // Sanitise the filename – strip path components and dangerous characters
   std::string safeName = file.filename;
@@ -181,10 +176,8 @@ bool FileUpload::saveTheThing(const FileData &file,
   // Reject null bytes and control characters
   for (std::string::size_type i = 0; i < safeName.size(); ++i) {
     unsigned char c = static_cast<unsigned char>(safeName[i]);
-    if (c < 0x20 || c == 0x7F) {
-      std::cerr << "FileUpload: unsafe character in filename" << std::endl;
+    if (c < 0x20 || c == 0x7F) 
       return false;
-    }
   }
   if (safeName.empty() || safeName == "." || safeName == "..")
     return false;
@@ -195,56 +188,18 @@ bool FileUpload::saveTheThing(const FileData &file,
     path += '/';
   path += safeName;
 
-  // If the file already exists, generate a unique name
-  struct stat st;
-  if (stat(path.c_str(), &st) == 0) {
-    // Find extension
-    std::string base = safeName;
-    std::string ext;
-    std::string::size_type dot = safeName.find_last_of('.');
-    if (dot != std::string::npos) {
-      base = safeName.substr(0, dot);
-      ext = safeName.substr(dot); // includes the dot
-    }
-
-    bool found = false;
-    for (int i = 1; i < 10000; ++i) {
-      std::ostringstream oss;
-      oss << "_" << i;
-      std::string candidate =
-          uploadDir + (uploadDir[uploadDir.size() - 1] != '/' ? "/" : "") +
-          base + oss.str() + ext;
-      if (stat(candidate.c_str(), &st) != 0) {
-        path = candidate;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      std::cerr << "FileUpload: could not find unique name for: " << safeName
-                << std::endl;
-      return false;
-    }
-  }
-
   // Write in binary mode to preserve exact data
   std::ofstream ofs(path.c_str(),
                     std::ios::out | std::ios::binary | std::ios::trunc);
-  if (!ofs.is_open()) {
-    std::cerr << "FileUpload::saveFile: could not open file for writing: "
-              << path << " (" << std::strerror(errno) << ")" << std::endl;
+  if (!ofs.is_open()) 
     return false;
-  }
 
   ofs.write(file.data.c_str(), static_cast<std::streamsize>(file.data.size()));
   if (!ofs.good()) {
-    std::cerr << "FileUpload::saveFile: write error for: " << path << std::endl;
     ofs.close();
     return false;
   }
 
   ofs.close();
-  std::cout << "FileUpload: saved " << file.filename << " (" << file.data.size()
-            << " bytes) -> " << path << std::endl;
   return true;
 }

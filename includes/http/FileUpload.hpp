@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <vector>
 
 #include "HTTPRequest.hpp"
 
@@ -15,8 +14,7 @@ class FileUpload {
 public:
   FileUpload();
 
-  bool parseTheThing(const HTTPRequest &request,
-                     FileData &file);
+  bool parseTheThing(const HTTPRequest &request, FileData &file);
   bool saveTheThing(const FileData &file, const std::string &uploadDir);
 
 private:
