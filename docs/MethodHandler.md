@@ -142,6 +142,34 @@ subdirectories, sorted alphabetically. Subdirectories display a trailing `/`.
 | `makeRedirect()` | Build a 301 redirect `Response` with `Location` header          |
 | `tryCGI()`       | Dispatch to `CGIHandler` if the URI matches a CGI extension     |
 | `buildAutoindex()`| Generate the HTML directory listing                            |
+| `ensureSession()`| Create/reuse simple `SESSION_ID` cookie-backed session          |
+
+## Simple Session Example
+
+First request (no cookie):
+
+```
+GET /index.html HTTP/1.1
+Host: localhost
+
+```
+
+Response contains a new session cookie:
+
+```
+Set-Cookie: SESSION_ID=abc123xyz
+```
+
+Next request (cookie sent back):
+
+```
+GET /index.html HTTP/1.1
+Host: localhost
+Cookie: SESSION_ID=abc123xyz
+
+```
+
+Server reuses the existing session and does not need to issue a new cookie.
 
 ---
 

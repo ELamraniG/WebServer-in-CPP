@@ -5,16 +5,18 @@
 #include <string>
 
 class HTTPRequest {
-    private:
+private:
   std::string method;
   std::string uri;
   std::string vers;
   std::map<std::string, std::string> headers;
+  std::map<std::string, std::string> cookies;
   std::string body;
   std::string querString;
   bool isComplete;
   bool isChunked;
   size_t contentLength;
+
 public:
   HTTPRequest();
 
@@ -24,6 +26,7 @@ public:
   const std::string &getQueryString() const;
   const std::string &getBody() const;
   std::string getHeader(const std::string &key) const;
+  std::string getCookie(const std::string &key) const;
 
   bool isItCompleted() const;
   bool isItChunked() const;

@@ -92,8 +92,8 @@ std::string ResponseBuilder::build(const Response &resp) const {
   std::ostringstream out;
 
   // --- Status line ---
-  out << "HTTP/1.0 " << resp.statusCode << " "
-      << reasonPhrase(resp.statusCode) << "\r\n";
+  out << "HTTP/1.0 " << resp.statusCode << " " << reasonPhrase(resp.statusCode)
+      << "\r\n";
 
   // --- Date header ---
   out << "Date: " << httpDate() << "\r\n";
@@ -111,8 +111,8 @@ std::string ResponseBuilder::build(const Response &resp) const {
     // lowercase compare
     std::string lower;
     for (std::string::size_type i = 0; i < key.size(); ++i)
-      lower += static_cast<char>(
-          std::tolower(static_cast<unsigned char>(key[i])));
+      lower +=
+          static_cast<char>(std::tolower(static_cast<unsigned char>(key[i])));
     if (lower == "content-type" || lower == "content-length")
       continue;
     out << it->first << ": " << it->second << "\r\n";
@@ -154,10 +154,8 @@ std::string ResponseBuilder::buildError(int code) const {
 
   std::string reason = reasonPhrase(code);
   std::ostringstream body;
-  body << "<!DOCTYPE html>\n<html><head><title>"
-       << code << " " << reason
-       << "</title></head>\n<body><h1>"
-       << code << " " << reason
+  body << "<!DOCTYPE html>\n<html><head><title>" << code << " " << reason
+       << "</title></head>\n<body><h1>" << code << " " << reason
        << "</h1></body></html>\n";
   resp.body = body.str();
 

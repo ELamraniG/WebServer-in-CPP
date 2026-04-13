@@ -35,6 +35,7 @@ Content-Type: text/html\r\n                  ← header
 | `uri`           | `std::string`                     | Path **without** the query string, e.g. `"/search"`                           |
 | `vers`          | `std::string`                     | `"HTTP/1.0"` or `"HTTP/1.1"`                                                  |
 | `headers`       | `std::map<string, string>`        | All headers stored as **lowercase key → value** (e.g. `"host"` → `"example.com"`) |
+| `cookies`       | `std::map<string, string>`        | Parsed cookies from the `Cookie` header (e.g. `"SESSION_ID"` → `"abc123"`)    |
 | `body`          | `std::string`                     | The raw body bytes (may be empty for GET / DELETE)                            |
 | `querString`    | `std::string`                     | Everything after `?` in the URI (e.g. `"q=hello&lang=en"`)                   |
 | `isComplete`    | `bool`                            | `true` once the parser has received all data for this request                 |
@@ -55,6 +56,25 @@ Content-Type: text/html\r\n                  ← header
 
 > Think of `HTTPRequest` as a **form** (not the HTML kind): the parser fills
 > it in, everyone else just reads it.
+
+---
+
+## Simple Cookie Example
+
+Incoming header:
+
+```
+Cookie: SESSION_ID=abc123; theme=light
+```
+
+Usage inside handlers:
+
+```cpp
+std::string sessionId = request.getCookie("SESSION_ID");
+std::string theme = request.getCookie("theme");
+```
+
+If the cookie key does not exist, `getCookie()` returns an empty string.
 
 ---
 
