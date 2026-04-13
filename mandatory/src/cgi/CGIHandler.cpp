@@ -3,6 +3,8 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <string>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -163,9 +165,19 @@ void	CGIHandler::closePipe(int &pipe)
 	}
 }
 
+std::string	CGIHandler::getExtension()
+{
+	ssize_t		dot;
+
+	dot = _scriptPath.find_last_of('.');
+	if (dot != std::string::npos)
+		return (_scriptPath.substr(dot));
+	return ("");
+}
+
 void	CGIHandler::runChild()
 {
-	char	*argv[2];
+	char	*argv[3];
 
 	closePipe(_pipeIn[1]);
 	closePipe(_pipeOut[0]);
@@ -178,9 +190,19 @@ void	CGIHandler::runChild()
 	}
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
-	argv[0] = const_cast<char *>(_scriptPath.c_str());
-	argv[1] = NULL;
-	execve(_scriptPath.c_str(), argv, _envp.data());
+	if (getExtension() == ".php") // FIXME: this is for bonus, i need to move it after
+	{
+		argv[0] = const_cast<char *>("php-cgi");
+		argv[1] = const_cast<char *>(_scriptPath.c_str());
+		argv[2] = NULL;
+		execve("/usr/bin/php-cgi", argv, _envp.data()); // FIXME: maybe i will ask Simo to add cgi map with key=extension value=interpreter (build it from config file)
+	}
+	else
+	{
+		argv[0] = const_cast<char *>(_scriptPath.c_str());
+		argv[1] = NULL;
+		execve(_scriptPath.c_str(), argv, _envp.data());
+	}
 	exit(1);
 }
 

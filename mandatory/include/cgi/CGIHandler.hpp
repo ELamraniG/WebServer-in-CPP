@@ -38,6 +38,7 @@ class CGIHandler
 		std::string getPathEnv() const;
 		void		runChild();
 		void		runParent();
+		std::string	getExtension();
 
 	public:
 		CGIHandler(const std::string &path, const std::string &method,
