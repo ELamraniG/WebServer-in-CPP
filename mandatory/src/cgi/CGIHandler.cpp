@@ -3,6 +3,8 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <sys/wait.h>
+#include <unistd.h>
 
 static const int	BUFFER_SIZE = 4096;
 
@@ -122,17 +124,26 @@ void	CGIHandler::readOutput()
 {
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes;
+	int		status;
 
 	bytes = read(_pipeOut[0], buffer, BUFFER_SIZE);
 	if (bytes > 0)
 		_output.append(buffer, bytes);
-	else if (bytes == 0 || bytes < 0)
+	else if (bytes == 0)
 	{
-		if (bytes == 0)
-			_done = true;
-		else
-			_error = true;
+		_done = true;
 		closePipe(_pipeOut[0]);
+		if (_pid > 0 && waitpid(_pid, &status, WNOHANG) > 0)
+		{
+			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+				_error = true;
+			_pid = -1;
+		}
+	}
+	else
+	{
+		closePipe(_pipeOut[0]);
+		_error = true;
 	}
 }
 
@@ -177,6 +188,8 @@ void	CGIHandler::runParent()
 
 bool	CGIHandler::start()
 {
+	if (access(_scriptPath.c_str(), F_OK | X_OK) == -1)
+		return (false);
 	if (!openPipes() || (_pid = fork()) == -1)
 		return (false);
 	if (_pid == 0)

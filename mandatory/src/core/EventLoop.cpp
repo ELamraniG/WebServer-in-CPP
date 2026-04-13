@@ -226,7 +226,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t &i)
 	_cgiFdToHandler[readFd]->readOutput();
 	if (_cgiFdToHandler[readFd]->isDone() || _cgiFdToHandler[readFd]->isError())
 	{
-		if (_cgiFdToHandler[readFd]->isError() || _cgiFdToHandler[readFd]->getOutput().empty())
+		if (_cgiFdToHandler[readFd]->isError())
 			_cgiFdToClient[readFd]->setResponse(build500Response());
 		else
 			_cgiFdToClient[readFd]->setResponse("HTTP/1.0 200 OK\r\n" + _cgiFdToHandler[readFd]->getOutput());
@@ -242,6 +242,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t &i)
 		delete _cgiFdToHandler[readFd];
 		_cgiFdToHandler.erase(readFd);
 		_cgiFdToClient.erase(readFd);
+		_cgiStartTime.erase(readFd);
 	}
 }
 
@@ -390,3 +391,8 @@ EventLoop::~EventLoop()
 	}
 	// TODO: i may thinking about create writeFds set to track them instead of store cgi for write and read both
 }
+
+/*
+	F_OK fails → 404 file not found
+	X_OK fails → 403 forbidden, file exists but not executable
+*/
