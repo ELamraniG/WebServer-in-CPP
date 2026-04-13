@@ -15,10 +15,6 @@ MethodHandler::MethodHandler()
 {
 }
 
-// ─────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────
-
 static bool	isAllowed(const std::string &method, const RouteConfig &route)
 {
 	const std::vector<std::string> &allowed = route.getAllowedMethods();
@@ -176,8 +172,6 @@ static Response	makeRedirect(const std::string &location)
 	return resp;
 }
 
-// Dispatch to CGI and build the Response.
-// Returns true if the URI was a CGI request (resp is filled).
 static bool	tryCGI(const HTTPRequest &request, const RouteConfig &route,
 		Response &resp)
 {
@@ -457,7 +451,7 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
 			std::cerr << "MethodHandler: no upload directory configured\n";
 			return makeError(500, "Internal Server Error");
 		}
-		// Verify upload directory exists
+		// upload directory exists
 		if (!fileExists(uploadDir) || !isDirectory(uploadDir))
 		{
 			std::cerr << "MethodHandler: upload directory missing: " << uploadDir << "\n";
@@ -499,9 +493,7 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
 		resp.body = res.str();
 		return resp;
 	}
-	// 5. application/x-www-form-urlencoded or raw body
-	//    42 subject does not require processing it, but we must not silently
-	//    discard it. Return 200 with a proper acknowledgement.
+	//    application/x-www-form-urlencoded or raw body
 	resp.statusCode = 200;
 	resp.contentType = "text/html";
 	resp.body = "<!DOCTYPE html>\n<html><body>"
