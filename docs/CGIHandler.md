@@ -16,6 +16,16 @@ as the response.
 2. **Execute** the CGI script as a child process.
 3. **Collect** the script's output and return it as a `CGIResult`.
 
+## Current Repository Status
+
+- The interface is declared in `includes/http/CGIHandler.hpp`.
+- There is no production implementation in `srcs/http/` yet.
+- Test builds currently use `build_tests/cgi_stub.cpp`, where:
+  - `isCGIRequest()` returns `false`
+  - `execute()` returns `{ success=false, statusCode=500, errorMessage="stub" }`
+
+The rest of this document describes the intended full CGI design for the final implementation.
+
 ---
 
 ## How CGI Works

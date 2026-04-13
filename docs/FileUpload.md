@@ -8,8 +8,8 @@ This format is **not** simple — files are wrapped in boundaries, each with
 its own mini-headers.
 
 `FileUpload` solves two problems:
-1. **Parsing** — Extract individual files from the multipart body.
-2. **Saving** — Write each extracted file safely to disk.
+1. **Parsing** — Extract one uploaded file part from the multipart body.
+2. **Saving** — Write that extracted file safely to disk.
 
 ---
 
@@ -19,17 +19,11 @@ When a browser uploads two files, the raw body looks like this:
 
 ```
 --WebKitFormBoundaryABC123\r\n
-Content-Disposition: form-data; name="file1"; filename="photo.jpg"\r\n
+Content-Disposition: form-data; name="file"; filename="photo.jpg"\r\n
 Content-Type: image/jpeg\r\n
 \r\n
 <raw binary data of photo.jpg>\r\n
---WebKitFormBoundaryABC123\r\n
-Content-Disposition: form-data; name="file2"; filename="doc.pdf"\r\n
-Content-Type: application/pdf\r\n
-\r\n
-<raw binary data of doc.pdf>\r\n
---WebKitFormBoundaryABC123--\r\n           ← closing boundary (ends with --)
-```
+--WebKitFormBoundaryABC123--\r\n
 
 ### Key elements:
 
@@ -57,21 +51,19 @@ Content-Type: multipart/form-data; boundary=WebKitFormBoundaryABC123
 `extractBoundary()` finds `boundary=` and extracts the value, trimming
 quotes and spaces.
 
-### 2. Split the Body into Parts
+### 2. Find the First Multipart Part
 
 ```
 Body = "--boundary\r\n<part1>\r\n--boundary\r\n<part2>\r\n--boundary--"
 
 Step 1:  Find first "--boundary" → skip it
-Step 2:  Find next "--boundary"  → everything between is Part 1
-Step 3:  Find next "--boundary"  → everything between is Part 2
-Step 4:  Next boundary ends with "--" → stop
+Step 2:  Find next "--boundary"  → everything between is the part to parse
+Step 3:  Trim trailing CRLF before that boundary
 ```
 
-For each part, the trailing `\r\n` before the next boundary is stripped
-(it belongs to the boundary separator, not the file data).
+Current implementation parses only this first part.
 
-### 3. Parse Each Part
+### 3. Parse That Part
 
 Each part is split at `\r\n\r\n` (or `\n\n`) into:
 - **Header block** — parsed into a map of lowercase key → value
@@ -81,12 +73,12 @@ From the headers, we extract:
 - `filename` from `Content-Disposition` (e.g. `"photo.jpg"`)
 - `Content-Type` (e.g. `"image/jpeg"`, defaults to `application/octet-stream`)
 
-Only parts that **have a filename** are treated as file uploads. Form fields
-without a filename are silently skipped.
+The part must contain a `filename` attribute in `Content-Disposition`.
+If filename is missing, parsing fails.
 
 ### 4. Result
 
-The parsed files are returned as a `vector<FileData>`:
+The parsed file is returned through a single `FileData` output argument:
 
 ```cpp
 struct FileData {
@@ -155,11 +147,11 @@ struct FileData {
                 │
                 ▼
            FileUpload
-           ├── parseTheThing(request, files)
+           ├── parseTheThing(request, file)
            │   ├── extractBoundary()     ← from Content-Type header
-           │   ├── split body at boundaries
+           │   ├── locate first part between boundaries
            │   ├── parse part headers
-           │   └── extract filename + data → FileData vector
+           │   └── extract filename + data → single FileData
            │
            └── saveTheThing(file, uploadDir)
                ├── sanitise filename

@@ -16,7 +16,7 @@ public:
   FileUpload();
 
   bool parseTheThing(const HTTPRequest &request,
-                     std::vector<FileData> &files);
+                     FileData &file);
   bool saveTheThing(const FileData &file, const std::string &uploadDir);
 
 private:

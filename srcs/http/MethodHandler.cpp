@@ -425,7 +425,7 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
                                    const RouteConfig &route) {
   Response resp;
   FileUpload uploader;
-  bool allSaved;
+  bool isSaved;
 
   if (isSafeAndAllowed("POST", request, route, resp))
     return applySession(request, resp);
@@ -441,8 +441,8 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
   // multipart file upload
   std::string contentType = request.getHeader("content-type");
   if (contentType.find("multipart/form-data") != std::string::npos) {
-    std::vector<FileData> files;
-    if (!uploader.parseTheThing(request, files) || files.empty())
+    FileData file;
+    if (!uploader.parseTheThing(request, file))
       return applySession(request, makeError(400, "Bad Request"));
     std::string uploadDir = route.getUploadStore();
     if (uploadDir.empty()) {
@@ -455,26 +455,25 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
                 << "\n";
       return applySession(request, makeError(500, "Internal Server Error"));
     }
-    allSaved = true;
+    
     std::ostringstream res;
     res << "<!DOCTYPE html>\n<html><body>\n"
         << "<h1>Upload Complete</h1>\n<ul>\n";
-    for (size_t i = 0; i < files.size(); i++) {
-      if (uploader.saveTheThing(files[i], uploadDir))
-        res << "<li>" << files[i].filename << " - uploaded ok</li>\n";
-      else {
-        res << "<li>" << files[i].filename << " - FAILED</li>\n";
-        allSaved = false;
-      }
+    if (uploader.saveTheThing(file, uploadDir)) {
+      res << "<li>" << file.filename << " - uploaded ok</li>\n";
+      isSaved = true;
+    } else {
+      res << "<li>" << file.filename << " - FAILED</li>\n";
+      isSaved = false;
     }
     res << "</ul>\n</body></html>\n";
-    if (allSaved) {
+    if (isSaved) {
       resp.statusCode = 201;
     } else {
       resp.statusCode = 500;
     }
     resp.contentType = "text/html";
-    if (allSaved) {
+    if (isSaved) {
       std::string location = RemoveQueryString(request.getURI());
       if (location.empty())
         location = "/";

@@ -97,17 +97,23 @@ timed out).
 | 204  | No Content              |
 | 301  | Moved Permanently       |
 | 302  | Found                   |
+| 307  | Temporary Redirect      |
+| 308  | Permanent Redirect      |
 | 400  | Bad Request             |
 | 403  | Forbidden               |
 | 404  | Not Found               |
 | 405  | Method Not Allowed      |
+| 408  | Request Timeout         |
 | 413  | Payload Too Large       |
+| 414  | URI Too Long            |
 | 500  | Internal Server Error   |
+| 501  | Not Implemented         |
 | 502  | Bad Gateway             |
+| 504  | Gateway Timeout         |
 | 505  | HTTP Version Not Supported |
 
 For unrecognised codes, it falls back to a generic phrase based on the code
-class (2xx → "OK", 4xx → "Client Error", 5xx → "Server Error").
+class (2xx → "OK", 3xx → "Redirection", 4xx → "Client Error", 5xx → "Server Error").
 
 ---
 

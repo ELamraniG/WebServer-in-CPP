@@ -89,8 +89,8 @@ Whether there *is* a body, and how to read it, depends on two headers:
 - If the body is chunked, `ChunksDecoding::decode()` is called. It may return
   `DECODE_NEED_MORE` (we wait for more data), `DECODE_ERROR` (bad format), or
   `DECODE_COMPLETE` (body is ready).
-- If `Content-Length` is present but the value is **not a valid number** →
-  parse error.
+- If `Content-Length` is present but does **not start with digits** → parse
+  error.
 - If `Content-Length` says 100 bytes but only 50 have arrived → `P_INCOMPLETE`
   (the caller will feed more data later).
 
