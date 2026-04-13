@@ -1,4 +1,5 @@
 #include "../../include/core/EventLoop.hpp"
+
 #include <cstddef>
 #include <ctime>
 #include <iostream>

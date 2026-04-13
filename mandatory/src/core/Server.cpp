@@ -1,4 +1,5 @@
 #include "../../include/core/Server.hpp"
+
 #include <cstring>
 #include <stdexcept>
 #include <iostream> // TODO: log instead of std::cerr
