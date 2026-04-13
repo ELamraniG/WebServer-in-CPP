@@ -9,7 +9,7 @@ const int EventLoop::POLL_TIMEOUT = 5000;
 const int EventLoop::CGI_TIMEOUT = 5;
 extern bool g_running;
 
-// TODO: remove this one after
+// TODO: remove this one after CHECK:
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -81,7 +81,7 @@ std::string buildResponse()
         body;
     return (response);
 }
-// TODO: ending
+// CHECK: ending
 
 bool	EventLoop::isServer(int fd) const
 {
@@ -131,7 +131,7 @@ void	EventLoop::startCGI(int clientFd)
     // std::string 						method = "POST";
     std::string							queryString = "";
     std::string							body = "";
-    // std::string							body = "name=REDA";
+    // std::string						body = "name=REDA";
     std::map<std::string, std::string>	headers;
 	CGIHandler 							*cgi;
 
@@ -251,7 +251,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t &i)
 	bool	isCGI;
 
     std::string &buffer = _clientMap[fd]->getRequestBuffer();
-    isCGI = (buffer.find(".py") != std::string::npos); // TODO: get it from parser of moel
+    isCGI = (buffer.find(".py") != std::string::npos); // TODO: get it from parser of moel l'asad
 	if (isCGI)
 	{
 		startCGI(fd);
@@ -389,7 +389,7 @@ EventLoop::~EventLoop()
 			delete cit->second;
 		}
 	}
-	// TODO: i may thinking about create writeFds set to track them instead of store cgi for write and read both
+	// FIXME: i may thinking about create writeFds set to track them instead of store cgi for write and read both
 }
 
 /*

@@ -54,7 +54,7 @@ void	CGIHandler::buildEnv()
 		if (_headers.count("content-length"))
 			_envStrings.push_back("CONTENT_LENGTH=" + _headers["content-length"]);
 	}
-	for (it = _headers.begin(); it != _headers.end(); ++it)
+	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
 		if (it->first == "content-type" || it->first == "content-length")
 			continue ;
@@ -103,6 +103,18 @@ bool	CGIHandler::openPipes()
 	return (true);
 }
 
+void	CGIHandler::checkExistStatus()
+{
+	int	status;
+
+	if (_pid > 0 && waitpid(_pid, &status, WNOHANG) > 0)
+	{
+		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+			_error = true;
+		_pid = -1;
+	}
+}
+
 void	CGIHandler::writeBody()
 {
 	ssize_t	bytes;
@@ -133,12 +145,7 @@ void	CGIHandler::readOutput()
 	{
 		_done = true;
 		closePipe(_pipeOut[0]);
-		if (_pid > 0 && waitpid(_pid, &status, WNOHANG) > 0)
-		{
-			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-				_error = true;
-			_pid = -1;
-		}
+		checkExistStatus();
 	}
 	else
 	{
@@ -160,7 +167,6 @@ void	CGIHandler::runChild()
 {
 	char	*argv[2];
 
-	
 	closePipe(_pipeIn[1]);
 	closePipe(_pipeOut[0]);
 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)

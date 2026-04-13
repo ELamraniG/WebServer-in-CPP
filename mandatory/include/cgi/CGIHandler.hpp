@@ -34,6 +34,7 @@ class CGIHandler
 		void        buildEnv();
 		bool        openPipes();
 		void		closePipe(int &pipe);
+		void		checkExistStatus();
 		std::string getPathEnv() const;
 		void		runChild();
 		void		runParent();
