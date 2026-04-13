@@ -130,13 +130,13 @@ bool FileUpload::parseTheThing(const HTTPRequest &request,
 
   std::string part = body.substr(pos, partEnd - pos);
 
-    std::string::size_type headerEnd = part.find("\r\n\r\n");
-    std::string::size_type sepLen = 4;
-    if (headerEnd == std::string::npos) {
-      headerEnd = part.find("\n\n");
-      sepLen = 2;
-    }
-  if (headerEnd == std::string::npos) 
+  std::string::size_type headerEnd = part.find("\r\n\r\n");
+  std::string::size_type sepLen = 4;
+  if (headerEnd == std::string::npos) {
+    headerEnd = part.find("\n\n");
+    sepLen = 2;
+  }
+  if (headerEnd == std::string::npos)
     return false;
 
   std::string headerBlock = part.substr(0, headerEnd);
@@ -172,17 +172,6 @@ bool FileUpload::saveTheThing(const FileData &file,
     return false;
   }
 
-  // Ensure upload directory exists
-  struct stat st;
-  if (stat(uploadDir.c_str(), &st) != 0) {
-    std::cerr << " error in the directory " << uploadDir << std::endl;
-    return false;
-  }
-  if (!S_ISDIR(st.st_mode)) {
-    std::cerr << "FileUpload: not a directory: " << uploadDir << std::endl;
-    return false;
-  }
-
   // Sanitise the filename – strip path components and dangerous characters
   std::string safeName = file.filename;
   std::string::size_type slash = safeName.find_last_of("/\\");
@@ -207,6 +196,7 @@ bool FileUpload::saveTheThing(const FileData &file,
   path += safeName;
 
   // If the file already exists, generate a unique name
+  struct stat st;
   if (stat(path.c_str(), &st) == 0) {
     // Find extension
     std::string base = safeName;
