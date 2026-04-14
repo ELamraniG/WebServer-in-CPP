@@ -133,7 +133,6 @@ void	CGIHandler::readOutput()
 {
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes;
-	int		status;
 
 	bytes = read(_pipeOut[0], buffer, BUFFER_SIZE);
 	if (bytes > 0)
@@ -162,7 +161,7 @@ void	CGIHandler::closePipe(int &pipe)
 
 std::string	CGIHandler::getExtension()
 {
-	ssize_t		dot;
+	size_t		dot;
 
 	dot = _scriptPath.find_last_of('.');
 	if (dot != std::string::npos)
