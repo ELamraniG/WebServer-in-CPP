@@ -44,7 +44,7 @@ class EventLoop
 		void	logEvent(const std::string msg) const;
 		bool	isReadable(const short revents) const;
 		bool	isWritable(const short revents) const;
-		void	startCGI(int clientFd);
+		bool	startCGI(int clientFd);
 		void	handleCGIRead(int readFd, size_t &i);
 		void	handleCGIWrite(int writeFd, size_t &i);
 		void	handleRequestComplete(int fd, size_t &i);

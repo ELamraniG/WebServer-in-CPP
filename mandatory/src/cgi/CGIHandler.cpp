@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <fcntl.h>
 #include <string>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -48,7 +49,7 @@ void	CGIHandler::buildEnv()
 	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
 	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	_envStrings.push_back("REDIRECT_STATUS=200");
+	_envStrings.push_back("REDIRECT_STATUS=200"); // for php-cgi bonus, need to remove it
 	_envStrings.push_back("PATH=" + getPathEnv());
 	if (_method == "POST")
 	{
@@ -76,33 +77,26 @@ void	CGIHandler::buildEnv()
 	_envp.push_back(NULL);
 }
 
+bool	CGIHandler::setNonBlocking(int fd)
+{
+	return (fcntl(fd, F_SETFL, O_NONBLOCK) != -1);
+}
+
+bool	CGIHandler::openPipe(int pipeFd[2])
+{
+	if (pipe(pipeFd) == -1)
+		return (false);
+	if (!setNonBlocking(pipeFd[0]) || !setNonBlocking(pipeFd[1]))
+		return (false);
+	return (true);
+}
+
 bool	CGIHandler::openPipes()
 {
-	if (pipe(_pipeOut) == -1)
+	if (!openPipe(_pipeOut))
 		return (false);
-	if (fcntl(_pipeOut[0], F_SETFL, O_NONBLOCK) == -1 || fcntl(_pipeOut[1], F_SETFL, O_NONBLOCK) == -1)
-	{
-		closePipe(_pipeOut[0]);
-		closePipe(_pipeOut[1]);
+	if (_method == "POST" && !openPipe(_pipeIn))
 		return (false);
-	}
-	if (_method == "POST")
-	{
-		if (pipe(_pipeIn) == -1)
-		{
-			closePipe(_pipeOut[0]);
-			closePipe(_pipeOut[1]);
-			return (false);
-		}
-		if (fcntl(_pipeIn[0], F_SETFL, O_NONBLOCK) == -1 || fcntl(_pipeIn[1], F_SETFL, O_NONBLOCK) == -1)
-		{
-			closePipe(_pipeOut[0]);
-			closePipe(_pipeOut[1]);
-			closePipe(_pipeIn[0]);
-			closePipe(_pipeIn[1]);
-			return (false);
-		}
-	}
 	return (true);
 }
 
@@ -258,6 +252,14 @@ bool	CGIHandler::isError() const
 	return (_error);
 }
 
+void	CGIHandler::closeAllpipes()
+{
+	closePipe(_pipeIn[0]);
+	closePipe(_pipeIn[1]);
+	closePipe(_pipeOut[0]);
+	closePipe(_pipeOut[1]);
+}
+
 void	CGIHandler::cleanup()
 {
 	if (_pid > 0)
@@ -265,19 +267,13 @@ void	CGIHandler::cleanup()
 		kill(_pid, SIGKILL);
 		waitpid(_pid, NULL, 0);
 		_pid = -1;
-		closePipe(_pipeIn[0]);
-		closePipe(_pipeIn[1]);
-		closePipe(_pipeOut[0]);
-		closePipe(_pipeOut[1]);
+		closeAllpipes();
 	}
 }
 
 CGIHandler::~CGIHandler()
 {
 	if (_pid > 0)
-		waitpid(_pid, NULL, WNOHANG);
-	closePipe(_pipeIn[0]);
-	closePipe(_pipeIn[1]);
-	closePipe(_pipeOut[0]);
-	closePipe(_pipeOut[1]);
+		waitpid(_pid, NULL, 0);
+	closeAllpipes();
 }

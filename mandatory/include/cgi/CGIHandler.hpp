@@ -32,8 +32,11 @@ class CGIHandler
 		std::vector<char*>					_envp;
 
 		void        buildEnv();
+		bool		setNonBlocking(int fd);
+		bool		openPipe(int pipeFd[2]);
 		bool        openPipes();
 		void		closePipe(int &pipe);
+		void		closeAllpipes();
 		void		checkExistStatus();
 		std::string getPathEnv() const;
 		void		runChild();

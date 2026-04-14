@@ -120,7 +120,7 @@ bool	EventLoop::isError(int fd, short revents) const
 	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (revents & (POLLERR | POLLHUP)));
 }
 
-void	EventLoop::startCGI(int clientFd)
+bool	EventLoop::startCGI(int clientFd)
 {
 	// all this from moel l'asad
 	int									writeFd;
@@ -142,7 +142,7 @@ void	EventLoop::startCGI(int clientFd)
 	if (!cgi->start())
 	{
 		delete cgi;
-		return ;
+		return (false);
 	}
 	readFd = cgi->getReadFd();
 	writeFd = cgi->getWriteFd();
@@ -156,6 +156,7 @@ void	EventLoop::startCGI(int clientFd)
 		_cgiFdToClient[writeFd] = _clientMap[clientFd];
 		addToPoll(writeFd, POLLOUT);
 	}
+	return (true);
 }
 
 void	EventLoop::addToPoll(int fd, short event)
@@ -252,11 +253,16 @@ void	EventLoop::handleRequestComplete(int fd, size_t &i)
 	bool	isCGI;
 
     std::string &buffer = _clientMap[fd]->getRequestBuffer();
-    isCGI = (buffer.find(".py") != std::string::npos); // TODO: get it from parser of moel l'asad
+    isCGI = ((buffer.find(".py") != std::string::npos) || (buffer.find(".php") != std::string::npos)); // TODO: get it from parser of moel l'asad
 	if (isCGI)
 	{
-		startCGI(fd);
-		_pollFds[i].events = PAUSE;
+		if (startCGI(fd))
+			_pollFds[i].events = PAUSE;
+		else
+		{
+			_pollFds[i].events = POLLOUT;
+			_clientMap[fd]->setResponse(build500Response());
+		}
 	}
 	else
 	{
