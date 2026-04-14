@@ -178,11 +178,8 @@ void	CGIHandler::runChild()
 	closePipe(_pipeOut[0]);
 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
 		exit(1);
-	if (_method == "POST")
-	{
-		if (dup2(_pipeIn[0], STDIN_FILENO) == -1)
+	if (_method == "POST" && (dup2(_pipeIn[0], STDIN_FILENO) == -1))
 			exit(1);
-	}
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
 	if (getExtension() == ".php") // FIXME: this is for bonus, i need to move it after
