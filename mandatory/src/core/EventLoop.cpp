@@ -214,9 +214,9 @@ void	EventLoop::handleCGITimeout(int fd, size_t &i)
 	removeFromPoll(i);
 	for (size_t j = 0; j < _pollFds.size(); j++)
 	{
-		if (_cgiFdToClient[fd]->getFd() == _pollFds[i].fd)
+		if (_cgiFdToClient[fd]->getFd() == _pollFds[j].fd)
 		{
-			_pollFds[i].events = POLLOUT;
+			_pollFds[j].events = POLLOUT;
 			break ;
 		}
 	}
