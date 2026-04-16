@@ -1,5 +1,7 @@
 #include "../../includes/http/ChunksDecoding.hpp"
 
+#include <cerrno>
+
 ChunksDecoding::ChunksDecoding() : completed(false) {}
 
 DecodeResult ChunksDecoding::decode(const std::string &chunkedData,
@@ -26,21 +28,16 @@ DecodeResult ChunksDecoding::decode(const std::string &chunkedData,
       hexStr = hexStr.substr(0, semiPos);
     }
 
-    // check if number is in hex
-    for (size_t i = 0; i < hexStr.size(); ++i) {
-      char c = hexStr[i];
-      if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') ||
-            (c >= 'A' && c <= 'F'))) {
-        return DECODE_ERROR;
-      }
+    if (hexStr.find_first_not_of("0123456789abcdefABCDEF") !=
+        std::string::npos) {
+      return DECODE_ERROR;
     }
-    // endptr returns a pointer to the first character after the number, we
-    // check if it is the same as the start of the string, if it is then it
-    // means that there was no valid number to convert
+
+    errno = 0;
     char *endPtr = NULL;
     unsigned long chunkSize = std::strtoul(hexStr.c_str(), &endPtr, 16);
-    if (endPtr == hexStr.c_str())
-      return DECODE_ERROR; // conversion failed
+    if (endPtr == hexStr.c_str() || *endPtr != '\0' || errno == ERANGE)
+      return DECODE_ERROR;
 
     // skip /r/n
     pos = crlfPos + 2;
