@@ -55,7 +55,7 @@ void	CGIHandler::buildEnv()
 	{
 		if (_headers.count("content-type"))
 			_envStrings.push_back("CONTENT_TYPE=" + _headers["content-type"]);
-		if (_headers.count("content-length"))
+		if (_headers.count("content-length")) // FIXME: when its chunked, i need to count body size and pass it to content-length
 			_envStrings.push_back("CONTENT_LENGTH=" + _headers["content-length"]);
 	}
 	for (it = _headers.begin(); it != _headers.end(); it++)
@@ -186,12 +186,14 @@ void	CGIHandler::runChild()
 		argv[0] = const_cast<char *>("php-cgi");
 		argv[1] = const_cast<char *>(_scriptPath.c_str());
 		argv[2] = NULL;
+		// FIXME: i may need to change directory to script location since its can be relative (working directly of the parent) 
 		execve("/usr/bin/php-cgi", argv, _envp.data()); // FIXME: maybe i will ask Simo to add cgi map with key=extension value=interpreter (build it from config file)
 	}
 	else
 	{
 		argv[0] = const_cast<char *>(_scriptPath.c_str());
 		argv[1] = NULL;
+		// FIXME: i may need to change directory to script location since its can be relative (working directly of the parent) 
 		execve(_scriptPath.c_str(), argv, _envp.data());
 	}
 	exit(1);
@@ -199,10 +201,12 @@ void	CGIHandler::runChild()
 
 void	CGIHandler::runParent()
 {
-	closePipe(_pipeIn[0]);
 	closePipe(_pipeOut[1]);
 	if (_method == "POST")
+	{
+		closePipe(_pipeIn[0]);
 		writeBody();
+	}
 }
 
 bool	CGIHandler::start()

@@ -10,7 +10,7 @@ CXX      := c++
 CXXFLAGS := -Wall -Wextra -Werror -std=c++98 -MMD -MP
 RM       := rm -rf
 NAME     := webserv
-VAL 	 := valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all
+VAL 	 := valgrind --leak-check=full --track-fds=yes --show-reachable=yes
 
 # ------------ Mandatory Paths ------------
 MANDO       := mandatory
