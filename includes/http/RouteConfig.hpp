@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 // Temporary RouteConfig class for Person 2 to code against
 // Person 3 will replace this with their real implementation
@@ -26,6 +27,7 @@ private:
   size_t maxBodySize;
   std::string index;
   bool autoindex;
+  std::map<int, std::string> errorPages;
 
 public:
   RouteConfig()
@@ -53,4 +55,7 @@ public:
   void setMaxBodySize(size_t s) { maxBodySize = s; }
   void setIndex(const std::string &i) { index = i; }
   void setAutoindex(bool a) { autoindex = a; }
+
+  const std::map<int, std::string> &getErrorPages() const { return errorPages; }
+  void addErrorPage(int code, const std::string &path) { errorPages[code] = path; }
 };
