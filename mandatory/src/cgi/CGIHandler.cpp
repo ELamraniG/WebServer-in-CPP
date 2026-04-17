@@ -181,19 +181,18 @@ void	CGIHandler::runChild()
 			exit(1);
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
+	// FIXME: i may need to change directory to script location before execve since its can be relative (working directly of the parent)
 	if (getExtension() == ".php") // FIXME: this is for bonus, i need to move it after
 	{
 		argv[0] = const_cast<char *>("php-cgi");
 		argv[1] = const_cast<char *>(_scriptPath.c_str());
 		argv[2] = NULL;
-		// FIXME: i may need to change directory to script location since its can be relative (working directly of the parent) 
 		execve("/usr/bin/php-cgi", argv, _envp.data()); // FIXME: maybe i will ask Simo to add cgi map with key=extension value=interpreter (build it from config file)
 	}
 	else
 	{
 		argv[0] = const_cast<char *>(_scriptPath.c_str());
 		argv[1] = NULL;
-		// FIXME: i may need to change directory to script location since its can be relative (working directly of the parent) 
 		execve(_scriptPath.c_str(), argv, _envp.data());
 	}
 	exit(1);

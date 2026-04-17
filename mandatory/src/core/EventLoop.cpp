@@ -294,7 +294,7 @@ void	EventLoop::handleReadEvent(int fd, size_t &i)
 				FIXME:
 						now after request ended (only headers \r\n\r\n) i need to check whatever content-length is there or not to keep reading.
 						i also need check for transfer-encoding, and transfer-encoding override content-length if both presents
-						chunked size/val separated by \r\n, its may be there extension like (1A;foo=bar) i should skep it, also size in hex
+						chunked size/val separated by \r\n, its may be there extension like (1A;foo=bar) i should skip it, also size in hex
 						if value of transfer-encoding is not "chunked" then i should return "501 not implemented"
 			*/
 			_clientMap[fd]->updateLastActivity();
