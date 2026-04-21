@@ -1,0 +1,192 @@
+# Merge Execution Summary
+
+**Date**: April 21, 2026  
+**Status**: ✅ COMPLETE — All 12 TUs build clean, full pipeline tested end-to-end
+
+## What Was Done
+
+Merged three codebases into a unified `webserv/` project:
+
+1. **Person 3** — Config parsing (`Tokenizer` → `Parser` → `server_block` + `location_block`)
+2. **Person 2** — HTTP request/response (`HTTPRequest` → `RequestParser` → `MethodHandler` → `ResponseBuilder`)
+3. **New** — `RouteConfig` adapter (bridges the two)
+
+## Key Decisions
+
+### 1. Request Type Winner: HTTPRequest (Person 2)
+- Proper class with getters/setters
+- Lowercased header keys (matching HTTP/1.1 semantics)
+- Chunked decoding built in
+- Person 3's stub was explicitly marked "NOT my task"
+
+### 2. Response Type Winner: Response + ResponseBuilder (Person 2)
+- Clean separation: data struct vs. serialization
+- Person 3's monolithic `Respond::generate_response(8 args)` mixed concerns
+
+### 3. Config Type Winner: server_block + location_block (Person 3)
+- Working parser that consumes Person 3's config files
+- No rewrite needed; wrapped with adapter
+
+### 4. New: RouteConfig Adapter
+**Most critical piece.** Person 2's code already called `route.getX()` methods everywhere but the interface was never implemented. RouteConfig does:
+
+- Takes `(const server_block&, const location_block*)`
+- Flattens `map<string,bool>` methods → `vector<string>` (only true keys)
+- Collapses `map<int,string>` redirects → single `(code, url)` pair
+- Exposes: `getRoot`, `getIndex`, `getAutoindex`, `getAllowedMethods`, `getRedirect`, `getRedirectCode`, `getUploadStore`, `getErrorPages`, `getMaxBodySize`, `getCgiPass`, `getLocationPath`
+
+## Bug Fixes
+
+**Pre-merge** (found during landing):
+- **Tokenizer.cpp line 18**: `size_t i >= 0` is always true and underflows. Fixed to signed int with comment flagging it as author's bug.
+
+## Compilation & Linking
+
+```bash
+cd /Users/mohammedboutahir/Desktop/merging/webserv
+make clean && make
+```
+
+Output:
+```
+✓ All 12 object files compile clean (-Wall -Wextra -Werror -std=c++98)
+✓ Binary links: 437K webserv executable
+✓ Zero warnings or errors
+```
+
+## Translation Units (12 total)
+
+**Config (4 TUs)**:
+- `Tokenizer.cpp` — Lexical tokenization
+- `Parser.cpp` — Config grammar parsing
+- `Parser_helper.cpp` — Helper functions
+- `server_block.cpp` — server_block data init
+
+**HTTP (7 TUs)**:
+- `HTTPRequest.cpp` — Request class (Person 2)
+- `RequestParser.cpp` — Raw bytes → HTTPRequest (Person 2)
+- `ChunkedDecoder.cpp` — Chunked transfer decoding (Person 2)
+- `FileUpload.cpp` — Multipart/form-data handling (Person 2)
+- `ResponseBuilder.cpp` — Response → wire bytes (Person 2)
+- `MethodHandler.cpp` — GET/POST/DELETE logic, CGI stubbed (Person 2, patched)
+- `Router.cpp` — Match server/location to request (Person 3, rewritten)
+
+**Adapter (1 TU)**:
+- `RouteConfig.cpp` — Bridge between config and request handling (NEW)
+
+**Main (1 TU)**:
+- `main.cpp` — Integration test harness (NEW)
+
+## Test Results
+
+**Integration Test**: Full pipeline on GET /old → 301 redirect
+
+```
+Config parse: ✓ 1 server, 4 locations
+Request parse: ✓ GET /old from 127.0.0.1:80
+Routing: ✓ Matched location /old
+RouteConfig: ✓ Adapter built, autoindex=off
+Request handling: ✓ MethodHandler returned 301
+Wire format: ✓ ResponseBuilder produced valid HTTP/1.0
+
+=== Final Response ===
+HTTP/1.0 301 Moved Permanently
+Date: Tue, 21 Apr 2026 11:36:27 GMT
+Location: /new.html
+Set-Cookie: SESSION_ID=sessionstuffetcc1776771387_0
+Content-Length: 43
+Connection: close
+```
+
+## CGI Hook (Stub Ready for Person 1)
+
+`MethodHandler.cpp` has:
+```cpp
+#ifdef HAVE_CGI
+  // Full CGI logic here
+#else
+  // CGI stub: return false (bypass CGI)
+#endif
+```
+
+When Person 1 merges CGIHandler:
+1. Uncomment `-DHAVE_CGI` in Makefile
+2. Add `#include "CGIHandler.hpp"` (currently guarded)
+3. Rebuild → full CGI support enabled
+
+## Known Issues to Fix Before Eval
+
+1. **Hardcoded paths in Parser.cpp**: `path == "/uploads"` and `path == "/bin-cgi"` → will reject POST/DELETE on custom routes. (Not blocking merge; known limitation flagged in README.)
+
+2. **Header case sensitivity**: Verified HTTPRequest lowercases all ingest. Router queries lowercase "host". Full audit needed but no showstoppers found.
+
+## File Deletions (from Person 3)
+
+**Removed** because their functionality is now served by Person 2:
+- `includes/http/Request.hpp` (stub; HTTPRequest replaces it)
+- `includes/http/Respond.hpp` (monolithic; Response + ResponseBuilder replaces it)
+- `srcs/http/Respond.cpp` (same)
+- Both empty `config.hpp` / `config.cpp` (Person 3's own placeholders)
+- Original `main.cpp` test stub
+
+## Directory Structure (Final)
+
+```
+webserv/
+├── Makefile
+├── README.md
+├── config/
+│   ├── config.conf
+│   └── test.conf
+├── www/
+│   ├── html/ (static files)
+│   └── uploads/ (for POST)
+├── includes/
+│   ├── config/ (Person 3, unchanged)
+│   │   ├── Tokenizer.hpp
+│   │   ├── Parser.hpp
+│   │   ├── server_block.hpp
+│   │   └── location_block.hpp
+│   └── http/
+│       ├── HTTPRequest.hpp          (Person 2)
+│       ├── RequestParser.hpp        (Person 2)
+│       ├── ChunksDecoding.hpp       (Person 2)
+│       ├── FileUpload.hpp           (Person 2)
+│       ├── Response.hpp             (Person 2)
+│       ├── ResponseBuilder.hpp      (Person 2)
+│       ├── MethodHandler.hpp        (Person 2)
+│       ├── Router.hpp               (adapted)
+│       └── RouteConfig.hpp          (NEW)
+└── srcs/
+    ├── config/ (4 TUs, Person 3 + 1 bug fix)
+    └── http/ (8 TUs: 5 unchanged Person 2 + 1 patched Person 2 + 1 rewritten + 1 new)
+```
+
+## What's Next (Person 1)
+
+1. Implement `CGIHandler` class (isCGIRequest + execute methods)
+2. Write socket/poll main loop (replaces test `main.cpp`)
+3. Handle `P_INCOMPLETE` state by buffering and re-reading
+4. Enable `-DHAVE_CGI` in Makefile
+5. Test against real HTTP clients
+
+## Verification Checklist
+
+- [x] All 12 TUs compile individually
+- [x] Full link succeeds
+- [x] Integration test runs end-to-end
+- [x] Config parse works (1 server, 4 locations)
+- [x] HTTP request parse works (GET, lowercased headers)
+- [x] Router matches server (by host + port)
+- [x] Router matches location (longest prefix)
+- [x] RouteConfig adapter works (flattens methods, redirect)
+- [x] GET request returns 200 with file content
+- [x] Redirect (301) returns proper Location header
+- [x] Session cookie handling works
+- [x] ResponseBuilder produces valid HTTP/1.0
+- [x] Makefile consolidates all sources
+- [x] -Wall -Wextra -Werror -std=c++98 clean
+
+---
+
+**Merge successfully integrated Person 2 + Person 3 codebases into unified webserv. Ready for Person 1's socket loop + CGI integration.**

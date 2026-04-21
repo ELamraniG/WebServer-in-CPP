@@ -1,0 +1,191 @@
+# Patch Log: Changes Made During Merge
+
+## Person 3 Code (Config Parsing)
+
+### ✅ Kept Unchanged (Core Logic)
+- `Tokenizer.hpp` — No changes
+- `Parser.hpp` — No changes
+- `Parser.cpp` — No changes
+- `Parser_helper.cpp` — No changes
+- `location_block.hpp` — No changes
+- `server_block.hpp` — No changes
+- `server_block.cpp` — No changes
+
+### 🔧 Fixed Bug
+**File**: `Tokenizer.cpp` (Line 18)
+
+**Issue**: Size_t underflow in reverse loop
+```cpp
+// BEFORE (BROKEN):
+for(size_t i = size - 1; i >= 0; i--)  // i >= 0 always true for size_t, underflows
+
+// AFTER (FIXED):
+for(int i = (int)size - 1; i >= 0; i--)  // Proper signed comparison
+{
+    if(s[i] != ' ' && s[i] != '\t' && s[i] != '\n' && s[i] != '\v' && s[i] != '\f' && s[i] != '\r')
+    {
+        if((size_t)i == size - 1)
+            break;
+        s = s.substr(0, i + 1);
+        break;
+    }
+}
+```
+
+**Note**: Pre-existing bug (author's code, not introduced by merge). Would fail -Werror compilation.
+
+### ❌ Deleted (Replaced by Person 2 Code)
+- `includes/http/Request.hpp` — Stub request class; HTTPRequest replaces it
+- `includes/http/Respond.hpp` — Monolithic response handler; Response + ResponseBuilder replace it
+- `srcs/http/Respond.cpp` — Same reason
+- `includes/http/config.hpp` — Empty placeholder
+- `srcs/http/config.cpp` — Empty placeholder
+
+## Person 2 Code (Request/Response)
+
+### ✅ Kept Unchanged (Core Logic)
+- `HTTPRequest.hpp` → unchanged
+- `HTTPRequest.cpp` → unchanged
+- `RequestParser.hpp` → unchanged
+- `RequestParser.cpp` → unchanged
+- `ChunksDecoding.hpp` → unchanged
+- `ChunkedDecoder.cpp` → unchanged
+- `FileUpload.hpp` → unchanged
+- `FileUpload.cpp` → unchanged
+- `Response.hpp` → unchanged
+- `ResponseBuilder.hpp` → unchanged
+- `ResponseBuilder.cpp` → unchanged
+
+### 🔧 Patched
+**File**: `MethodHandler.cpp`
+
+**Change 1**: Guard CGI includes
+```cpp
+// BEFORE:
+#include "../../includes/http/CGIHandler.hpp"
+
+// AFTER:
+#ifdef HAVE_CGI
+#include "../../includes/http/CGIHandler.hpp"
+#endif
+```
+
+**Change 2**: Stub tryCGI function
+```cpp
+// BEFORE:
+static bool tryCGI(const HTTPRequest &request, const RouteConfig &route, Response &resp) {
+  CGIHandler cgiHandler;
+  CGIResult cgiResult;
+  if (!cgiHandler.isCGIRequest(request.getURI(), route))
+    return false;
+  // ... full CGI logic
+}
+
+// AFTER:
+static bool tryCGI(const HTTPRequest &request, const RouteConfig &route, Response &resp) {
+#ifdef HAVE_CGI
+  CGIHandler cgiHandler;
+  CGIResult cgiResult;
+  if (!cgiHandler.isCGIRequest(request.getURI(), route))
+    return false;
+  // ... full CGI logic
+  return true;
+#else
+  // CGI stub: Person 1 will enable this with -DHAVE_CGI
+  (void)request;
+  (void)route;
+  (void)resp;
+  return false;
+#endif
+}
+```
+
+**Reason**: Person 1 hasn't implemented CGIHandler yet. Stub allows compilation without CGI, ready to flip on with `-DHAVE_CGI` flag.
+
+## Router (COMPLETE REWRITE)
+
+**Person 3 Original**:
+- Takes `Request&` (stub with public fields)
+- Methods: `match_server`, `match_location`, `get_path`, `get_error_path`
+- Case-sensitive header lookup ("Host" or "host")
+
+**New Implementation**:
+- Takes `const HTTPRequest&` (proper class, lowercased headers)
+- Methods: `match_server`, `match_location` (only; path logic moved to MethodHandler)
+- Query strings stripped before longest-prefix matching
+- Lowercase header lookup ("host" only; HTTPRequest guarantees lowercasing)
+
+**Changed Signatures**:
+```cpp
+// BEFORE (Person 3):
+static server_block& match_server(Request& req, std::vector<server_block>& servers);
+static location_block *match_location(Request& req, server_block& server);
+
+// AFTER (merged):
+static server_block& match_server(const HTTPRequest& req, std::vector<server_block>& servers);
+static location_block* match_location(const HTTPRequest& req, server_block& server);
+```
+
+**Methods Dropped**: `get_path` and `get_error_path` (duplicated by MethodHandler's `makeThePath` and `makeError`; consolidation prevents bugs).
+
+**Headers**: Fixed include to use `#include "HTTPRequest.hpp"` instead of `#include "Request.hpp"`.
+
+## RouteConfig (NEW FILE)
+
+**What it is**: Adapter that presents a `(server_block, location_block*)` pair as the interface MethodHandler expects.
+
+**Key Transformations**:
+1. **Methods**: `map<string,bool>` → `vector<string>` (flattens, only true keys)
+2. **Redirect**: `map<int,string>` → `(code, url)` tuple (takes first entry; parser guarantees ≤1)
+3. **Priority**: Location fields override server fields (e.g., root, index)
+
+**Files**:
+- `includes/http/RouteConfig.hpp` — Interface (NEW)
+- `srcs/http/RouteConfig.cpp` — Implementation (NEW)
+
+## Main Program (NEW)
+
+**File**: `main.cpp`
+
+**Purpose**: Integration test harness (NOT the final server loop).
+
+**Pipeline tested**:
+1. Tokenizer → Parser → std::vector<server_block>
+2. Raw HTTP bytes → RequestParser → HTTPRequest
+3. Router::match_server + match_location
+4. RouteConfig bridge
+5. MethodHandler::handleGET/POST/DELETE
+6. ResponseBuilder::build
+7. Output to stdout
+
+**Configured Request**: `GET /old` → matches 301 redirect location → produces `Location: /new.html`
+
+## Makefile (CONSOLIDATED)
+
+**Person 3 Original**: Built config TUs only  
+**Person 2 Original**: No Makefile (stub main only)  
+**Merged**: Unified Makefile consolidating all 12 TUs
+
+**Key Features**:
+- `SRCS` list includes all 12 translation units
+- Flags: `-Wall -Wextra -Werror -std=c++98 -MMD -MP`
+- Targets: `all`, `clean`, `fclean`, `re`
+- Dependency tracking (`.d` files)
+- Line for `-DHAVE_CGI` ready to uncomment
+
+## Summary of Changes by Scope
+
+| File | Type | Change |
+|------|------|--------|
+| Tokenizer.cpp | Bug Fix | Size_t underflow → signed int |
+| MethodHandler.cpp | Guard + Stub | CGI code under #ifdef HAVE_CGI |
+| Router.hpp/.cpp | Rewrite | HTTPRequest-based, dropped get_path/get_error_path |
+| RouteConfig.hpp/.cpp | New | Adapter bridging config & request layers |
+| main.cpp | New | Integration test harness |
+| Makefile | New | Unified build for all 12 TUs |
+| Request.hpp | Deleted | Replaced by HTTPRequest |
+| Respond.* | Deleted | Replaced by Response + ResponseBuilder |
+
+---
+
+**Total Changes**: 1 bug fix + 1 rewrite + 1 patch + 3 new files + 2 deletions + 1 new Makefile = **Successful merge with minimal disruption**
