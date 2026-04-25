@@ -2,10 +2,8 @@
 
 #include <cstdlib>
 #include <cstring>
-#include <netinet/in.h>
 #include <stdexcept>
 #include <iostream> // TODO: log instead of std::cerr
-#include <sys/socket.h>
 #include <netdb.h>
 
 int	Server::getFd() const
@@ -48,10 +46,12 @@ void	Server::bindSocket()
 	struct addrinfo		hints;
 	struct addrinfo*	res;
 	int					portNum;
+	std::string			host;
 
 	std::memset(&serverAddr, 0, sizeof(serverAddr));
 	portNum = std::atoi(_serverBlock.port.c_str());
-	if (_serverBlock.host == "0.0.0.0")
+	host = _serverBlock.host;
+	if (host == "0.0.0.0")
 	{
 		serverAddr.sin_family = AF_INET;
 		serverAddr.sin_port = htons(portNum);
@@ -62,7 +62,7 @@ void	Server::bindSocket()
 		std::memset(&hints, 0, sizeof(hints));
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
-		if (getaddrinfo(_serverBlock.host.c_str(), _serverBlock.port.c_str(), &hints, &res) != 0)
+		if (getaddrinfo(host.c_str(), _serverBlock.port.c_str(), &hints, &res) != 0)
 			throw std::runtime_error("Error: getaddinfo failed.");
 		serverAddr = *(struct sockaddr_in *)res->ai_addr;
 		freeaddrinfo(res);

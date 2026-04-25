@@ -5,13 +5,8 @@
 #include "../../include/http/RouteConfig.hpp"
 #include "../../include/http/MethodHandler.hpp"
 
-#include <cstddef>
-#include <ctime>
 #include <iostream>
-#include <map>
 #include <stdexcept>
-#include <sys/poll.h>
-#include <vector>
 
 const int EventLoop::POLL_TIMEOUT = 5000;
 const int EventLoop::CGI_TIMEOUT = 5;
