@@ -251,10 +251,10 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 
 void	EventLoop::handleRequestComplete(int fd, size_t& i, const HTTPRequest& req, const RouteConfig& route)
 {
-	MethodHandler	handler;
-	ResponseBuilder	responseBuilder;
-	Response		response;
-	std::string		method;
+	MethodHandler								handler;
+	ResponseBuilder								responseBuilder;
+	Response									response;
+	std::string									method;
 	const std::map<std::string, std::string>&	cgiPass = route.getCgiPass();
 
 	if (isCGIRequest(req.getURI(), cgiPass))

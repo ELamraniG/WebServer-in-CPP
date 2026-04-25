@@ -66,6 +66,8 @@ int main(int argc, char **argv)
 	}
 	catch(std::exception& e)
 	{
+		for (size_t i = 0; i < serverList.size(); i++)
+			delete serverList[i];
 		std::cerr << "[webserv] " << e.what() << std::endl;
 		return (1);
 	}

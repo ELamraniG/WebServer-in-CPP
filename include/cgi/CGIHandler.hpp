@@ -22,6 +22,7 @@ class CGIHandler
 		pid_t								_pid;
 		bool								_done;
 		bool								_error;
+		int									_code;
 		std::string							_output;
 		std::string							_scriptPath;
 		std::string							_interpreter;
@@ -53,11 +54,13 @@ class CGIHandler
 		int			start();
 		int			getReadFd() const;
 		int			getWriteFd() const;
+		int			getCode() const;
+		std::string	getOutput() const;
 		bool		isWriteBodyDone() const;
 		bool		isDone() const;
 		bool		isError() const;
 		void		readOutput();
+		void		setCode(int code);
 		void        writeBody();
 		void		cleanup();
-		std::string	getOutput() const;
 };

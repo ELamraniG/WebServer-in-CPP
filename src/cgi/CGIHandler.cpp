@@ -19,6 +19,7 @@ CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, 
 	_pid(-1),
 	_done(false),
 	_error(false),
+	_code(200),
 	_scriptPath(path),
 	_interpreter(interpreter),
 	_method(method),
@@ -78,6 +79,11 @@ void	CGIHandler::buildEnv()
 	for (size_t i = 0; i < _envStrings.size(); i++)
 		_envp.push_back(const_cast<char*>(_envStrings[i].c_str()));
 	_envp.push_back(NULL);
+}
+
+void	CGIHandler::setCode(int code)
+{
+	_code = code;
 }
 
 bool	CGIHandler::setNonBlocking(int fd)
@@ -238,6 +244,11 @@ int	CGIHandler::getReadFd() const
 int	CGIHandler::getWriteFd() const
 {
 	return (_pipeIn[1]);
+}
+
+int CGIHandler::getCode() const
+{
+	return (_code);
 }
 
 bool	CGIHandler::isDone() const
