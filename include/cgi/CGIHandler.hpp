@@ -8,14 +8,14 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-extern char	**environ;
+extern char** environ;
 
 class CGIHandler
 {
 	private:
 		CGIHandler();
-		CGIHandler(const CGIHandler &obj);
-		CGIHandler& operator=(const CGIHandler &obj);
+		CGIHandler(const CGIHandler& obj);
+		CGIHandler& operator=(const CGIHandler& obj);
 
 		int									_pipeIn[2];
 		int									_pipeOut[2];
@@ -24,6 +24,7 @@ class CGIHandler
 		bool								_error;
 		std::string							_output;
 		std::string							_scriptPath;
+		std::string							_interpreter;
 		std::string							_method;
 		std::string							_queryString;
 		std::string							_body;
@@ -31,25 +32,25 @@ class CGIHandler
 		std::vector<std::string>			_envStrings;
 		std::vector<char*>					_envp;
 
-		void        buildEnv();
-		bool		setNonBlocking(int fd);
-		bool		openPipe(int pipeFd[2]);
-		bool        openPipes();
-		void		closePipe(int &pipe);
-		void		closeAllpipes();
-		void		checkExistStatus();
-		std::string getPathEnv() const;
-		void		runChild();
-		void		runParent();
-		std::string	getExtension();
+		void				buildEnv();
+		bool				setNonBlocking(int fd);
+		bool				openPipe(int pipeFd[2]);
+		bool				openPipes();
+		void				closePipe(int& pipe);
+		void				closeAllPipes();
+		void				checkExitStatus();
+		const std::string	getPathEnv() const;
+		void				runChild();
+		void				runParent();
+		const std::string	getExtension();
 
 	public:
-		CGIHandler(const std::string &path, const std::string &method,
-					const std::string &queryString, const std::string &body,
-					const std::map<std::string, std::string> &headers);
+		CGIHandler(const std::string& path, const std::string& interpreter, const std::string& method,
+					const std::string& queryString, const std::string& body,
+					const std::map<std::string, std::string>& headers);
 		~CGIHandler();
 
-		bool		start();
+		int			start();
 		int			getReadFd() const;
 		int			getWriteFd() const;
 		bool		isWriteBodyDone() const;

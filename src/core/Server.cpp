@@ -1,8 +1,12 @@
 #include "../../include/core/Server.hpp"
 
+#include <cstdlib>
 #include <cstring>
+#include <netinet/in.h>
 #include <stdexcept>
 #include <iostream> // TODO: log instead of std::cerr
+#include <sys/socket.h>
+#include <netdb.h>
 
 int	Server::getFd() const
 {
@@ -16,7 +20,7 @@ int	Server::accept() const
 	socklen_t			clientLen;
 
 	clientLen = sizeof(clientAddr);
-	clientFd = ::accept(_fd, (struct sockaddr *)&clientAddr, &clientLen);
+	clientFd = ::accept(_fd, (struct sockaddr*)&clientAddr, &clientLen);
 	if (clientFd < 0)
 	{
 		std::cerr << "Error: accept failed." << std::endl;
@@ -35,18 +39,35 @@ void	Server::startListening() const
 {
 	if (listen(_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: listen failed.");
-	std::cout << "Server listening on port: " << _port << std::endl;
+	std::cout << "Server listening on port: " << _serverBlock.port << std::endl;
 }
 
-void	Server::bindToPort()
+void	Server::bindSocket()
 {
-	struct sockaddr_in	server_addr;
+	struct sockaddr_in	serverAddr;
+	struct addrinfo		hints;
+	struct addrinfo*	res;
+	int					portNum;
 
-	std::memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(_port);
-	server_addr.sin_addr.s_addr = INADDR_ANY;
-	if (bind(_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+	std::memset(&serverAddr, 0, sizeof(serverAddr));
+	portNum = std::atoi(_serverBlock.port.c_str());
+	if (_serverBlock.host == "0.0.0.0")
+	{
+		serverAddr.sin_family = AF_INET;
+		serverAddr.sin_port = htons(portNum);
+		serverAddr.sin_addr.s_addr = INADDR_ANY;
+	}
+	else
+	{
+		std::memset(&hints, 0, sizeof(hints));
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		if (getaddrinfo(_serverBlock.host.c_str(), _serverBlock.port.c_str(), &hints, &res) != 0)
+			throw std::runtime_error("Error: getaddinfo failed.");
+		serverAddr = *(struct sockaddr_in *)res->ai_addr;
+		freeaddrinfo(res);
+	}
+	if (bind(_fd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
 		throw std::runtime_error("Error: bind failed.");
 }
 
@@ -65,21 +86,21 @@ void	Server::createSocket()
 
 Server::Server() {}
 
-Server::Server(int port) :
+Server::Server(const Server_block& serverBlock) :
 	_fd(-1),
-	_port(port)
+	_serverBlock(serverBlock)
 {
 	createSocket();
-	bindToPort();
+	bindSocket();
 	startListening();
 }
 
-Server::Server(const Server &obj)
+Server::Server(const Server& obj)
 {
 	(void)obj;
 }
 
-Server& Server::operator=(const Server &obj) 
+Server& Server::operator=(const Server& obj) 
 {
 	(void)obj;
 	return (*this);

@@ -1,6 +1,7 @@
 #include "../../include/cgi/CGIHandler.hpp"
 
 #include <cctype>
+#include <cstddef>
 #include <cstring>
 #include <cstdlib>
 #include <fcntl.h>
@@ -8,16 +9,18 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 static const int	BUFFER_SIZE = 4096;
 
-CGIHandler::CGIHandler(const std::string &path, const std::string &method,
-						const std::string &queryString, const std::string &body,
-						const std::map<std::string, std::string> &headers) :
+CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, const std::string& method,
+						const std::string& queryString, const std::string& body,
+						const std::map<std::string, std::string>& headers) :
 	_pid(-1),
 	_done(false),
 	_error(false),
 	_scriptPath(path),
+	_interpreter(interpreter),
 	_method(method),
 	_queryString(queryString),
 	_body(body),
@@ -28,11 +31,11 @@ CGIHandler::CGIHandler(const std::string &path, const std::string &method,
 	buildEnv();
 }
 
-std::string	CGIHandler::getPathEnv() const
+const std::string	CGIHandler::getPathEnv() const
 {
 	for (int i=0; environ[i]; i++)
 	{
-		if (strncmp(environ[i], "PATH=", 5) == 0) // TODO: implement my strncmp
+		if (strncmp(environ[i], "PATH=", 5) == 0)
 			return std::string(environ[i] + 5);
 	}
 	return ("/usr/local/bin:/usr/bin:/bin");
@@ -49,7 +52,7 @@ void	CGIHandler::buildEnv()
 	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
 	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	_envStrings.push_back("REDIRECT_STATUS=200"); // for php-cgi bonus, need to remove it
+	_envStrings.push_back("REDIRECT_STATUS=200");
 	_envStrings.push_back("PATH=" + getPathEnv());
 	if (_method == "POST")
 	{
@@ -100,13 +103,13 @@ bool	CGIHandler::openPipes()
 	return (true);
 }
 
-void	CGIHandler::checkExistStatus()
+void	CGIHandler::checkExitStatus()
 {
 	int	status;
 
-	if (_pid > 0 && waitpid(_pid, &status, WNOHANG) > 0)
+	if (_pid > 0 && waitpid(_pid,& status, WNOHANG) > 0)
 	{
-		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+		if (WIFEXITED(status)&& WEXITSTATUS(status) != 0)
 			_error = true;
 		_pid = -1;
 	}
@@ -141,7 +144,7 @@ void	CGIHandler::readOutput()
 	{
 		_done = true;
 		closePipe(_pipeOut[0]);
-		checkExistStatus();
+		checkExitStatus();
 	}
 	else
 	{
@@ -150,7 +153,7 @@ void	CGIHandler::readOutput()
 	}
 }
 
-void	CGIHandler::closePipe(int &pipe)
+void	CGIHandler::closePipe(int& pipe)
 {
 	if (pipe != -1)
 	{
@@ -159,19 +162,11 @@ void	CGIHandler::closePipe(int &pipe)
 	}
 }
 
-std::string	CGIHandler::getExtension()
-{
-	size_t		dot;
-
-	dot = _scriptPath.find_last_of('.');
-	if (dot != std::string::npos)
-		return (_scriptPath.substr(dot));
-	return ("");
-}
-
 void	CGIHandler::runChild()
 {
-	char	*argv[3];
+	std::vector<char*>	argv;
+	std::size_t			slash;
+	const char*			bin;
 
 	closePipe(_pipeIn[1]);
 	closePipe(_pipeOut[0]);
@@ -181,20 +176,22 @@ void	CGIHandler::runChild()
 			exit(1);
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
-	// FIXME: i may need to change directory to script location before execve since its can be relative (working directly of the parent)
-	if (getExtension() == ".php") // FIXME: this is for bonus, i need to move it after
+	slash = _scriptPath.find_last_of('/');
+	if (slash != std::string::npos)
+		chdir(_scriptPath.substr(0, slash).c_str());
+	if (!_interpreter.empty())
 	{
-		argv[0] = const_cast<char *>("php-cgi");
-		argv[1] = const_cast<char *>(_scriptPath.c_str());
-		argv[2] = NULL;
-		execve("/usr/bin/php-cgi", argv, _envp.data()); // FIXME: maybe i will ask Simo to add cgi map with key=extension value=interpreter (build it from config file)
+		argv.push_back(const_cast<char*>(_interpreter.c_str()));
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
 	}
 	else
-	{
-		argv[0] = const_cast<char *>(_scriptPath.c_str());
-		argv[1] = NULL;
-		execve(_scriptPath.c_str(), argv, _envp.data());
-	}
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
+	argv.push_back(NULL);
+	if (_interpreter.empty())
+		bin = _scriptPath.c_str();
+	else
+		bin = _interpreter.c_str();
+	execve(bin, argv.data(), _envp.data());
 	exit(1);
 }
 
@@ -208,17 +205,19 @@ void	CGIHandler::runParent()
 	}
 }
 
-bool	CGIHandler::start()
+int	CGIHandler::start()
 {
-	if (access(_scriptPath.c_str(), F_OK | X_OK) == -1)
-		return (false);
+	if (access(_scriptPath.c_str(), F_OK) == -1)
+		return (404);
+	if (access(_scriptPath.c_str(), X_OK) == -1)
+		return (403);
 	if (!openPipes() || (_pid = fork()) == -1)
-		return (false);
+		return (500);
 	if (_pid == 0)
 		runChild();
 	else
 		runParent();
-	return (true);
+	return (200);
 }
 
 std::string	CGIHandler::getOutput() const
@@ -251,7 +250,7 @@ bool	CGIHandler::isError() const
 	return (_error);
 }
 
-void	CGIHandler::closeAllpipes()
+void	CGIHandler::closeAllPipes()
 {
 	closePipe(_pipeIn[0]);
 	closePipe(_pipeIn[1]);
@@ -266,7 +265,7 @@ void	CGIHandler::cleanup()
 		kill(_pid, SIGKILL);
 		waitpid(_pid, NULL, 0);
 		_pid = -1;
-		closeAllpipes();
+		closeAllPipes();
 	}
 }
 
@@ -274,5 +273,5 @@ CGIHandler::~CGIHandler()
 {
 	if (_pid > 0)
 		waitpid(_pid, NULL, 0);
-	closeAllpipes();
+	closeAllPipes();
 }

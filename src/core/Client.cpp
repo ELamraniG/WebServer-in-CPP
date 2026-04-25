@@ -5,8 +5,7 @@
 const int	Client::TIMEOUT = 55;
 const int	Client::BUFFER_SIZE = 4096;
 
-// TODO: need it only from check is it CGi or not, need to remove it after
-std::string &Client::getRequestBuffer()
+std::string& Client::getRequestBuffer()
 {
     return (_requestBuffer);
 }
@@ -21,7 +20,7 @@ bool	Client::hasNoPendingWrite() const
 	return (_responseBuffer.size() == 0);
 }
 
-void	Client::setResponse(const std::string &response)
+void	Client::setResponse(const std::string& response)
 {
 	_responseBuffer = response;
 }
@@ -77,12 +76,12 @@ Client::Client(int fd) :
 	_lastActivity(time(NULL))
 {}
 
-Client::Client(const Client &obj)
+Client::Client(const Client& obj)
 {
 	(void)obj;
 }
 
-Client& Client::operator=(const Client &obj) 
+Client& Client::operator=(const Client& obj) 
 {
 	(void)obj;
 	return (*this);
