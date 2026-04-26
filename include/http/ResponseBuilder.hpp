@@ -1,8 +1,9 @@
 #pragma once
 
-#include <string>
-
+#include "MethodHandler.hpp"
 #include "Response.hpp"
+#include "RouteConfig.hpp"
+#include <string>
 
 // Serialises a Response struct into the raw bytes that go on the wire.
 //
@@ -14,19 +15,21 @@
 //   \r\n
 //   <body>
 
-class ResponseBuilder {
-public:
-  ResponseBuilder();
+class ResponseBuilder
+{
+  public:
+	ResponseBuilder();
+	std::string buildCgiResponse(const Response &resp, std::string cgiResult,
+		RouteConfig &Route) const;
+	// Build the full HTTP response string ready for send()
+	std::string build(const Response &resp) const;
 
-  // Build the full HTTP response string ready for send()
-  std::string build(const Response &resp) const;
+	// Build an error response from just a status code
+	// (used by the server loop when MethodHandler isn't reached,
+	//  e.g. 400 Bad Request from the parser)
+	std::string buildError(int code) const;
 
-  // Build an error response from just a status code
-  // (used by the server loop when MethodHandler isn't reached,
-  //  e.g. 400 Bad Request from the parser)
-  std::string buildError(int code) const;
-
-private:
-  // Map a numeric status code to its reason phrase
-  static std::string reasonPhrase(int code);
+  private:
+	// Map a numeric status code to its reason phrase
+	static std::string reasonPhrase(int code);
 };
