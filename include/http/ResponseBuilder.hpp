@@ -19,7 +19,7 @@ class ResponseBuilder
 {
   public:
 	ResponseBuilder();
-	std::string buildCgiResponse(const Response &resp, std::string cgiResult,
+	std::string buildCgiResponse(std::string cgiResult,
 		RouteConfig &Route) const;
 	// Build the full HTTP response string ready for send()
 	std::string build(const Response &resp) const;

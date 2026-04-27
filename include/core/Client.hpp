@@ -26,8 +26,9 @@ class Client
 		Client(int fd);
 		~Client();
 
-		static const int TIMEOUT;
-		static const int BUFFER_SIZE;
+		HTTPRequest			httpReq;
+		static const int	TIMEOUT;
+		static const int	BUFFER_SIZE;
 
 		int				getFd() const;
 		ssize_t			readFromSocket();

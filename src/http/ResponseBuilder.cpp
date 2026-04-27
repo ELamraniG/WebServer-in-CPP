@@ -138,8 +138,7 @@ std::string ResponseBuilder::buildError(int code) const
 	return (build(resp));
 }
 
-std::string ResponseBuilder::buildCgiResponse(const Response &resp,
-	std::string cgiResult, RouteConfig &Route) const
+std::string ResponseBuilder::buildCgiResponse(std::string cgiResult, RouteConfig &Route) const
 {
 	std::ostringstream out;
 

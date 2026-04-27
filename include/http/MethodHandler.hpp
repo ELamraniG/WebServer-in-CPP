@@ -10,8 +10,8 @@ class MethodHandler {
 public:
   MethodHandler();
   static Response makeError(int code, const std::string &msg,const RouteConfig &route);
-  Response handleGET(const HTTPRequest &request, const RouteConfig &route);
-  Response handlePOST(const HTTPRequest &request, const RouteConfig &route);
-  Response handleDELETE(const HTTPRequest &request, const RouteConfig &route);
+  Response handleGET(HTTPRequest &request, const RouteConfig &route);
+  Response handlePOST(HTTPRequest &request, const RouteConfig &route);
+  Response handleDELETE(HTTPRequest &request, const RouteConfig &route);
   std::string getTheFileType(const std::string &path) const;
 };

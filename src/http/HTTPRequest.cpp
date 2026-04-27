@@ -36,7 +36,7 @@ parseCookiesFromHeader(const std::string &value,
 
 HTTPRequest::HTTPRequest()
     : method(""), uri(""), vers(""), body(""), queryString(""),
-      isComplete(false), isChunked(false), contentLength(0) {}
+      isComplete(false), isChunked(false), contentLength(0), isCGI(false) {}
 
 const std::string &HTTPRequest::getMethod() const { return method; }
 const std::string &HTTPRequest::getURI() const { return uri; }
@@ -63,11 +63,13 @@ std::string HTTPRequest::getCookie(const std::string &key) const {
 }
 bool HTTPRequest::isItCompleted() const { return isComplete; }
 bool HTTPRequest::isItChunked() const { return isChunked; }
+bool HTTPRequest::getIsCGI() const { return isCGI; }
 size_t HTTPRequest::getContentLength() const { return contentLength; }
 
 void HTTPRequest::setMethod(const std::string &method) {
   this->method = method;
 }
+void HTTPRequest::setIsCGI(bool value) { this->isCGI = value; }
 void HTTPRequest::setURI(const std::string &uri) { this->uri = uri; }
 void HTTPRequest::setVersion(const std::string &version) {
   this->vers = version;

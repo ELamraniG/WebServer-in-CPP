@@ -55,7 +55,7 @@ class EventLoop
 		void		handleCGIWrite(int writeFd, size_t& i);
 		bool		isCGITimeout(int fd) const;
 		void		handleCGITimeout(int fd, size_t& i);
-		void		handleRequestComplete(int fd, size_t& i, const HTTPRequest& req, const RouteConfig& routeConfig);
+		void		handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const RouteConfig& routeConfig);
 
 	public:
 		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);

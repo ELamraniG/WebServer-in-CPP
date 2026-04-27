@@ -16,6 +16,7 @@ private:
   bool isComplete;
   bool isChunked;
   size_t contentLength;
+  bool isCGI;
 
 public:
   HTTPRequest();
@@ -31,6 +32,7 @@ public:
 
   bool isItCompleted() const;
   bool isItChunked() const;
+  bool getIsCGI() const;
   size_t getContentLength() const;
 
   void setMethod(const std::string &method);
@@ -42,4 +44,5 @@ public:
   void setCompleted(bool complete);
   void setChunked(bool chunked);
   void setContentLength(size_t length);
+  void setIsCGI(bool value);
 };

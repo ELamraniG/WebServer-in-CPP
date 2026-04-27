@@ -60,6 +60,13 @@ int RouteConfig::getRedirectCode() const {
   return 0;
 }
 
+const std::string& RouteConfig::getLocationRoot() const {
+	static const std::string empty_str;
+	if (_location)
+		return _location->root;
+	return empty_str;
+}
+
 const std::string &RouteConfig::getUploadStore() const {
   static const std::string empty_str;
   if (_location)

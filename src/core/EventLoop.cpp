@@ -63,7 +63,7 @@ std::string	EventLoop::extractExtention(const std::string& uri)
 
 	dot = uri.find_last_of('.');
 	if (dot == std::string::npos)
-		return (NULL);
+		return ("");
 	extension = uri.substr(dot);
 	queryStartAt = extension.find('?');
 	if (queryStartAt != std::string::npos)
@@ -112,12 +112,12 @@ bool	EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std
 	root = route.getRoot();
 	locationPath = route.getLocationPath();
 	relativeUri = cleanUri;
-	if (!locationPath.empty() && cleanUri.compare(0, locationPath.size(), locationPath) == 0)
+	if (!route.getLocationRoot().empty() && !locationPath.empty() && cleanUri.compare(0, locationPath.size(), locationPath) == 0)
 		relativeUri = cleanUri.substr(locationPath.size());
 	if (!root.empty() && root[root.size() - 1] != '/' && !relativeUri.empty() && relativeUri[0] != '/')
 		root += '/';
 	scriptPath = root + relativeUri;
-	return (false);
+	return (true);
 }
 
 bool	EventLoop::startCGI(int clientFd, const HTTPRequest& req, const RouteConfig& route)
@@ -221,8 +221,10 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 
 void	EventLoop::handleCGIRead(int readFd, size_t& i)
 {
-	CGIHandler*	cgi;
-	Client*		client;
+	CGIHandler*		cgi;
+	Client*			client;
+	ResponseBuilder	build;
+	location_block*	locationBlock;
 
 	cgi	= _cgiFdToHandler[readFd];
 	client = _cgiFdToClient[readFd];
@@ -232,7 +234,12 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 		if (cgi->isError())
 			client->setResponse(builderErrorResponse(502));
 		else
-			client->setResponse("HTTP/1.0 200 OK\r\n" + cgi->getOutput()); // TODO: moel will need to write parseCGIOutput
+		{
+			Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
+			locationBlock = Router::match_location(client->httpReq, serverBlock);
+			RouteConfig	route(serverBlock, locationBlock);
+			client->setResponse(build.buildCgiResponse(cgi->getOutput(), route));
+		}
 		for (size_t j = 0; j < _pollFds.size(); j++)
 		{
 			if (_pollFds[j].fd == client->getFd())
@@ -249,34 +256,37 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 	}
 }
 
-void	EventLoop::handleRequestComplete(int fd, size_t& i, const HTTPRequest& req, const RouteConfig& route)
+void	EventLoop::handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const RouteConfig& route)
 {
-	MethodHandler								handler;
-	ResponseBuilder								responseBuilder;
-	Response									response;
-	std::string									method;
-	const std::map<std::string, std::string>&	cgiPass = route.getCgiPass();
+	MethodHandler	handler;
+	ResponseBuilder	responseBuilder;
+	std::string		method;
+	Client*			client;
+	Response		response;
 
-	if (isCGIRequest(req.getURI(), cgiPass))
+	client = _clientMap[fd];
+	method = req.getMethod();
+	if (method == "GET")
+		response = handler.handleGET(req, route);
+	else if (method == "POST")
+		response = handler.handlePOST(req, route);
+	else if (method == "DELETE")
+		response = handler.handleDELETE(req, route);
+	else
+		_clientMap[fd]->setResponse(builderErrorResponse(501));
+	if (req.getIsCGI())
 	{
 		if (startCGI(fd, req, route))
 			_pollFds[i].events = PAUSE;
 		else
+		{
 			_pollFds[i].events = POLLOUT;
+			client->setResponse(builderErrorResponse(500));
+		}
 	}
 	else
 	{
-		method = req.getMethod();
-		if (method == "GET")
-			response = handler.handleGET(req, route);
-		else if (method == "POST")
-			response = handler.handlePOST(req, route);
-		else if (method == "DELETE")
-			response = handler.handleDELETE(req, route);
-		else
-			_clientMap[fd]->setResponse(builderErrorResponse(501));
-		if (method == "GET" || method == "POST" || method == "DELETE")
-			_clientMap[fd]->setResponse(responseBuilder.build(response));
+		responseBuilder.build(response);
 		_pollFds[i].events = POLLOUT;
 	}
 	_clientMap[fd]->updateLastActivity();
@@ -287,7 +297,6 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 	ssize_t							bytes;
 	RequestParser					reqParser;
 	RequestParser::ParsingStatus	status;
-    HTTPRequest						httpReq;
 	location_block*					locationBlock;
 
 	if (isServer(fd))
@@ -303,7 +312,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 			handleClientDisconnected(fd, i, "Client disconnected");
 		else
 		{
-			status = reqParser.parseRequest(_clientMap[fd]->getRequestBuffer(), httpReq);
+			status = reqParser.parseRequest(_clientMap[fd]->getRequestBuffer(), _clientMap[fd]->httpReq);
 			if (status == RequestParser::P_INCOMPLETE)
 				return ;
 			if (status == RequestParser::P_ERROR)
@@ -312,14 +321,14 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 				_pollFds[i].events = POLLOUT;
 				return ;
 			}
-			Server_block& serverBlock = Router::match_server(httpReq, _serverBlocks);
-			locationBlock = Router::match_location(httpReq, serverBlock);
+			Server_block& serverBlock = Router::match_server(_clientMap[fd]->httpReq, _serverBlocks);
+			locationBlock = Router::match_location(_clientMap[fd]->httpReq, serverBlock);
 			RouteConfig	route(serverBlock, locationBlock);
-			handleRequestComplete(fd, i, httpReq, route);
+			handleRequestComplete(fd, i, _clientMap[fd]->httpReq, route);
 		}
 	}
 }
-
+// TODO: handle
 void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 {
 	CGIHandler*	cgi;

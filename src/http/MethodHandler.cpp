@@ -20,6 +20,22 @@ MethodHandler::MethodHandler() {}
 static std::map<std::string, std::string> AllSession;
 static unsigned long gSessionCounter = 0;
 
+std::string	extractExtention(const std::string& uri)
+{
+	size_t		dot;
+	size_t		queryStartAt;
+	std::string	extension;
+
+	dot = uri.find_last_of('.');
+	if (dot == std::string::npos)
+		return ("");
+	extension = uri.substr(dot);
+	queryStartAt = extension.find('?');
+	if (queryStartAt != std::string::npos)
+		extension = extension.substr(0, queryStartAt);
+	return (extension);
+}
+
 static std::string makeSessionId() {
   std::ostringstream SesId;
 
@@ -205,43 +221,15 @@ static Response makeRedirect(const std::string &location) {
   return resp;
 }
 
-static bool tryCGI(const HTTPRequest &request, const RouteConfig &route,
-                   Response &resp) {
-#ifdef HAVE_CGI
-  CGIHandler cgiHandler;
-  CGIResult cgiResult;
+static bool tryCGI(const HTTPRequest &request, const RouteConfig &route
+                   ) {
+	std::string	extension;
+	const std::map<std::string, std::string>& cgiPass = route.getCgiPass();
 
-  if (!cgiHandler.isCGIRequest(request.getURI(), route))
-    return false;
-  cgiResult = cgiHandler.execute(request, route);
-  if (!cgiResult.success) {
-    std::ostringstream errBody;
-    errBody << "<!DOCTYPE html>\n<html><body><h1>" << cgiResult.statusCode
-            << " CGI Error</h1><p>" << cgiResult.errorMessage
-            << "</p></body></html>\n";
-    resp.statusCode = cgiResult.statusCode;
-    resp.contentType = "text/html";
-    resp.body = errBody.str();
-    return true;
-  }
-  resp.statusCode = cgiResult.statusCode;
-  resp.body = cgiResult.body;
-  resp.headers = cgiResult.headers;
-  std::map<std::string, std::string>::const_iterator it =
-      cgiResult.headers.find("content-type");
-  if (it != cgiResult.headers.end()) {
-    resp.contentType = it->second;
-  } else {
-    resp.contentType = "text/html";
-  }
-  return true;
-#else
-  // CGI stub: Person 1 will enable this with -DHAVE_CGI
-  (void)request;
-  (void)route;
-  (void)resp;
-  return false;
-#endif
+	extension = extractExtention(request.getURI());
+	if (extension.empty() || cgiPass.empty())
+		return (false);
+	return (cgiPass.count(extension));
 }
 
 // sorted dirs and files
@@ -361,7 +349,7 @@ std::string MethodHandler::getTheFileType(const std::string &path) const {
 
 // check if allowed and safe > check if redirect > check if cgi > check if
 // directory > check if file
-Response MethodHandler::handleGET(const HTTPRequest &request,
+Response MethodHandler::handleGET(HTTPRequest &request,
                                   const RouteConfig &route) {
   Response resp;
   size_t queryPos;
@@ -373,8 +361,11 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
   if (!route.getRedirect().empty())
     return applySession(request, makeRedirect(route.getRedirect()));
   // check if the request in cgi file
-  if (tryCGI(request, route, resp))
-    return applySession(request, resp);
+  if (tryCGI(request, route))
+  {
+	request.setIsCGI(true);
+	return applySession(request, resp);
+  }
   std::string ourFilePath = makeThePath(route.getRoot(), request.getURI());
   // check if dir
   if (isDirectory(ourFilePath)) {
@@ -407,8 +398,11 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
         std::string indexedURI = justPath + indexFile + queryPart;
         indexReq = request;
         indexReq.setURI(indexedURI);
-        if (tryCGI(indexReq, route, resp))
-          return applySession(request, resp);
+        if (tryCGI(indexReq, route))
+		{
+			request.setIsCGI(true);
+			return applySession(request, resp);
+		}
         if (!isReadable(indexPath))
           return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
         std::string content;
@@ -451,7 +445,7 @@ Response MethodHandler::handleGET(const HTTPRequest &request,
   return applySession(request, resp);
 }
 
-Response MethodHandler::handlePOST(const HTTPRequest &request,
+Response MethodHandler::handlePOST(HTTPRequest &request,
                                    const RouteConfig &route) {
   Response resp;
   FileUpload uploader;
@@ -466,8 +460,11 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
   if (route.getMaxBodySize() > 0 &&
       request.getBody().size() > route.getMaxBodySize())
     return applySession(request,  MethodHandler::makeError(413, "Payload Too Large", route));
-  if (tryCGI(request, route, resp))
-    return applySession(request, resp);
+  if (tryCGI(request, route))
+  {
+	request.setIsCGI(true);
+	return applySession(request, resp);
+  }
   // multipart file upload
   std::string contentType = request.getHeader("content-type");
   if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -526,7 +523,7 @@ Response MethodHandler::handlePOST(const HTTPRequest &request,
   return applySession(request, resp);
 }
 
-Response MethodHandler::handleDELETE(const HTTPRequest &request,
+Response MethodHandler::handleDELETE(HTTPRequest &request,
                                      const RouteConfig &route) {
   Response resp;
   if (isSafeAndAllowed("DELETE", request, route, resp))
