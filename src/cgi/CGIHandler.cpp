@@ -170,82 +170,45 @@ void	CGIHandler::closePipe(int& pipe)
 	}
 }
 
-// void	CGIHandler::runChild()
-// {
-// 	std::vector<char*>	argv;
-// 	std::size_t			slash;
-// 	const char*			bin;
-
-// 	closePipe(_pipeIn[1]);
-// 	closePipe(_pipeOut[0]);
-// 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
-// 		exit(1);
-// 	if (_method == "POST" && (dup2(_pipeIn[0], STDIN_FILENO) == -1))
-// 			exit(1);
-// 	closePipe(_pipeOut[1]);
-// 	closePipe(_pipeIn[0]);
-// 	slash = _scriptPath.find_last_of('/');
-
-// 	if (slash != std::string::npos)
-// 		chdir(_scriptPath.substr(0, slash).c_str());
-// 	if (!_interpreter.empty())
-// 	{
-// 		argv.push_back(const_cast<char*>(_interpreter.c_str()));
-// 		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
-// 	}
-// 	else
-// 		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
-// 	argv.push_back(NULL);
-// 	if (_interpreter.empty())
-// 		bin = _scriptPath.c_str();
-// 	else
-// 		bin = _interpreter.c_str();
-// 	execve(bin, argv.data(), _envp.data());
-// 	exit(1);
-// }
-
-void CGIHandler::runChild()
+void	CGIHandler::runChild()
 {
-    std::vector<char*>  argv;
-    std::string         scriptDir;
-    std::string         scriptFile;
-    std::size_t         slash;
-    const char*         bin;
+	std::vector<char*>	argv;
+	std::string			scriptDir;
+	std::string			scriptFile;
+	std::size_t			slash;
+	const char*			bin;
 
-    closePipe(_pipeIn[1]);
-    closePipe(_pipeOut[0]);
-    if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
-        exit(1);
-    if (_method == "POST" && (dup2(_pipeIn[0], STDIN_FILENO) == -1))
-        exit(1);
-    closePipe(_pipeOut[1]);
-    closePipe(_pipeIn[0]);
-
-    slash = _scriptPath.find_last_of('/');
-    if (slash != std::string::npos)
-    {
-        scriptDir  = _scriptPath.substr(0, slash);
-        scriptFile = _scriptPath.substr(slash + 1);
-    }
-    else
-    {
-        scriptDir  = ".";
-        scriptFile = _scriptPath;
-    }
-    chdir(scriptDir.c_str());
-
-    if (!_interpreter.empty())
-    {
-        argv.push_back(const_cast<char*>(_interpreter.c_str()));
-        argv.push_back(const_cast<char*>(scriptFile.c_str()));
-    }
-    else
-        argv.push_back(const_cast<char*>(scriptFile.c_str()));
-    argv.push_back(NULL);
-
-    bin = _interpreter.empty() ? scriptFile.c_str() : _interpreter.c_str();
-    execve(bin, argv.data(), _envp.data());
-    exit(1);
+	closePipe(_pipeIn[1]);
+	closePipe(_pipeOut[0]);
+	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
+		exit(1);
+	if (_method == "POST" && (dup2(_pipeIn[0], STDIN_FILENO) == -1))
+		exit(1);
+	closePipe(_pipeOut[1]);
+	closePipe(_pipeIn[0]);
+	slash = _scriptPath.find_last_of('/');
+	if (slash != std::string::npos)
+	{
+		scriptDir  = _scriptPath.substr(0, slash);
+		scriptFile = _scriptPath.substr(slash + 1);
+	}
+	else
+	{
+		scriptDir  = ".";
+		scriptFile = _scriptPath;
+	}
+	chdir(scriptDir.c_str());
+	if (!_interpreter.empty())
+	{
+		argv.push_back(const_cast<char*>(_interpreter.c_str()));
+		argv.push_back(const_cast<char*>(scriptFile.c_str()));
+	}
+	else
+		argv.push_back(const_cast<char*>(scriptFile.c_str()));
+	argv.push_back(NULL);
+	bin = _interpreter.empty() ? scriptFile.c_str() : _interpreter.c_str();
+	execve(bin, argv.data(), _envp.data());
+	exit(1);
 }
 
 void	CGIHandler::runParent()

@@ -286,7 +286,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const
 	}
 	else
 	{
-		responseBuilder.build(response);
+		client->setResponse(responseBuilder.build(response));
 		_pollFds[i].events = POLLOUT;
 	}
 	_clientMap[fd]->updateLastActivity();
