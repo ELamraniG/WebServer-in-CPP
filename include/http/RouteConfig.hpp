@@ -54,7 +54,6 @@ public:
   // Get the matched location path (for logging/debugging)
   const std::string &getLocationPath() const;
 
-  const std::string& getLocationRoot() const;
 };
 
 #endif

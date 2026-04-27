@@ -112,7 +112,7 @@ bool	EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std
 	root = route.getRoot();
 	locationPath = route.getLocationPath();
 	relativeUri = cleanUri;
-	if (!route.getLocationRoot().empty() && !locationPath.empty() && cleanUri.compare(0, locationPath.size(), locationPath) == 0)
+	if (!locationPath.empty() && cleanUri.compare(0, locationPath.size(), locationPath) == 0)
 		relativeUri = cleanUri.substr(locationPath.size());
 	if (!root.empty() && root[root.size() - 1] != '/' && !relativeUri.empty() && relativeUri[0] != '/')
 		root += '/';
@@ -120,7 +120,7 @@ bool	EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std
 	return (true);
 }
 
-bool	EventLoop::startCGI(int clientFd, const HTTPRequest& req, const RouteConfig& route)
+bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 {
 	int			writeFd;
 	int			readFd;
@@ -128,7 +128,9 @@ bool	EventLoop::startCGI(int clientFd, const HTTPRequest& req, const RouteConfig
 	std::string	scriptPath;
 	std::string	interpreter;
 	int			code;
+	HTTPRequest	req;
 
+	req = _clientMap[clientFd]->httpReq;
 	if (!resolveCGI(req.getURI(), route, scriptPath, interpreter))
 		return (false);
 	cgi = new CGIHandler(scriptPath, interpreter, req.getMethod(),
@@ -202,12 +204,6 @@ void	EventLoop::handleClientDisconnected(int fd, size_t& i, const std::string& m
 
 void	EventLoop::handleCGITimeout(int fd, size_t& i)
 {
-	_cgiFdToHandler[fd]->cleanup();
-	_cgiFdToClient[fd]->setResponse(builderErrorResponse(504));
-	delete _cgiFdToHandler[fd];
-	_cgiFdToHandler.erase(fd);
-	_cgiStartTime.erase(fd);
-	removeFromPoll(i);
 	for (size_t j = 0; j < _pollFds.size(); j++)
 	{
 		if (_cgiFdToClient[fd]->getFd() == _pollFds[j].fd)
@@ -216,7 +212,13 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 			break ;
 		}
 	}
+	_cgiFdToHandler[fd]->cleanup();
+	_cgiFdToClient[fd]->setResponse(builderErrorResponse(504));
+	delete _cgiFdToHandler[fd];
+	_cgiFdToHandler.erase(fd);
+	_cgiStartTime.erase(fd);
 	_cgiFdToClient.erase(fd);
+	removeFromPoll(i);
 }
 
 void	EventLoop::handleCGIRead(int readFd, size_t& i)
@@ -256,7 +258,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 	}
 }
 
-void	EventLoop::handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const RouteConfig& route)
+void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& route)
 {
 	MethodHandler	handler;
 	ResponseBuilder	responseBuilder;
@@ -265,18 +267,18 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const
 	Response		response;
 
 	client = _clientMap[fd];
-	method = req.getMethod();
+	method = client->httpReq.getMethod();
 	if (method == "GET")
-		response = handler.handleGET(req, route);
+		response = handler.handleGET(client->httpReq, route);
 	else if (method == "POST")
-		response = handler.handlePOST(req, route);
+		response = handler.handlePOST(client->httpReq, route);
 	else if (method == "DELETE")
-		response = handler.handleDELETE(req, route);
+		response = handler.handleDELETE(client->httpReq, route);
 	else
 		_clientMap[fd]->setResponse(builderErrorResponse(501));
-	if (req.getIsCGI())
+	if (client->httpReq.getIsCGI())
 	{
-		if (startCGI(fd, req, route))
+		if (startCGI(fd, route))
 			_pollFds[i].events = PAUSE;
 		else
 		{
@@ -324,7 +326,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 			Server_block& serverBlock = Router::match_server(_clientMap[fd]->httpReq, _serverBlocks);
 			locationBlock = Router::match_location(_clientMap[fd]->httpReq, serverBlock);
 			RouteConfig	route(serverBlock, locationBlock);
-			handleRequestComplete(fd, i, _clientMap[fd]->httpReq, route);
+			handleRequestComplete(fd, i, route);
 		}
 	}
 }

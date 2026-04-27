@@ -50,12 +50,12 @@ class EventLoop
 		std::string	extractCleanUri(const std::string& uri);
 		bool		isCGIRequest(const std::string& uri, const std::map<std::string, std::string>& cgiPass);
 		bool		resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath, std::string& interpreter);
-		bool		startCGI(int clientFd, const HTTPRequest& req, const RouteConfig& route);
+		bool		startCGI(int clientFd, const RouteConfig& route);
 		void		handleCGIRead(int readFd, size_t& i);
 		void		handleCGIWrite(int writeFd, size_t& i);
 		bool		isCGITimeout(int fd) const;
 		void		handleCGITimeout(int fd, size_t& i);
-		void		handleRequestComplete(int fd, size_t& i, HTTPRequest& req, const RouteConfig& routeConfig);
+		void		handleRequestComplete(int fd, size_t& i, const RouteConfig& routeConfig);
 
 	public:
 		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);

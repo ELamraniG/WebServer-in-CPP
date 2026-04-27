@@ -19,7 +19,6 @@ class Client
 		int 		_fd;
 		std::string	_requestBuffer;
 		std::string	_responseBuffer;
-		HTTPRequest	_httpRequest;
 		time_t		_lastActivity;
 
 	public:
@@ -40,5 +39,4 @@ class Client
 		void			updateLastActivity();
 		void			setResponse(const std::string& response);
 		std::string&	getRequestBuffer();
-		HTTPRequest&	getHttpRequest();
 };

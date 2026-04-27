@@ -15,9 +15,10 @@ VAL			:=	valgrind --leak-check=full --track-fds=yes --show-reachable=yes
 # ------------ Paths ------------
 SRC_PATH	:=	src
 INC_PATH	:=	include
+OBJ_PATH	:=	.build
 
 CORE_PATH	:=	$(SRC_PATH)/core
-CGI_PATH 	:=	$(SRC_PATH)/cgi
+CGI_PATH	:=	$(SRC_PATH)/cgi
 CONFIG_PATH	:=	$(SRC_PATH)/config
 HTTP_PATH	:=	$(SRC_PATH)/http
 
@@ -26,12 +27,12 @@ CORE	:=	$(CORE_PATH)/Client.cpp \
 			$(CORE_PATH)/EventLoop.cpp \
 			$(CORE_PATH)/Server.cpp
 
-CGI	:=	$(CGI_PATH)/CGIHandler.cpp
+CGI		:=	$(CGI_PATH)/CGIHandler.cpp
 
 CONFIG	:=	$(CONFIG_PATH)/Tokenizer.cpp \
 			$(CONFIG_PATH)/Parser.cpp \
 			$(CONFIG_PATH)/Parser_helper.cpp \
-			$(CONFIG_PATH)/Server_block.cpp \
+			$(CONFIG_PATH)/Server_block.cpp
 
 HTTP	:=	$(HTTP_PATH)/HTTPRequest.cpp \
 			$(HTTP_PATH)/RequestParser.cpp \
@@ -43,14 +44,14 @@ HTTP	:=	$(HTTP_PATH)/HTTPRequest.cpp \
 			$(HTTP_PATH)/RouteConfig.cpp
 
 SRC		:=	$(CORE) $(CGI) $(CONFIG) $(HTTP) main.cpp
-OBJS	:=	$(SRC:.cpp=.o)
+OBJS	:=	$(addprefix $(OBJ_PATH)/, $(SRC:.cpp=.o))
 DEPS	:=	$(OBJS:.o=.d)
 
 # ------------ Rules ------------
 all: $(NAME)
 
-valgrind: $(NAME) clean
-	@printf "$(GREEN)  Execute with VALGRIND$(RESET)\n"
+valgrind: $(NAME)
+	@printf "$(GRN)  Execute with VALGRIND$(RESET)\n"
 	@$(VAL) ./$(NAME)
 
 $(NAME): $(OBJS)
@@ -58,13 +59,14 @@ $(NAME): $(OBJS)
 	@$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 	@printf "$(GRN)  Successfully built $(NAME)$(RESET)\n"
 
-%.o: %.cpp 
+$(OBJ_PATH)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	@printf "$(BLUE)  Compiling $<...$(RESET)\n"
 	@$(CXX) $(CXXFLAGS) -I$(INC_PATH) -c $< -o $@
 
 clean:
 	@printf "$(RED)  Cleaning object files...$(RESET)\n"
-	@$(RM) $(OBJS) $(DEPS)
+	@$(RM) $(OBJ_PATH)
 	@printf "$(GRN)  Object files removed$(RESET)\n"
 
 fclean: clean
@@ -73,8 +75,7 @@ fclean: clean
 	@printf "$(GRN)  Full cleanup complete$(RESET)\n"
 
 re: fclean all
-	@printf "$(YEL)  Rebuilding project...$(RESET)\n"
 
 -include $(DEPS)
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re valgrind

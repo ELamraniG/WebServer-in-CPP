@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <fcntl.h>
+#include <sstream>
 #include <string>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -46,12 +47,13 @@ void	CGIHandler::buildEnv()
 {
 	std::map<std::string, std::string>::const_iterator	it;
 	std::string											key;
+	std::ostringstream									oss;
 
 	_envStrings.push_back("REQUEST_METHOD=" + _method);
 	_envStrings.push_back("QUERY_STRING=" + _queryString);
 	_envStrings.push_back("SCRIPT_FILENAME=" + _scriptPath);
 	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
-	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
+	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_envStrings.push_back("REDIRECT_STATUS=200");
 	_envStrings.push_back("PATH=" + getPathEnv());
@@ -59,14 +61,17 @@ void	CGIHandler::buildEnv()
 	{
 		if (_headers.count("content-type"))
 			_envStrings.push_back("CONTENT_TYPE=" + _headers["content-type"]);
-		// if (_headers.count("transfer-encoding"))
-		// 	_envStrings.push_back("CONTENT_LENGTH=" + std::to_string(_body.size()));
-		if (_headers.count("content-length")) // FIXME: when its chunked, i need to count body size and pass it to content-length
-			_envStrings.push_back("CONTENT_LENGTH=" + _headers["content-length"]);
+		if (_headers.count("transfer-encoding"))
+		{
+			oss << _body.size();
+			_envStrings.push_back("CONTENT_LENGTH=" + oss.str());
+		}
+		else if (_headers.count("content-length"))
+			_envStrings.push_back("CONTENT_LENGTH=" +  _headers["content-length"]);
 	}
 	for (it = _headers.begin(); it != _headers.end(); it++)
 	{
-		if (it->first == "content-type" || it->first == "content-length")
+		if (it->first == "content-type" || it->first == "content-length" || it->first == "transfer-encoding")
 			continue ;
 		key = "HTTP_";
 		for (size_t i = 0; i < it->first.size(); i++)
@@ -170,43 +175,32 @@ void	CGIHandler::closePipe(int& pipe)
 	}
 }
 
-void	CGIHandler::runChild()
+void CGIHandler::runChild()
 {
 	std::vector<char*>	argv;
-	std::string			scriptDir;
-	std::string			scriptFile;
-	std::size_t			slash;
 	const char*			bin;
 
 	closePipe(_pipeIn[1]);
 	closePipe(_pipeOut[0]);
 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
 		exit(1);
-	if (_method == "POST" && (dup2(_pipeIn[0], STDIN_FILENO) == -1))
+	if (_method == "POST" && dup2(_pipeIn[0], STDIN_FILENO) == -1)
 		exit(1);
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
-	slash = _scriptPath.find_last_of('/');
-	if (slash != std::string::npos)
-	{
-		scriptDir  = _scriptPath.substr(0, slash);
-		scriptFile = _scriptPath.substr(slash + 1);
-	}
-	else
-	{
-		scriptDir  = ".";
-		scriptFile = _scriptPath;
-	}
-	chdir(scriptDir.c_str());
+
 	if (!_interpreter.empty())
 	{
 		argv.push_back(const_cast<char*>(_interpreter.c_str()));
-		argv.push_back(const_cast<char*>(scriptFile.c_str()));
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
+		bin = _interpreter.c_str();
 	}
 	else
-		argv.push_back(const_cast<char*>(scriptFile.c_str()));
+	{
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
+		bin = _scriptPath.c_str();
+	}
 	argv.push_back(NULL);
-	bin = _interpreter.empty() ? scriptFile.c_str() : _interpreter.c_str();
 	execve(bin, argv.data(), _envp.data());
 	exit(1);
 }
