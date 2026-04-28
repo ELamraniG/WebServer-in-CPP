@@ -320,7 +320,6 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 	ssize_t							bytes;
 	RequestParser					reqParser;
 	RequestParser::ParsingStatus	status;
-	location_block*					locationBlock;
 
 	if (isServer(fd))
 		handleNewClient(fd);
@@ -345,10 +344,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 				_pollFds[i].events = POLLOUT;
 				return ;
 			}
-			Server_block& serverBlock = Router::match_server(_clientMap[fd]->httpReq, _serverBlocks);
-			locationBlock = Router::match_location(_clientMap[fd]->httpReq, serverBlock);
-			RouteConfig	route(serverBlock, locationBlock);
-			handleRequestComplete(fd, i, route);
+			handleRequestComplete(fd, i, getRoute(_clientMap[fd]));
 		}
 	}
 }
