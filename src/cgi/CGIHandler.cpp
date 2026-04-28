@@ -1,4 +1,5 @@
 #include "../../include/cgi/CGIHandler.hpp"
+#include "../../include/core/ServerConstants.hpp"
 
 #include <cctype>
 #include <cstddef>
@@ -11,8 +12,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
-
-static const int	BUFFER_SIZE = 4096;
 
 CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, const std::string& method,
 						const std::string& queryString, const std::string& body,
@@ -214,19 +213,19 @@ void	CGIHandler::runParent()
 		writeBody();
 	}
 }
-int	CGIHandler::start()
+HttpStatus	CGIHandler::start()
 {
 	if (access(_scriptPath.c_str(), F_OK) == -1)
-		return (404);
+		return (HTTP_NOT_FOUND);
 	if (access(_scriptPath.c_str(), X_OK) == -1)
-		return (403);
+		return (HTTP_FORBIDDEN);
 	if (!openPipes() || (_pid = fork()) == -1)
-		return (500);
+		return (HTTP_INTERNAL_SERVER_ERROR);
 	if (_pid == 0)
 		runChild();
 	else
 		runParent();
-	return (200);
+	return (HTTP_OK);
 }
 
 std::string	CGIHandler::getOutput() const

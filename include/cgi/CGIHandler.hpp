@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../core/ServerConstants.hpp"
+
 #include <string>
 #include <map>
 #include <vector>
@@ -51,7 +53,7 @@ class CGIHandler
 					const std::map<std::string, std::string>& headers);
 		~CGIHandler();
 
-		int			start();
+		HttpStatus	start();
 		int			getReadFd() const;
 		int			getWriteFd() const;
 		int			getCode() const;

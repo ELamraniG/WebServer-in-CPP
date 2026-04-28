@@ -21,6 +21,7 @@ CORE_PATH	:=	$(SRC_PATH)/core
 CGI_PATH	:=	$(SRC_PATH)/cgi
 CONFIG_PATH	:=	$(SRC_PATH)/config
 HTTP_PATH	:=	$(SRC_PATH)/http
+LOGGER_PATH	:=	$(SRC_PATH)/logger
 
 # ------------ Sources ------------
 CORE	:=	$(CORE_PATH)/Client.cpp \
@@ -43,7 +44,9 @@ HTTP	:=	$(HTTP_PATH)/HTTPRequest.cpp \
 			$(HTTP_PATH)/Router.cpp \
 			$(HTTP_PATH)/RouteConfig.cpp
 
-SRC		:=	$(CORE) $(CGI) $(CONFIG) $(HTTP) main.cpp
+LOGGER	:=	$(LOGGER_PATH)/Logger.cpp \
+
+SRC		:=	$(CORE) $(CGI) $(CONFIG) $(HTTP) $(LOGGER) main.cpp
 OBJS	:=	$(addprefix $(OBJ_PATH)/, $(SRC:.cpp=.o))
 DEPS	:=	$(OBJS:.o=.d)
 

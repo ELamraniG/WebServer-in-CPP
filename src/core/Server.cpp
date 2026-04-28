@@ -1,10 +1,12 @@
 #include "../../include/core/Server.hpp"
+#include "../../include/logger/Logger.hpp"
 
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
-#include <iostream> // TODO: log instead of std::cerr
 #include <netdb.h>
+
+extern Logger	logger;
 
 int	Server::getFd() const
 {
@@ -37,7 +39,7 @@ void	Server::startListening() const
 {
 	if (listen(_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: listen failed.");
-	std::cout << "Server listening on port: " << _serverBlock.port << std::endl;
+	logger.serverStart(_serverBlock.host, _serverBlock.port, _fd);
 }
 
 void	Server::bindSocket()

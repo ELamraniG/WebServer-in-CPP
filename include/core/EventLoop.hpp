@@ -4,6 +4,7 @@
 #include "Server.hpp"
 #include "../cgi/CGIHandler.hpp"
 #include "../http/RouteConfig.hpp"
+#include "../core/ServerConstants.hpp"
 
 #include <ctime>
 #include <map>
@@ -12,10 +13,6 @@
 #include <cstddef>
 #include <cstring>
 #include <sys/poll.h>
-
-const bool	VERBOSE = true;
-const int	BUFFER_SIZE = 4096;
-const int	PAUSE = 0;
 
 class EventLoop
 {
@@ -36,14 +33,13 @@ class EventLoop
 		void		addToPoll(int fd, short event);
 		void		removeFromPoll(size_t& i);
 		void		handleNewClient(int fd);
-		void		handleClientDisconnected(int fd, size_t& i, const std::string& msg);
+		void		handleClientDisconnected(int fd, size_t& i, HttpStatus code);
 		void		handleReadEvent(int fd, size_t& i);
 		void		handleWriteEvent(int fd, size_t& i);
 		bool		isTimeout(int fd);
 		bool		isError(int fd, short revents) const;
 		bool		isServer(int fd) const;
 		void		handleError();
-		void		logEvent(const std::string msg) const;
 		bool		isReadable(const short revents) const;
 		bool		isWritable(const short revents) const;
 		std::string	extractExtention(const std::string& uri);
@@ -61,8 +57,5 @@ class EventLoop
 		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);
 		~EventLoop();
 
-		static const int	POLL_TIMEOUT;
-		static const int	CGI_TIMEOUT;
-
-		void				run();
+		void	run();
 };

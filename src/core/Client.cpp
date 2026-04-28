@@ -1,9 +1,7 @@
 #include "../../include/core/Client.hpp"
+#include "../../include/core/ServerConstants.hpp"
 
 #include <cstddef>
-
-const int	Client::TIMEOUT = 55;
-const int	Client::BUFFER_SIZE = 4096;
 
 std::string& Client::getRequestBuffer()
 {
