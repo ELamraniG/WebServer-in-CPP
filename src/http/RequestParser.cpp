@@ -121,7 +121,7 @@ bool RequestParser::parseFirstLine(const std::string &one_line,
     return false;
 
   // invalide hhtp v
-  if (version != "HTTP/1.0" && version != "HTTP/1.1")
+  if (version != "HTTP/1.0")
     return false;
 
   // parse the query string : ?lopo=lapa

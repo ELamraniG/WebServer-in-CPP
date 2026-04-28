@@ -20,12 +20,10 @@ std::string	builderResponse(HttpStatus code, const RouteConfig& route)
 	return (builder.build(MethodHandler::makeError(code, "Error", route)));
 }
 
-RouteConfig	EventLoop::getRoute(int fd)
+RouteConfig	EventLoop::getRoute(const Client* client)
 {
 	location_block*	locationBlock;
-	Client			*client;
 
-	client = _cgiFdToClient[fd];
 	Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
 	locationBlock = Router::match_location(client->httpReq, serverBlock);
 	RouteConfig	route(serverBlock, locationBlock);
@@ -225,7 +223,7 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 		}
 	}
 	_cgiFdToHandler[fd]->cleanup();
-	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, getRoute(fd)));
+	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, getRoute(_cgiFdToClient[fd])));
 	delete _cgiFdToHandler[fd];
 	_cgiFdToHandler.erase(fd);
 	_cgiStartTime.erase(fd);
@@ -343,7 +341,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 			if (status == RequestParser::P_ERROR)
 			{
 				logger.error("BAD REQUEST");
-				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, getRoute(fd)));
+				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, getRoute(_clientMap[fd])));
 				_pollFds[i].events = POLLOUT;
 				return ;
 			}
@@ -365,7 +363,7 @@ void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 		if (cgi->isError())
 		{
 			logger.error("INTERNAL_SERVER_ERROR");
-			_cgiFdToClient[writeFd]->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, getRoute(_cgiFdToClient[writeFd]->getFd())));
+			_cgiFdToClient[writeFd]->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, getRoute(_cgiFdToClient[writeFd])));
 		}
 		_cgiFdToHandler.erase(writeFd);
 		_cgiFdToClient.erase(writeFd);
