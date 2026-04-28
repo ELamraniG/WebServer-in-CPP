@@ -181,6 +181,22 @@ void	EventLoop::removeFromPoll(size_t &i)
 		i--;
 }
 
+void	EventLoop::cleanupCGIWriteFd(int writeFd)
+{
+	if (writeFd == -1)
+		return ;
+	for (size_t j = 0; j < _pollFds.size(); j++)
+	{
+		if (_pollFds[j].fd == writeFd)
+		{
+			_pollFds.erase(_pollFds.begin() + j);
+			break ;
+		}
+	}
+	_cgiFdToHandler.erase(writeFd);
+	_cgiFdToClient.erase(writeFd);
+}
+
 void	EventLoop::handleNewClient(int serverFd)
 {
 	int		clientFd;
@@ -213,6 +229,9 @@ void	EventLoop::handleClientDisconnected(int fd, size_t& i, HttpStatus code)
 
 void	EventLoop::handleCGITimeout(int fd, size_t& i)
 {
+	int	writeFd;
+
+	writeFd	= _cgiFdToHandler[fd]->getWriteFd();
 	logger.cgiTimeout(_cgiFdToClient[fd]->getFd(), _cgiFdToClient[fd]->httpReq.getURI());
 	for (size_t j = 0; j < _pollFds.size(); j++)
 	{
@@ -223,6 +242,7 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 		}
 	}
 	_cgiFdToHandler[fd]->cleanup();
+	cleanupCGIWriteFd(writeFd);
 	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, getRoute(_cgiFdToClient[fd])));
 	delete _cgiFdToHandler[fd];
 	_cgiFdToHandler.erase(fd);
@@ -236,16 +256,15 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 	CGIHandler*		cgi;
 	Client*			client;
 	ResponseBuilder	build;
-	location_block*	locationBlock;
-
-	cgi	= _cgiFdToHandler[readFd];
+	int				writeFd;
+	
 	client = _cgiFdToClient[readFd];
+	RouteConfig		route = getRoute(client);
+	cgi	= _cgiFdToHandler[readFd];
+	writeFd	= cgi->getWriteFd();
 	cgi->readOutput();
 	if (cgi->isDone() || cgi->isError())
 	{
-		Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
-		locationBlock = Router::match_location(client->httpReq, serverBlock);
-		RouteConfig	route(serverBlock, locationBlock);
 		if (cgi->isError())
 		{
 			logger.cgiError(readFd, client->httpReq.getURI(), HTTP_INTERNAL_SERVER_ERROR);
@@ -264,6 +283,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 				break ;
 			}
 		}
+		cleanupCGIWriteFd(writeFd);
 		removeFromPoll(i);
 		delete cgi;
 		_cgiFdToHandler.erase(readFd);
