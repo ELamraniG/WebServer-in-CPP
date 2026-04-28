@@ -1,0 +1,9 @@
+stringbuilder is mutable
+
+string is immutable
+
+Adds n spaces to the beginning of each line
+Adds a newline \n at the end if one is missing
+If n is negative, it removes up to n spaces from the beginning
+
+date are ummutable, 

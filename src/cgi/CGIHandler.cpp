@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+#include <signal.h>
 
 CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, const std::string& method,
 						const std::string& queryString, const std::string& body,
