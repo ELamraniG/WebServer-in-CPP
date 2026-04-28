@@ -291,7 +291,13 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 	else if (method == "DELETE")
 		response = handler.handleDELETE(client->httpReq, route);
 	else
+	{
+		logger.error("Not Implemented");
 		_clientMap[fd]->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, route));
+		_pollFds[i].events = POLLOUT;
+		_clientMap[fd]->updateLastActivity();
+		return ;
+	}
 	if (client->httpReq.getIsCGI())
 	{
 		if (startCGI(fd, route))
