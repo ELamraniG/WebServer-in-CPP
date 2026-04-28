@@ -3,10 +3,7 @@
 RouteConfig::RouteConfig(const Server_block &s, const location_block *l)
     : _server(s), _location(l), _cache_valid(false) {}
 
-// Root: location overrides server if it set one.
-// Subject example: URL /kapouet rooted to /tmp/www ; URL /kapouet/pouic/toto
-// searches /tmp/www/pouic/toto. Callers achieve this by computing
-//     file_path = getRoot() + (uri.substr(getLocationPath().length()))
+
 const std::string &RouteConfig::getRoot() const {
   if (_location && !_location->root.empty())
     return _location->root;
@@ -36,12 +33,7 @@ const std::vector<std::string> &RouteConfig::getAllowedMethods() const {
           _allowed_methods_cache.push_back(it->first);
       }
     }
-    // Contract: if no allowed_methods directive was given in the config for
-    // this location, the cache stays empty. Your request handler must decide
-    // whether that means "allow all" (NGINX default) or "deny all". The
-    // evaluation sheet explicitly tests rejecting DELETE without permission,
-    // so make sure your config always sets allowed_methods for routes where
-    // you care.
+
     _cache_valid = true;
   }
   return _allowed_methods_cache;

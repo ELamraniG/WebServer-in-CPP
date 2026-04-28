@@ -52,6 +52,7 @@ class EventLoop
 		bool		isCGITimeout(int fd) const;
 		void		handleCGITimeout(int fd, size_t& i);
 		void		handleRequestComplete(int fd, size_t& i, const RouteConfig& routeConfig);
+		RouteConfig	getRoute(int fd);
 
 	public:
 		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);

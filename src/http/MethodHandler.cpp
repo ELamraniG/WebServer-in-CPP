@@ -1,7 +1,4 @@
 #include "../../include/http/MethodHandler.hpp"
-#ifdef HAVE_CGI
-#include "../../include/http/CGIHandler.hpp"
-#endif
 #include "../../include/http/FileUpload.hpp"
 #include "../../include/http/RouteConfig.hpp"
 #include <algorithm>
@@ -20,20 +17,19 @@ MethodHandler::MethodHandler() {}
 static std::map<std::string, std::string> AllSession;
 static unsigned long gSessionCounter = 0;
 
-std::string	extractExtention(const std::string& uri)
-{
-	size_t		dot;
-	size_t		queryStartAt;
-	std::string	extension;
+std::string extractExtention(const std::string &uri) {
+  size_t dot;
+  size_t queryStartAt;
+  std::string extension;
 
-	dot = uri.find_last_of('.');
-	if (dot == std::string::npos)
-		return ("");
-	extension = uri.substr(dot);
-	queryStartAt = extension.find('?');
-	if (queryStartAt != std::string::npos)
-		extension = extension.substr(0, queryStartAt);
-	return (extension);
+  dot = uri.find_last_of('.');
+  if (dot == std::string::npos)
+    return ("");
+  extension = uri.substr(dot);
+  queryStartAt = extension.find('?');
+  if (queryStartAt != std::string::npos)
+    extension = extension.substr(0, queryStartAt);
+  return (extension);
 }
 
 static std::string makeSessionId() {
@@ -56,8 +52,14 @@ static void ensureSession(const HTTPRequest &request, Response &resp) {
   while (AllSession.find(newSessionId) != AllSession.end())
     newSessionId = makeSessionId();
   AllSession[newSessionId] = "";
-  if (resp.headers.find("Set-Cookie") == resp.headers.end())
-    resp.headers["Set-Cookie"] = "SESSION_ID=" + newSessionId;
+  if (resp.headers.find("Set-Cookie") == resp.headers.end()) {
+    resp.headers["Set-Cookie"] =
+        "SESSION_ID=" + newSessionId +
+        "; Path=/\r\n"
+        "Set-Cookie: member1=ELAMRANI; Path=/; Max-Age=31536000\r\n"
+        "Set-Cookie: member2=REDA; Path=/; Max-Age=31536000\r\n"
+        "Set-Cookie: member3=SIMO; Path=/; Max-Age=31536000";
+  }
 }
 
 static Response applySession(const HTTPRequest &request, Response resp) {
@@ -165,8 +167,8 @@ static bool canDeletePath(const std::string &path) {
   return (access(parent.c_str(), W_OK | X_OK) == 0);
 }
 
- Response MethodHandler::makeError(int code, const std::string &msg,
-                          const RouteConfig &route) {
+Response MethodHandler::makeError(int code, const std::string &msg,
+                                  const RouteConfig &route) {
   Response resp;
 
   resp.statusCode = code;
@@ -200,11 +202,11 @@ static bool isSafeAndAllowed(const std::string &method,
                              const HTTPRequest &request,
                              const RouteConfig &route, Response &resp) {
   if (!isAllowed(method, route)) {
-    resp =  MethodHandler::makeError(405, "Method Not Allowed", route);
+    resp = MethodHandler::makeError(405, "Method Not Allowed", route);
     return true;
   }
   if (isItUnsafe(request.getURI())) {
-    resp =  MethodHandler::makeError(403, "Forbidden", route);
+    resp = MethodHandler::makeError(403, "Forbidden", route);
     return true;
   }
   return false;
@@ -221,15 +223,14 @@ static Response makeRedirect(const std::string &location) {
   return resp;
 }
 
-static bool tryCGI(const HTTPRequest &request, const RouteConfig &route
-                   ) {
-	std::string	extension;
-	const std::map<std::string, std::string>& cgiPass = route.getCgiPass();
+static bool tryCGI(const HTTPRequest &request, const RouteConfig &route) {
+  std::string extension;
+  const std::map<std::string, std::string> &cgiPass = route.getCgiPass();
 
-	extension = extractExtention(request.getURI());
-	if (extension.empty() || cgiPass.empty())
-		return (false);
-	return (cgiPass.count(extension));
+  extension = extractExtention(request.getURI());
+  if (extension.empty() || cgiPass.empty())
+    return (false);
+  return (cgiPass.count(extension));
 }
 
 // sorted dirs and files
@@ -361,10 +362,9 @@ Response MethodHandler::handleGET(HTTPRequest &request,
   if (!route.getRedirect().empty())
     return applySession(request, makeRedirect(route.getRedirect()));
   // check if the request in cgi file
-  if (tryCGI(request, route))
-  {
-	request.setIsCGI(true);
-	return applySession(request, resp);
+  if (tryCGI(request, route)) {
+    request.setIsCGI(true);
+    return applySession(request, resp);
   }
   std::string ourFilePath = makeThePath(route.getRoot(), request.getURI());
   // check if dir
@@ -398,17 +398,18 @@ Response MethodHandler::handleGET(HTTPRequest &request,
         std::string indexedURI = justPath + indexFile + queryPart;
         indexReq = request;
         indexReq.setURI(indexedURI);
-        if (tryCGI(indexReq, route))
-		{
-			request.setIsCGI(true);
-			return applySession(request, resp);
-		}
+        if (tryCGI(indexReq, route)) {
+          request.setIsCGI(true);
+          return applySession(request, resp);
+        }
         if (!isReadable(indexPath))
-          return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
+          return applySession(
+              request, MethodHandler::makeError(403, "Forbidden", route));
         std::string content;
         if (!readFileContent(indexPath, content))
-          return applySession(request,
-                               MethodHandler::makeError(500, "Internal Server Error", route));
+          return applySession(
+              request,
+              MethodHandler::makeError(500, "Internal Server Error", route));
         resp.statusCode = 200;
         resp.contentType = getTheFileType(indexPath);
         resp.body = content;
@@ -420,25 +421,28 @@ Response MethodHandler::handleGET(HTTPRequest &request,
       std::string listing =
           buildAutoindex(ourFilePath, RemoveQueryString(request.getURI()));
       if (listing.empty())
-        return applySession(request,
-                             MethodHandler::makeError(500, "Internal Server Error", route));
+        return applySession(request, MethodHandler::makeError(
+                                         500, "Internal Server Error", route));
       resp.statusCode = 200;
       resp.contentType = "text/html";
       resp.body = listing;
       return applySession(request, resp);
     }
     // no index no autoindex
-    return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request,
+                        MethodHandler::makeError(403, "Forbidden", route));
   }
   // neither dir or a file
   if (!fileExists(ourFilePath))
-    return applySession(request,  MethodHandler::makeError(404, "Not Found", route));
+    return applySession(request,
+                        MethodHandler::makeError(404, "Not Found", route));
   if (!isReadable(ourFilePath))
-    return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request,
+                        MethodHandler::makeError(403, "Forbidden", route));
   std::string content;
   if (!readFileContent(ourFilePath, content))
-    return applySession(request,
-                         MethodHandler::makeError(500, "Internal Server Error", route));
+    return applySession(
+        request, MethodHandler::makeError(500, "Internal Server Error", route));
   resp.statusCode = 200;
   resp.contentType = getTheFileType(ourFilePath);
   resp.body = content;
@@ -459,30 +463,31 @@ Response MethodHandler::handlePOST(HTTPRequest &request,
   // body size bigger than config file max body
   if (route.getMaxBodySize() > 0 &&
       request.getBody().size() > route.getMaxBodySize())
-    return applySession(request,  MethodHandler::makeError(413, "Payload Too Large", route));
-  if (tryCGI(request, route))
-  {
-	request.setIsCGI(true);
-	return applySession(request, resp);
+    return applySession(
+        request, MethodHandler::makeError(413, "Payload Too Large", route));
+  if (tryCGI(request, route)) {
+    request.setIsCGI(true);
+    return applySession(request, resp);
   }
   // multipart file upload
   std::string contentType = request.getHeader("content-type");
   if (contentType.find("multipart/form-data") != std::string::npos) {
     FileData file;
     if (!uploader.parseTheThing(request, file))
-      return applySession(request,  MethodHandler::makeError(400, "Bad Request", route));
+      return applySession(request,
+                          MethodHandler::makeError(400, "Bad Request", route));
     std::string uploadDir = route.getUploadStore();
     if (uploadDir.empty()) {
       std::cerr << "MethodHandler: no upload directory configured\n";
-      return applySession(request,
-                           MethodHandler::makeError(500, "Internal Server Error", route));
+      return applySession(request, MethodHandler::makeError(
+                                       500, "Internal Server Error", route));
     }
     // upload directory exists
     if (!fileExists(uploadDir) || !isDirectory(uploadDir)) {
       std::cerr << "MethodHandler: upload directory missing: " << uploadDir
                 << "\n";
-      return applySession(request,
-                           MethodHandler::makeError(500, "Internal Server Error", route));
+      return applySession(request, MethodHandler::makeError(
+                                       500, "Internal Server Error", route));
     }
 
     std::ostringstream res;
@@ -533,19 +538,22 @@ Response MethodHandler::handleDELETE(HTTPRequest &request,
 
   // if dir, not allowed
   if (isDirectory(ourFilePath))
-    return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request,
+                        MethodHandler::makeError(403, "Forbidden", route));
 
   // file doesnt exxists
   if (!fileExists(ourFilePath))
-    return applySession(request,  MethodHandler::makeError(404, "Not Found", route));
+    return applySession(request,
+                        MethodHandler::makeError(404, "Not Found", route));
   // is it possible to delete it
   if (!canDeletePath(ourFilePath))
-    return applySession(request,  MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request,
+                        MethodHandler::makeError(403, "Forbidden", route));
 
   if (std::remove(ourFilePath.c_str()) != 0) {
     std::cerr << "MethodHandler: failed to delete: " << ourFilePath << "\n";
-    return applySession(request,
-                         MethodHandler::makeError(500, "Internal Server Error", route));
+    return applySession(
+        request, MethodHandler::makeError(500, "Internal Server Error", route));
   }
 
   // 204 No Content – no body, no content-type

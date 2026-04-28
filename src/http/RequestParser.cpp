@@ -1,47 +1,7 @@
 #include "../../include/http/RequestParser.hpp"
 #include <cstdlib>
 #include <sstream>
-/*
-  RAW HTTP REQUEST FORMAT:
 
-  Complete example of what arrives on the socket (as raw bytes):
-
-  GET /search?q=hello&lang=en HTTP/1.1\r\n
-  Host: example.com\r\n
-  Content-Length: 13\r\n
-  Content-Type: application/json\r\n
-  \r\n
-  {"data":"ok"}
-
-  PARSING BREAKDOWN:
-
-  1. REQUEST LINE (split by spaces, ends with \r\n)
-     GET /search?q=hello&lang=en HTTP/1.1\r\n
-     ├─ METHOD: "GET"
-     ├─ URI: "/search?q=hello&lang=en"
-     │  ├─ Path (before ?): "/search"
-     │  └─ Query String (after ?): "q=hello&lang=en"
-     └─ VERSION: "HTTP/1.1"
-
-  2. HEADERS (each line: KEY: VALUE\r\n, until \r\n\r\n)
-     Host: example.com\r\n
-     Content-Length: 13\r\n
-     Content-Type: application/json\r\n
-     ├─ host: "example.com"
-     ├─ content-length: "13"
-     └─ content-type: "application/json"
-
-  3. BLANK LINE (\r\n\r\n marks end of headers)
-
-  4. BODY (13 bytes based on Content-Length)
-     {"data":"ok"}
-
-  OFFSETS IN RAW BYTES:
-  - Position 0-44: "GET /search?q=hello&lang=en HTTP/1.1\r\n"
-  - Position 44-64: Headers
-  - Position ~87-89: "\r\n\r\n"
-  - Position ~91+: Body starts
-*/
 RequestParser::RequestParser() {}
 
 static std::string strTrim(const std::string &s) {
@@ -69,8 +29,9 @@ RequestParser::parseRequest(const std::string &rawBytes, HTTPRequest &request) {
 
   // get the requestline
   std::string requestLine = rawBytes.substr(0, firstLineEnd);
-  if (!parseFirstLine(requestLine, request))
+  if (!parseFirstLine(requestLine, request)) {
     return P_ERROR;
+  }
 
   // look for /r/n/r/n end of the headers
   size_t headersEnd = rawBytes.find("\r\n\r\n");
@@ -129,6 +90,25 @@ RequestParser::parseRequest(const std::string &rawBytes, HTTPRequest &request) {
   return P_SUCCESS;
 }
 
+static std::string urlDecode(const std::string &str) {
+  std::string result;
+  for (size_t i = 0; i < str.length(); ++i) {
+    if (str[i] == '%' && i + 2 < str.length()) {
+      std::string hexStr = str.substr(i + 1, 2);
+      char *tmp = NULL;
+      long val = std::strtol(hexStr.c_str(), &tmp, 16);
+      if (*tmp == '\0') {
+        result += static_cast<char>(val);
+        i += 2;
+      } else {
+        result += str[i];
+      }
+    } else 
+      result += str[i];
+  }
+  return result;
+}
+
 bool RequestParser::parseFirstLine(const std::string &one_line,
                                    HTTPRequest &request) {
   std::istringstream iss(one_line);
@@ -138,9 +118,6 @@ bool RequestParser::parseFirstLine(const std::string &one_line,
   // if there is more than get | index | http
   std::string extra;
   if (iss >> extra)
-    return false;
-  // invalide method
-  if (method != "GET" && method != "POST" && method != "DELETE")
     return false;
 
   // invalide hhtp v
@@ -154,6 +131,8 @@ bool RequestParser::parseFirstLine(const std::string &one_line,
     request.setQueryString(uri.substr(stifhamPos + 1));
     uri = uri.substr(0, stifhamPos);
   }
+
+  uri = urlDecode(uri);
 
   request.setMethod(method);
   request.setURI(uri);
@@ -183,7 +162,7 @@ bool RequestParser::parseHeaders(const std::string &theHeader,
     size_t posOfDots = line.find(':');
     if (posOfDots == std::string::npos)
       return false;
-    
+
     std::string key = strTrim(line.substr(0, posOfDots));
     std::string value = strTrim(line.substr(posOfDots + 1));
 

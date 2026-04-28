@@ -13,11 +13,23 @@
 extern		bool g_running;
 Logger		logger;
 
-std::string	builderErrorResponse(HttpStatus code)
+std::string	builderResponse(HttpStatus code, const RouteConfig& route)
 {
 	ResponseBuilder	builder;
 
-	return (builder.buildError(code));
+	return (builder.build(MethodHandler::makeError(code, "Error", route)));
+}
+
+RouteConfig	EventLoop::getRoute(int fd)
+{
+	location_block*	locationBlock;
+	Client			*client;
+
+	client = _cgiFdToClient[fd];
+	Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
+	locationBlock = Router::match_location(client->httpReq, serverBlock);
+	RouteConfig	route(serverBlock, locationBlock);
+	return (route);
 }
 
 bool	EventLoop::isServer(int fd) const
@@ -135,7 +147,7 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	if (code != HTTP_OK)
 	{
 		logger.cgiError(clientFd, scriptPath, code);
-		_clientMap[clientFd]->setResponse(builderErrorResponse(code));
+		_clientMap[clientFd]->setResponse(builderResponse(code, route));
 		delete cgi;
 		return (false);
 	}
@@ -213,7 +225,7 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 		}
 	}
 	_cgiFdToHandler[fd]->cleanup();
-	_cgiFdToClient[fd]->setResponse(builderErrorResponse(HTTP_GATEWAY_TIMEOUT));
+	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, getRoute(fd)));
 	delete _cgiFdToHandler[fd];
 	_cgiFdToHandler.erase(fd);
 	_cgiStartTime.erase(fd);
@@ -233,17 +245,17 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 	cgi->readOutput();
 	if (cgi->isDone() || cgi->isError())
 	{
+		Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
+		locationBlock = Router::match_location(client->httpReq, serverBlock);
+		RouteConfig	route(serverBlock, locationBlock);
 		if (cgi->isError())
 		{
 			logger.cgiError(readFd, client->httpReq.getURI(), HTTP_INTERNAL_SERVER_ERROR);
-			client->setResponse(builderErrorResponse(HTTP_INTERNAL_SERVER_ERROR));
+			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, route));
 		}
 		else
 		{
 			logger.cgiDone(client->getFd(), client->httpReq.getURI(), HTTP_OK);
-			Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
-			locationBlock = Router::match_location(client->httpReq, serverBlock);
-			RouteConfig	route(serverBlock, locationBlock);
 			client->setResponse(build.buildCgiResponse(cgi->getOutput(), route));
 		}
 		for (size_t j = 0; j < _pollFds.size(); j++)
@@ -279,7 +291,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 	else if (method == "DELETE")
 		response = handler.handleDELETE(client->httpReq, route);
 	else
-		_clientMap[fd]->setResponse(builderErrorResponse(HTTP_NOT_IMPLEMENTED));
+		_clientMap[fd]->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, route));
 	if (client->httpReq.getIsCGI())
 	{
 		if (startCGI(fd, route))
@@ -288,7 +300,6 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 		{
 			logger.error("INTERNAL_SERVER_ERROR");
 			_pollFds[i].events = POLLOUT;
-			client->setResponse(builderErrorResponse(HTTP_INTERNAL_SERVER_ERROR));
 		}
 	}
 	else
@@ -326,7 +337,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 			if (status == RequestParser::P_ERROR)
 			{
 				logger.error("BAD REQUEST");
-				_clientMap[fd]->setResponse(builderErrorResponse(HTTP_BAD_REQUEST));
+				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, getRoute(fd)));
 				_pollFds[i].events = POLLOUT;
 				return ;
 			}
@@ -348,7 +359,7 @@ void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 		if (cgi->isError())
 		{
 			logger.error("INTERNAL_SERVER_ERROR");
-			_cgiFdToClient[writeFd]->setResponse(builderErrorResponse(HTTP_INTERNAL_SERVER_ERROR));
+			_cgiFdToClient[writeFd]->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, getRoute(_cgiFdToClient[writeFd]->getFd())));
 		}
 		_cgiFdToHandler.erase(writeFd);
 		_cgiFdToClient.erase(writeFd);

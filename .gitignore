@@ -1,0 +1,19 @@
+# Build artifacts
+.build/
+webserv
+*.o
+*.d
+
+# Runtime / generated
+webserv.log
+test_results.txt
+
+# OS junk
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/

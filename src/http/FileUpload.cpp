@@ -8,17 +8,13 @@
 
 FileUpload::FileUpload() {}
 
-// ---------------------------------------------------------------------------
-// Extract the boundary string from the Content-Type header value.
-// Expected format:  multipart/form-data; boundary=----WebKitFormBoundary...
-// ---------------------------------------------------------------------------
+//  format:  multipart/form-data; boundary=----WebKitFormBoundary...
 std::string FileUpload::extractBoundary(const std::string &contentType) const {
   std::string::size_type pos = contentType.find("boundary=");
   if (pos == std::string::npos)
     return "";
   std::string boundary = contentType.substr(pos + 9);
 
-  // Trim "" nd spaces
   while (!boundary.empty() && (boundary[0] == ' ' || boundary[0] == '"'))
     boundary.erase(0, 1);
   while (!boundary.empty() && (boundary[boundary.size() - 1] == ' ' ||
@@ -44,7 +40,6 @@ static std::string extractAttribute(const std::string &header,
   std::string key = attr + "=\"";
   std::string::size_type pos = header.find(key);
   if (pos == std::string::npos) {
-    // Try without quotes:  attr=value
     key = attr + "=";
     pos = header.find(key);
     if (pos == std::string::npos)
@@ -85,7 +80,6 @@ parsePartHeaders(const std::string &headerBlock) {
     std::string name = strTrim(line.substr(0, colon));
     std::string value = strTrim(line.substr(colon + 1));
 
-    // Lowercase the header name for case-insensitive lookup
     for (std::string::size_type i = 0; i < name.size(); ++i)
       name[i] =
           static_cast<char>(std::tolower(static_cast<unsigned char>(name[i])));
@@ -167,13 +161,11 @@ bool FileUpload::saveTheThing(const FileData &file,
   if (file.filename.empty()) 
     return false;
 
-  // Sanitise the filename – strip path components and dangerous characters
   std::string safeName = file.filename;
   std::string::size_type slash = safeName.find_last_of("/\\");
   if (slash != std::string::npos)
     safeName = safeName.substr(slash + 1);
 
-  // Reject null bytes and control characters
   for (std::string::size_type i = 0; i < safeName.size(); ++i) {
     unsigned char c = static_cast<unsigned char>(safeName[i]);
     if (c < 0x20 || c == 0x7F) 
@@ -188,7 +180,7 @@ bool FileUpload::saveTheThing(const FileData &file,
     path += '/';
   path += safeName;
 
-  // Write in binary mode to preserve exact data
+
   std::ofstream ofs(path.c_str(),
                     std::ios::out | std::ios::binary | std::ios::trunc);
   if (!ofs.is_open()) 
