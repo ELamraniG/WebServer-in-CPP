@@ -54,29 +54,6 @@ Server_block &Router::match_server(const HTTPRequest &req,
   return servers[0];
 }
 
-
-Server_block &Router::match_server(const HTTPRequest & /*req*/,
-                                   std::vector<Server_block> &servers,
-                                   const std::string &local_host,
-                                   const std::string &local_port) {
-  if (servers.empty())
-    throw std::runtime_error("Router::match_server: no servers configured");
-
-  Server_block *port_match = NULL;
-  for (std::size_t i = 0; i < servers.size(); ++i) {
-    if (servers[i].port != local_port)
-      continue;
-    if (port_match == NULL)
-      port_match = &servers[i];
-    if (servers[i].host == local_host || servers[i].host == "0.0.0.0")
-      return servers[i];
-  }
-  if (port_match != NULL)
-    return *port_match;
-  return servers[0];
-}
-
-
 location_block *Router::match_location(const HTTPRequest &req,
                                        Server_block &server) {
   std::string uri = req.getURI();

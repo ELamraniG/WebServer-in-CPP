@@ -20,8 +20,6 @@ class Parser {
         block_type                  state;
         Server_block*               current_server;
         location_block*             current_location;
-        // Track which directives have been set in the current server/location,
-        // to catch duplicates like `listen 80; listen 8080;`.
         std::set<std::string>       _server_seen;
         std::set<std::string>       _location_seen;
 

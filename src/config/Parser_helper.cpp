@@ -33,12 +33,6 @@ int isvalid_return_number(std::string& return_number)
     return _return_number;
 }
 
-// FIXED:
-//  - 1024*1014 -> 1024*1024 (M typo)
-//  - no longer requires a K/M/G suffix; bare bytes are legal
-//  - no longer restricted to 1-9 (now accepts any positive value)
-//  - removed the std::cout debug leftover
-//  - now throws on ANY invalid value (caller cannot silently ignore)
 unsigned long isvalid_client_number(std::string& client_number)
 {
     if (client_number.empty())
@@ -58,8 +52,6 @@ unsigned long isvalid_client_number(std::string& client_number)
         mult = 1024UL * 1024UL * 1024UL;
         num_str = num_str.substr(0, num_str.size() - 1);
     }
-    // else: no suffix -> raw bytes, fine
-
     if (num_str.empty())
         throw std::runtime_error("client_max_body_size: missing number");
 

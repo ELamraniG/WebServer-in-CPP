@@ -13,7 +13,6 @@ private:
   const Server_block &_server;
   const location_block *_location;
   mutable std::vector<std::string> _allowed_methods_cache;
-  mutable bool _cache_valid;
 
 public:
   RouteConfig(const Server_block &s, const location_block *l);

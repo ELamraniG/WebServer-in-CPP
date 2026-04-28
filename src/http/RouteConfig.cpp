@@ -1,16 +1,18 @@
 #include "../../include/http/RouteConfig.hpp"
 
 RouteConfig::RouteConfig(const Server_block &s, const location_block *l)
-    : _server(s), _location(l), _cache_valid(false) {}
+    : _server(s), _location(l){}
 
 
-const std::string &RouteConfig::getRoot() const {
+const std::string &RouteConfig::getRoot() const 
+{
   if (_location && !_location->root.empty())
     return _location->root;
   return _server.root;
 }
 
-const std::string &RouteConfig::getIndex() const {
+const std::string &RouteConfig::getIndex() const 
+{
   if (_location && !_location->index.empty())
     return _location->index;
   return _server.index;
@@ -22,10 +24,11 @@ bool RouteConfig::getAutoindex() const {
   return false;
 }
 
-const std::vector<std::string> &RouteConfig::getAllowedMethods() const {
-  if (!_cache_valid) {
-    _allowed_methods_cache.clear();
-    if (_location) {
+const std::vector<std::string> &RouteConfig::getAllowedMethods() const
+{
+
+    if (_location) 
+    {
       for (std::map<std::string, bool>::const_iterator it =
                _location->methods.begin();
            it != _location->methods.end(); ++it) {
@@ -33,9 +36,6 @@ const std::vector<std::string> &RouteConfig::getAllowedMethods() const {
           _allowed_methods_cache.push_back(it->first);
       }
     }
-
-    _cache_valid = true;
-  }
   return _allowed_methods_cache;
 }
 
@@ -52,29 +52,34 @@ int RouteConfig::getRedirectCode() const {
   return 0;
 }
 
-const std::string &RouteConfig::getUploadStore() const {
+const std::string &RouteConfig::getUploadStore() const 
+{
   static const std::string empty_str;
   if (_location)
     return _location->upload_pass;
   return empty_str;
 }
 
-const std::map<int, std::string> &RouteConfig::getErrorPages() const {
+const std::map<int, std::string> &RouteConfig::getErrorPages() const 
+{
   return _server.error_pages;
 }
 
-size_t RouteConfig::getMaxBodySize() const {
+size_t RouteConfig::getMaxBodySize() const 
+{
   return _server.client_max_body_size;
 }
 
-const std::map<std::string, std::string> &RouteConfig::getCgiPass() const {
+const std::map<std::string, std::string> &RouteConfig::getCgiPass() const 
+{
   static const std::map<std::string, std::string> empty_map;
   if (_location)
     return _location->cgi_pass;
   return empty_map;
 }
 
-const std::string &RouteConfig::getLocationPath() const {
+const std::string &RouteConfig::getLocationPath() const 
+{
   static const std::string empty_str;
   if (_location)
     return _location->path;
