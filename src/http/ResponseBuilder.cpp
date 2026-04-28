@@ -7,10 +7,6 @@ ResponseBuilder::ResponseBuilder()
 {
 }
 
-// ─────────────────────────────────────────────
-//  Reason phrases (covers every code the server can produce)
-// ─────────────────────────────────────────────
-
 std::string ResponseBuilder::reasonPhrase(int code)
 {
 	switch (code)
@@ -59,7 +55,6 @@ std::string ResponseBuilder::reasonPhrase(int code)
 		return ("HTTP Version Not Supported");
 	default:
 	{
-		// Fallback: produce a generic reason from the class
 		if (code >= 200 && code < 300)
 			return ("OK");
 		if (code >= 300 && code < 400)
