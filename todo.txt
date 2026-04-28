@@ -1,1 +1,1 @@
-* write 408,  501 pages error 
+* create 408 and 501 error pages

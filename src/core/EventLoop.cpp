@@ -240,7 +240,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 		}
 		else
 		{
-			logger.cgiDone(readFd, client->httpReq.getURI(), HTTP_OK);
+			logger.cgiDone(client->getFd(), client->httpReq.getURI(), HTTP_OK);
 			Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
 			locationBlock = Router::match_location(client->httpReq, serverBlock);
 			RouteConfig	route(serverBlock, locationBlock);
@@ -373,7 +373,7 @@ void	EventLoop::handleWriteEvent(int fd, size_t& i)
 			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
 		}
 		else if (_clientMap[fd]->hasNoPendingWrite())
-			handleClientDisconnected(fd, i, HTTP_OK);
+			handleClientDisconnected(fd, i, HTTP_CLIENT_DISCONNECTED);
 	}
 }
 
