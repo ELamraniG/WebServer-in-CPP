@@ -349,7 +349,6 @@ void EventLoop::handleReadEvent(int fd, size_t &i) {
   }
 }
 
-<<<<<<< HEAD
 void EventLoop::handleCGIWrite(int writeFd, size_t &i) {
   CGIHandler *cgi;
 
@@ -365,40 +364,6 @@ void EventLoop::handleCGIWrite(int writeFd, size_t &i) {
     removeFromPoll(i);
   } else
     cgi->writeBody();
-=======
-void	EventLoop::handleReadEvent(int fd, size_t& i)
-{
-	ssize_t							bytes;
-	RequestParser					reqParser;
-	RequestParser::ParsingStatus	status;
-
-	if (isServer(fd))
-		handleNewClient(fd);
-	else if (_cgiFdToHandler.count(fd))
-		handleCGIRead(fd, i);
-	else
-	{
-		bytes = _clientMap[fd]->readFromSocket();
-		if (bytes < 0)
-			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
-		else if (bytes == 0)
-			handleClientDisconnected(fd, i, HTTP_CLIENT_DISCONNECTED);
-		else
-		{
-			status = reqParser.parseRequest(_clientMap[fd]->getRequestBuffer(), _clientMap[fd]->httpReq);
-			if (status == RequestParser::P_INCOMPLETE)
-				return ;
-			if (status == RequestParser::P_ERROR)
-			{
-				logger.error("BAD REQUEST");
-				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, getRoute(_clientMap[fd])));
-				_pollFds[i].events = POLLOUT;
-				return ;
-			}
-			handleRequestComplete(fd, i, getRoute(_clientMap[fd]));
-		}
-	}
->>>>>>> 7ea85ecf4e27598039fc8e300998f5527edce25a
 }
 
 void EventLoop::handleWriteEvent(int fd, size_t &i) {
