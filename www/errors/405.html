@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>405 — Method Not Allowed · webserv</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04050f;
+      --glass: rgba(255, 255, 255, 0.05);
+      --gb: rgba(255, 255, 255, 0.09);
+      --c1: #00f0d4;
+      --c2: #60a5fa;
+      --text: #e2e8f0;
+      --muted: #475569;
+      --m2: #94a3b8
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden
+    }
+
+    .aurora {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0
+    }
+
+    .b1 {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(130px);
+      background: radial-gradient(circle, rgba(0, 240, 212, 0.22), rgba(96, 165, 250, 0.15));
+      top: -150px;
+      left: -100px;
+      animation: drift 13s ease-in-out infinite
+    }
+
+    .b2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(110px);
+      background: radial-gradient(circle, rgba(96, 165, 250, 0.2), rgba(0, 240, 212, 0.1));
+      bottom: -80px;
+      right: -50px;
+      animation: drift 11s ease-in-out infinite reverse
+    }
+
+    @keyframes drift {
+
+      0%,
+      100% {
+        transform: translate(0, 0)
+      }
+
+      50% {
+        transform: translate(30px, -25px)
+      }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0
+    }
+
+    nav {
+      position: relative;
+      z-index: 10;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--gb)
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none
+    }
+
+    .nav-r {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .08em
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      position: relative;
+      z-index: 1
+    }
+
+    .wrap {
+      max-width: 640px;
+      width: 100%;
+      text-align: center
+    }
+
+    .big {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(110px, 22vw, 220px);
+      font-weight: 800;
+      line-height: .85;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -.05em;
+      display: block;
+      animation: pop .6s cubic-bezier(.175, .885, .32, 1.275) both
+    }
+
+    @keyframes pop {
+      from {
+        opacity: 0;
+        transform: scale(.85)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--c1);
+      margin-bottom: 12px;
+      display: block;
+      animation: fadeU .5s ease .2s both
+    }
+
+    .title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(22px, 3.5vw, 36px);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.02em;
+      margin-bottom: 16px;
+      animation: fadeU .5s ease .25s both
+    }
+
+    .desc {
+      font-size: 16px;
+      color: var(--m2);
+      line-height: 1.8;
+      font-weight: 300;
+      margin-bottom: 40px;
+      animation: fadeU .5s ease .3s both
+    }
+
+    .glass-box {
+      background: var(--glass);
+      border: 1px solid var(--gb);
+      border-radius: 16px;
+      padding: 22px 26px;
+      font-family: 'DM Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 2;
+      text-align: left;
+      margin-bottom: 40px;
+      backdrop-filter: blur(20px);
+      animation: fadeU .5s ease .35s both
+    }
+
+    .tok {
+      color: #4ade80
+    }
+
+    .te {
+      color: #fb7185
+    }
+
+    .td {
+      color: var(--muted)
+    }
+
+    .tc1 {
+      color: var(--c1)
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      animation: fadeU .5s ease .4s both
+    }
+
+    .btn-g {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 13px 28px;
+      border-radius: 11px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--c1), var(--c2));
+      color: #04050f;
+      box-shadow: 0 0 28px rgba(0, 240, 212, .3);
+      transition: all .25s
+    }
+
+    .btn-g:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(0, 240, 212, .5)
+    }
+
+    .btn-o {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 13px 28px;
+      border-radius: 11px;
+      cursor: pointer;
+      text-decoration: none;
+      background: var(--glass);
+      color: var(--text);
+      border: 1px solid var(--gb);
+      backdrop-filter: blur(12px);
+      transition: all .25s
+    }
+
+    .btn-o:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, .2)
+    }
+
+    @keyframes fadeU {
+      from {
+        opacity: 0;
+        transform: translateY(16px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 20px 40px;
+      border-top: 1px solid var(--gb);
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none
+    }
+
+    footer a:hover {
+      color: var(--c1)
+    }
+  </style>
+</head>
+
+<body>
+  <div class="aurora">
+    <div class="b1"></div>
+    <div class="b2"></div>
+  </div>
+  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.1 · Error Page</span></nav>
+  <main>
+    <div class="wrap">
+      <span class="label">// HTTP/1.1 · Client Error</span>
+      <span class="big">405</span>
+      <h1 class="title">Method Not Allowed</h1>
+      <p class="desc">The HTTP method you used is not permitted for this route. The server knows exactly which methods
+        are allowed here — yours isn't one of them. Check the <code
+          style="color:var(--c1);background:rgba(0,240,212,0.1);padding:2px 8px;border-radius:4px">Allow</code> header
+        for what's accepted.</p>
+      <div class="glass-box">
+        <div class="td">[METHOD] [requested_resource] HTTP/1.1</div>
+        <div class="te">✗ 405 Method Not Allowed</div>
+        <div class="tc1">Allow: GET, POST</div>
+        <div class="td">→ route config only allows listed methods — yours wasn't invited</div>
+      </div>
+      <div class="actions">
+        <a href="/" class="btn-g">← Back to Home</a>
+        <a href="javascript:history.back()" class="btn-o">Go Back</a>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <span>webserv · 42 School · REDA, ELAMRANI, SIMO</span>
+    <span><a href="/400.html">400</a> · <a href="/403.html">403</a> · <a href="/404.html">404</a> · <a
+        href="/500.html">500</a></span>
+  </footer>
+</body>
+
+</html>

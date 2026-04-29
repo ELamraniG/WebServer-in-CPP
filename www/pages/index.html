@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>webserv — it works.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04050f;
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-b: rgba(255, 255, 255, 0.09);
+      --glass-hover: rgba(255, 255, 255, 0.09);
+      --teal: #00f0d4;
+      --violet: #a78bfa;
+      --rose: #fb7185;
+      --blue: #60a5fa;
+      --text: #e2e8f0;
+      --muted: #475569;
+      --muted2: #94a3b8;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh
+    }
+
+    /* ─── AURORA ─── */
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      animation: drift 14s ease-in-out infinite
+    }
+
+    .b1 {
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.35), rgba(96, 165, 250, 0.2));
+      top: -300px;
+      left: -200px;
+      animation-delay: 0s
+    }
+
+    .b2 {
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0, 240, 212, 0.25), rgba(96, 165, 250, 0.15));
+      top: 50%;
+      right: -150px;
+      animation-delay: -5s
+    }
+
+    .b3 {
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(251, 113, 133, 0.2), rgba(167, 139, 250, 0.2));
+      bottom: -200px;
+      left: 35%;
+      animation-delay: -9s
+    }
+
+    @keyframes drift {
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1)
+      }
+
+      33% {
+        transform: translate(50px, -40px) scale(1.06)
+      }
+
+      66% {
+        transform: translate(-30px, 30px) scale(0.96)
+      }
+    }
+
+    /* noise */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 64px);
+      max-width: 1160px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-radius: 18px;
+      background: rgba(4, 5, 15, 0.65);
+      backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-b)
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -.03em;
+      background: linear-gradient(130deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+      list-style: none
+    }
+
+    .nav-links a {
+      color: var(--muted2);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 10px;
+      transition: all .2s
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+      background: var(--glass)
+    }
+
+    .nav-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      background: rgba(0, 240, 212, 0.1);
+      border: 1px solid rgba(0, 240, 212, 0.2);
+      padding: 6px 16px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .pulse {
+      width: 7px;
+      height: 7px;
+      background: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--teal);
+      animation: blink 2s ease infinite
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .35
+      }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 40px 80px;
+      position: relative;
+      z-index: 1
+    }
+
+    .hero-inner {
+      max-width: 860px;
+      text-align: center
+    }
+
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+      color: var(--violet);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 20px;
+      border-radius: 40px;
+      margin-bottom: 36px;
+      letter-spacing: .03em;
+      animation: fadeD .5s ease both
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(60px, 11vw, 120px);
+      font-weight: 800;
+      line-height: .95;
+      letter-spacing: -.04em;
+      margin-bottom: 30px;
+      animation: fadeD .6s ease .1s both
+    }
+
+    .hero-title .t1 {
+      display: block;
+      color: #fff
+    }
+
+    .hero-title .t2 {
+      display: block;
+      background: linear-gradient(135deg, var(--teal) 0%, var(--violet) 55%, var(--rose) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .hero-desc {
+      font-size: 18px;
+      color: var(--muted2);
+      max-width: 560px;
+      margin: 0 auto 48px;
+      line-height: 1.8;
+      font-weight: 300;
+      animation: fadeD .6s ease .2s both
+    }
+
+    .hero-desc strong {
+      color: var(--text);
+      font-weight: 500
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 80px;
+      animation: fadeD .6s ease .3s both
+    }
+
+    .btn-glow {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .02em;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      color: #04050f;
+      box-shadow: 0 0 30px rgba(167, 139, 250, .35), 0 4px 20px rgba(0, 0, 0, .4);
+      transition: all .25s
+    }
+
+    .btn-glow:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 55px rgba(167, 139, 250, .6), 0 8px 30px rgba(0, 0, 0, .5)
+    }
+
+    .btn-ghost {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: .02em;
+      padding: 14px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      background: var(--glass);
+      color: var(--text);
+      border: 1px solid var(--glass-b);
+      backdrop-filter: blur(12px);
+      transition: all .25s
+    }
+
+    .btn-ghost:hover {
+      background: var(--glass-hover);
+      border-color: rgba(255, 255, 255, .18);
+      transform: translateY(-3px)
+    }
+
+    /* stats row */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+      animation: fadeD .6s ease .4s both
+    }
+
+    .stat {
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+      backdrop-filter: blur(20px);
+      padding: 20px 36px;
+      text-align: center;
+      flex: 1;
+      max-width: 220px
+    }
+
+    .stat:first-child {
+      border-radius: 14px 0 0 14px
+    }
+
+    .stat:last-child {
+      border-radius: 0 14px 14px 0
+    }
+
+    .stat-n {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+      line-height: 1
+    }
+
+    .stat-l {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 600;
+      margin-top: 6px
+    }
+
+    @keyframes fadeD {
+      from {
+        opacity: 0;
+        transform: translateY(-18px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes fadeU {
+      from {
+        opacity: 0;
+        transform: translateY(18px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ─── GENERIC SECTION ─── */
+    .section {
+      position: relative;
+      z-index: 1;
+      padding: 110px 40px
+    }
+
+    .container {
+      max-width: 1160px;
+      margin: 0 auto
+    }
+
+    .sec-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .sec-label::before {
+      content: '';
+      width: 22px;
+      height: 2px;
+      background: var(--teal);
+      border-radius: 1px
+    }
+
+    .sec-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(32px, 5vw, 58px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      margin-bottom: 16px
+    }
+
+    .sec-title span {
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .sec-sub {
+      font-size: 17px;
+      color: var(--muted2);
+      max-width: 520px;
+      line-height: 1.8;
+      font-weight: 300;
+      margin-bottom: 64px
+    }
+
+    /* ─── ABOUT SECTION ─── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start
+    }
+
+    .about-text p {
+      color: var(--muted2);
+      font-size: 16px;
+      line-height: 1.9;
+      margin-bottom: 18px;
+      font-weight: 300
+    }
+
+    .about-text p strong {
+      color: var(--text);
+      font-weight: 500
+    }
+
+    code {
+      color: var(--teal);
+      background: rgba(0, 240, 212, 0.1);
+      padding: 2px 8px;
+      border-radius: 5px;
+      font-size: 14px
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 28px
+    }
+
+    .feat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      transition: all .2s
+    }
+
+    .feat:hover {
+      background: var(--glass-hover);
+      transform: translateY(-2px)
+    }
+
+    .fd {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    /* terminal */
+    .terminal {
+      background: rgba(4, 5, 15, .9);
+      border: 1px solid var(--glass-b);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .07)
+    }
+
+    .tbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--glass-b);
+      background: rgba(255, 255, 255, .03)
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%
+    }
+
+    .dr {
+      background: #ff5f57
+    }
+
+    .dy {
+      background: #febc2e
+    }
+
+    .dg {
+      background: #28c840
+    }
+
+    .ttitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 auto;
+      padding-right: 40px;
+      letter-spacing: .04em
+    }
+
+    .tbody {
+      padding: 24px;
+      font-family: 'DM Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 2.1
+    }
+
+    .tp {
+      color: var(--teal)
+    }
+
+    .tc {
+      color: #fff
+    }
+
+    .tok {
+      color: #4ade80
+    }
+
+    .ti {
+      color: var(--violet)
+    }
+
+    .td {
+      color: var(--muted)
+    }
+
+    .te {
+      color: var(--rose)
+    }
+
+    .tcur {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--teal);
+      vertical-align: middle;
+      border-radius: 1px;
+      animation: blink 1.2s step-end infinite
+    }
+
+    /* ─── TEAM ─── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px
+    }
+
+    .tcard {
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+      border-radius: 24px;
+      overflow: hidden;
+      backdrop-filter: blur(24px);
+      transition: all .35s;
+      position: relative
+    }
+
+    .tcard::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(255, 255, 255, .04) 0%, transparent 60%);
+      pointer-events: none;
+      border-radius: 24px
+    }
+
+    .tcard:hover {
+      transform: translateY(-10px);
+      border-color: rgba(255, 255, 255, .16);
+      box-shadow: 0 36px 90px rgba(0, 0, 0, .55)
+    }
+
+    .tcard-top {
+      height: 4px;
+      width: 100%
+    }
+
+    .tcard-body {
+      padding: 32px
+    }
+
+    .avatar {
+      width: 78px;
+      height: 78px;
+      border-radius: 18px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      position: relative;
+      overflow: hidden
+    }
+
+    .avatar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .18), transparent);
+      border-radius: 18px
+    }
+
+    .av1 {
+      background: linear-gradient(135deg, #0f2850, #1d4ed8);
+      color: #93c5fd
+    }
+
+    .av2 {
+      background: linear-gradient(135deg, #1e0a47, #7c3aed);
+      color: #c4b5fd
+    }
+
+    .av3 {
+      background: linear-gradient(135deg, #052e22, #0d9488);
+      color: #5eead4
+    }
+
+    .tc-role {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      margin-bottom: 6px
+    }
+
+    .tc-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.02em;
+      margin-bottom: 6px
+    }
+
+    .tc-quote {
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+      font-weight: 300;
+      margin-bottom: 26px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--glass-b)
+    }
+
+    .mods {
+      display: flex;
+      flex-direction: column;
+      gap: 13px
+    }
+
+    .mod {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start
+    }
+
+    .mnum {
+      font-family: 'Syne', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px
+    }
+
+    .mc {
+      flex: 1
+    }
+
+    .mn {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      margin-bottom: 2px
+    }
+
+    .md {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-weight: 300
+    }
+
+    /* ─── PIPELINE ─── */
+    .pipeline {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      align-items: center;
+      margin-top: 64px
+    }
+
+    .pcard {
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+      border-radius: 20px;
+      padding: 30px 26px;
+      backdrop-filter: blur(20px);
+      transition: all .3s
+    }
+
+    .pcard:hover {
+      background: var(--glass-hover);
+      transform: translateY(-5px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .45)
+    }
+
+    .pp {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .pt {
+      font-family: 'Syne', sans-serif;
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 14px;
+      letter-spacing: -.02em
+    }
+
+    .pi {
+      list-style: none;
+      font-size: 12px;
+      color: var(--muted2);
+      line-height: 2.1;
+      font-weight: 300
+    }
+
+    .pi li {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .pi li::before {
+      content: '';
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .parr {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--muted);
+      opacity: .5
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      margin: 0 32px;
+      border-radius: 24px 24px 0 0;
+      border: 1px solid var(--glass-b);
+      border-bottom: none;
+      background: rgba(4, 5, 15, .7);
+      backdrop-filter: blur(28px);
+      padding: 64px 56px 48px
+    }
+
+    .foot-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr;
+      gap: 64px
+    }
+
+    .foot-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px
+    }
+
+    .foot-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-weight: 300
+    }
+
+    .foot-h {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 18px
+    }
+
+    .foot-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 9px
+    }
+
+    .foot-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 300;
+      transition: color .2s;
+      display: flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .foot-links a::before {
+      content: '→';
+      font-size: 12px;
+      opacity: .4
+    }
+
+    .foot-links a:hover {
+      color: var(--teal)
+    }
+
+    .foot-bottom {
+      max-width: 1160px;
+      margin: 40px auto 0;
+      padding-top: 26px;
+      border-top: 1px solid var(--glass-b);
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .04em
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="aurora">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">webserv</div>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="/pages/form.html">CGI / POST Test</a></li>
+      <li><a href="/pages/upload.html">Upload File</a></li>
+      <li><a href="/cgi-bin/print_cookies.py">Cookies Test</a></li>
+      <li><a href="/cgi-bin/session_check.py">Session Test</a></li>
+      <li><a href="/pages">Pages Autoindex</a></li>
+      <li><a href="/old">Redirect Test</a></li>
+    </ul>
+    <div class="nav-pill"><span class="pulse"></span>Server Online</div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-chip">⚡ HTTP/1.1 · C++98 · 42 School · v24.0</div>
+      <h1 class="hero-title">
+        <span class="t1">Hey there —</span>
+        <span class="t2">it works.</span>
+      </h1>
+      <p class="hero-desc">
+        You're looking at a <strong>custom HTTP server</strong> built from scratch in C++98. No frameworks. No external
+        libraries. Just raw sockets, a single <strong>poll()</strong> event loop, and three very determined students.
+      </p>
+      <div class="hero-ctas">
+        <a href="/pages/upload.html" class="btn-glow">Upload a file</a>
+        <a href="#team" class="btn-ghost">Meet the team →</a>
+      </div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-n">200</span>
+          <div class="stat-l">Status OK</div>
+        </div>
+        <div class="stat"><span class="stat-n">1</span>
+          <div class="stat-l">poll() loop</div>
+        </div>
+        <div class="stat"><span class="stat-n">3</span>
+          <div class="stat-l">Developers</div>
+        </div>
+        <div class="stat"><span class="stat-n">0</span>
+          <div class="stat-l">Crashes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="sec-label">About this server</div>
+      <h2 class="sec-title">What is <span>webserv?</span></h2>
+      <p class="sec-sub">A fully functional HTTP/1.1 server in C++98 — think miniature NGINX, built with raw syscalls,
+        zero mercy for blocking I/O, and a single event loop driving everything.</p>
+      <div class="about-grid">
+        <div>
+          <div class="about-text">
+            <p><strong>webserv</strong> is the final systems project at 42. It handles real HTTP requests from real
+              browsers — parsing requests, routing them, executing CGI, serving static files, and returning accurate
+              status codes and headers.</p>
+            <p>The entire server is <strong>non-blocking</strong>. A single <code>poll()</code> call drives all I/O
+              across every client simultaneously. It listens on multiple ports and survives stress testing without a
+              single crash.</p>
+            <p>Built strictly to <strong>C++98</strong> with no external libraries — every feature from the HTTP parser
+              to CGI integration is hand-crafted from scratch.</p>
+          </div>
+          <div class="feat-grid">
+            <div class="feat"><span class="fd" style="background:var(--teal)"></span>Non-Blocking I/O</div>
+            <div class="feat"><span class="fd" style="background:var(--violet)"></span>GET · POST · DELETE</div>
+            <div class="feat"><span class="fd" style="background:var(--rose)"></span>CGI Execution</div>
+            <div class="feat"><span class="fd" style="background:var(--blue)"></span>File Uploads</div>
+            <div class="feat"><span class="fd" style="background:var(--teal)"></span>Multi-Port Listen</div>
+            <div class="feat"><span class="fd" style="background:var(--violet)"></span>Directory Listing</div>
+            <div class="feat"><span class="fd" style="background:var(--rose)"></span>Custom Error Pages</div>
+            <div class="feat"><span class="fd" style="background:var(--blue)"></span>HTTP Redirects</div>
+          </div>
+        </div>
+        <div class="terminal">
+          <div class="tbar">
+            <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+            <span class="ttitle">webserv — zsh</span>
+          </div>
+          <div class="tbody">
+            <div><span class="tp">❯</span> <span class="tc">./webserv config.conf</span></div>
+            <div class="tok">✓ Config loaded: config.conf</div>
+            <div class="ti">→ Listening 0.0.0.0:8080</div>
+            <div class="ti">→ Listening 0.0.0.0:8443</div>
+            <div class="tok">✓ poll() ready — serving</div>
+            <br>
+            <div class="td">GET / HTTP/1.1</div>
+            <div class="tok">200 OK → /www/index.html</div>
+            <div class="td">POST /upload HTTP/1.1</div>
+            <div class="tok">201 Created → saved</div>
+            <div class="td">GET /cgi-bin/hello.py HTTP/1.1</div>
+            <div class="tok">200 OK → CGI executed</div>
+            <div class="td">DELETE /uploads/old.txt HTTP/1.1</div>
+            <div class="tok">204 No Content → deleted</div>
+            <div class="td">GET /missing HTTP/1.1</div>
+            <div class="te">404 Not Found → error page</div>
+            <br>
+            <div><span class="tp">❯</span> <span class="tcur"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TEAM -->
+  <section class="section" id="team" style="padding-top:0">
+    <div class="container">
+      <div class="sec-label">The builders</div>
+      <h2 class="sec-title">Who built <span>this?</span></h2>
+      <p class="sec-sub">Three people. Three modules. One server. Here's who owns what — and who to blame when things
+        break.</p>
+      <div class="team-grid">
+
+        <!-- P1 -->
+        <div class="tcard">
+          <div class="tcard-top" style="background:linear-gradient(90deg,#1d4ed8,#00f0d4)"></div>
+          <div class="tcard-body">
+            <div class="avatar av1">P1</div>
+            <div class="tc-role" style="color:#60a5fa">Core Server · I/O Engine · CGI</div>
+            <div class="tc-name">REDA</div>
+            <div class="tc-quote">"fighting Linux syscalls at 3AM"</div>
+            <div class="mods">
+              <div class="mod">
+                <div class="mnum" style="background:rgba(96,165,250,.15);color:#60a5fa">01</div>
+                <div class="mc"><span class="mn">Socket Foundation</span><span class="md">socket() · bind() · listen() ·
+                    multiple ports · O_NONBLOCK</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(96,165,250,.15);color:#60a5fa">02</div>
+                <div class="mc"><span class="mn">poll() Event Loop</span><span class="md">Single multiplexer ·
+                    POLLIN/POLLOUT/POLLERR · zero blocking I/O</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(96,165,250,.15);color:#60a5fa">03</div>
+                <div class="mc"><span class="mn">Connection Manager</span><span class="md">accept() · Client class ·
+                    timeouts · graceful disconnects</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(96,165,250,.15);color:#60a5fa">04</div>
+                <div class="mc"><span class="mn">Main Server Loop</span><span class="md">Event routing · SIGINT/SIGTERM
+                    · coordinates all modules</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(96,165,250,.15);color:#60a5fa">05</div>
+                <div class="mc"><span class="mn">CGI Integration</span><span class="md">fork() · execve() · pipe() ·
+                    multiple CGIs (.php, .py, .sh) · env vars</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P2 -->
+        <div class="tcard">
+          <div class="tcard-top" style="background:linear-gradient(90deg,#7c3aed,#fb7185)"></div>
+          <div class="tcard-body">
+            <div class="avatar av2">P2</div>
+            <div class="tc-role" style="color:#a78bfa">HTTP Parser · Request & Response Logic</div>
+            <div class="tc-name">ELAMRANI</div>
+            <div class="tc-quote">"turning raw TCP bytes into HTTP"</div>
+            <div class="mods">
+              <div class="mod">
+                <div class="mnum" style="background:rgba(167,139,250,.15);color:#a78bfa">01</div>
+                <div class="mc"><span class="mn">HTTP Request Parser</span><span class="md">Method · URI · headers ·
+                    chunked encoding · Content-Length</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(167,139,250,.15);color:#a78bfa">02</div>
+                <div class="mc"><span class="mn">Method Handlers</span><span class="md">GET · POST · DELETE · 405 Method
+                    Not Allowed</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(167,139,250,.15);color:#a78bfa">03</div>
+                <div class="mc"><span class="mn">File Upload Handler</span><span class="md">multipart/form-data ·
+                    boundary parsing · max body size</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(167,139,250,.15);color:#a78bfa">04</div>
+                <div class="mc"><span class="mn">HTTP Response Builder</span><span class="md">Status codes · headers ·
+                    Content-Type · POLLOUT-gated writes</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(167,139,250,.15);color:#a78bfa">05</div>
+                <div class="mc"><span class="mn">Session & Cookies</span><span class="md">Session management · Cookie
+                    parsing · Set-Cookie</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P3 -->
+        <div class="tcard">
+          <div class="tcard-top" style="background:linear-gradient(90deg,#0d9488,#60a5fa)"></div>
+          <div class="tcard-body">
+            <div class="avatar av3">P3</div>
+            <div class="tc-role" style="color:#00f0d4">Config · Route · Static Files</div>
+            <div class="tc-name">SIMO</div>
+            <div class="tc-quote">"making the server actually useful"</div>
+            <div class="mods">
+              <div class="mod">
+                <div class="mnum" style="background:rgba(0,240,212,.12);color:#00f0d4">01</div>
+                <div class="mc"><span class="mn">Config File Parser</span><span class="md">server blocks · location ·
+                    error pages · autoindex · body size</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(0,240,212,.12);color:#00f0d4">02</div>
+                <div class="mc"><span class="mn">Route Resolution</span><span class="md">Longest-prefix match ·
+                    traversal protection · redirects</span></div>
+              </div>
+              <div class="mod">
+                <div class="mnum" style="background:rgba(0,240,212,.12);color:#00f0d4">03</div>
+                <div class="mc"><span class="mn">Static Files + Error Pages</span><span class="md">MIME types ·
+                    directory listing · 404/403 · custom errors</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section class="section" id="pipeline" style="padding-top:0">
+    <div class="container">
+      <div class="sec-label">Request lifecycle</div>
+      <h2 class="sec-title">How a request <span>flows</span></h2>
+      <p class="sec-sub">Every HTTP request passes through three layers — each owned by a different person on the team.
+      </p>
+      <div class="pipeline">
+        <div class="pcard">
+          <div class="pp" style="color:#60a5fa">REDA · Network</div>
+          <div class="pt">TCP + poll()</div>
+          <ul class="pi">
+            <li><span style="background:#60a5fa"></span>accept() connection</li>
+            <li><span style="background:#60a5fa"></span>poll() readiness</li>
+            <li><span style="background:#60a5fa"></span>recv() raw bytes</li>
+            <li><span style="background:#60a5fa"></span>CGI Processing</li>
+          </ul>
+        </div>
+        <div class="parr">→</div>
+        <div class="pcard">
+          <div class="pp" style="color:#a78bfa">ELAMRANI · Protocol</div>
+          <div class="pt">HTTP Parsing</div>
+          <ul class="pi">
+            <li><span style="background:#a78bfa"></span>Parse request line</li>
+            <li><span style="background:#a78bfa"></span>Parse headers + body</li>
+            <li><span style="background:#a78bfa"></span>Handle methods</li>
+            <li><span style="background:#a78bfa"></span>Build HTTP response</li>
+          </ul>
+        </div>
+        <div class="parr">→</div>
+        <div class="pcard">
+          <div class="pp" style="color:#00f0d4">SIMO · Application</div>
+          <div class="pt">Route + Serve</div>
+          <ul class="pi">
+            <li><span style="background:#00f0d4"></span>Match location config</li>
+            <li><span style="background:#00f0d4"></span>Serve file or error</li>
+            <li><span style="background:#00f0d4"></span>Directory autoindex</li>
+            <li><span style="background:#00f0d4"></span>POLLOUT → send()</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-inner">
+      <div>
+        <div class="foot-logo">webserv</div>
+        <p class="foot-desc">A custom HTTP/1.1 server built from scratch in C++98 as part of the 42 school Common Core
+          curriculum. No external libraries. No mercy for blocking I/O.</p>
+      </div>
+      <div>
+        <div class="foot-h">Pages</div>
+        <ul class="foot-links">
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/400.html">400 Bad Request</a></li>
+          <li><a href="/403.html">403 Forbidden</a></li>
+          <li><a href="/404.html">404 Not Found</a></li>
+          <li><a href="/405.html">405 Not Allowed</a></li>
+          <li><a href="/500.html">500 Server Error</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="foot-h">Built with</div>
+        <ul class="foot-links">
+          <li><a href="#">C++98 Standard</a></li>
+          <li><a href="#">poll() / epoll / kqueue</a></li>
+          <li><a href="#">Raw POSIX Sockets</a></li>
+          <li><a href="#">RFC 7230 (HTTP/1.1)</a></li>
+          <li><a href="#">php-cgi · python3</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2025 REDA, ELAMRANI, SIMO · 42 School</span>
+      <span>webserv v24.0 · HTTP/1.1 · C++98</span>
+    </div>
+  </footer>
+
+</body>
+
+</html>

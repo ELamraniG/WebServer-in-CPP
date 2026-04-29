@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload · webserv</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #04050f;
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-b: rgba(255, 255, 255, 0.09);
+      --glass-hover: rgba(255, 255, 255, 0.09);
+      --teal: #00f0d4;
+      --violet: #a78bfa;
+      --rose: #fb7185;
+      --blue: #60a5fa;
+      --text: #e2e8f0;
+      --muted: #475569;
+      --muted2: #94a3b8;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ─── AURORA ─── */
+    .aurora {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      animation: drift 14s ease-in-out infinite;
+    }
+
+    .b1 {
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(167,139,250,0.35), rgba(96,165,250,0.2));
+      top: -300px; left: -200px;
+      animation-delay: 0s;
+    }
+
+    .b2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,240,212,0.25), rgba(96,165,250,0.15));
+      top: 50%; right: -150px;
+      animation-delay: -5s;
+    }
+
+    .b3 {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(251,113,133,0.2), rgba(167,139,250,0.2));
+      bottom: -200px; left: 35%;
+      animation-delay: -9s;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0,0) scale(1) }
+      33%       { transform: translate(50px,-40px) scale(1.06) }
+      66%       { transform: translate(-30px,30px) scale(0.96) }
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 64px);
+      max-width: 1160px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-radius: 18px;
+      background: rgba(4,5,15,0.65);
+      backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-b);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -.03em;
+      background: linear-gradient(130deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted2);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 10px;
+      transition: all .2s;
+    }
+
+    .nav-links a:hover {
+      color: #fff;
+      background: var(--glass);
+    }
+
+    .nav-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--teal);
+      background: rgba(0,240,212,0.1);
+      border: 1px solid rgba(0,240,212,0.2);
+      padding: 6px 16px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pulse {
+      width: 7px; height: 7px;
+      background: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--teal);
+      animation: blink 2s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1 }
+      50%       { opacity: .35 }
+    }
+
+    /* ─── PAGE WRAPPER ─── */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 40px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── UPLOAD CARD ─── */
+    .upload-wrap {
+      width: 100%;
+      max-width: 560px;
+      animation: fadeU .6s ease both;
+    }
+
+    @keyframes fadeU {
+      from { opacity: 0; transform: translateY(18px) }
+      to   { opacity: 1; transform: translateY(0) }
+    }
+
+    .upload-label-row {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .upload-label-row::before {
+      content: '';
+      width: 22px; height: 2px;
+      background: var(--teal);
+      border-radius: 1px;
+    }
+
+    .upload-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(36px, 6vw, 58px);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1.05;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .upload-title span {
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .upload-sub {
+      font-size: 16px;
+      color: var(--muted2);
+      font-weight: 300;
+      margin-bottom: 36px;
+      line-height: 1.8;
+    }
+
+    .upload-card {
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+      backdrop-filter: blur(28px);
+      border-radius: 20px;
+      padding: 36px;
+    }
+
+    /* ─── DROP ZONE ─── */
+    .drop-zone {
+      border: 2px dashed rgba(167,139,250,0.3);
+      border-radius: 14px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .25s;
+      position: relative;
+      margin-bottom: 28px;
+      background: rgba(167,139,250,0.03);
+    }
+
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--violet);
+      background: rgba(167,139,250,0.07);
+      transform: translateY(-2px);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      width: 52px; height: 52px;
+      margin: 0 auto 16px;
+      border-radius: 14px;
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .drop-icon svg {
+      width: 24px; height: 24px;
+      stroke: var(--violet);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .drop-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .drop-hint {
+      font-size: 13px;
+      color: var(--muted2);
+      font-weight: 300;
+    }
+
+    .drop-hint strong {
+      color: var(--violet);
+      font-weight: 600;
+    }
+
+    /* file chosen state */
+    .file-chosen {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      background: rgba(0,240,212,0.06);
+      border: 1px solid rgba(0,240,212,0.18);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+    }
+
+    .file-chosen.visible { display: flex }
+
+    .file-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(0,240,212,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .file-icon svg {
+      width: 18px; height: 18px;
+      stroke: var(--teal);
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .file-meta { flex: 1; min-width: 0 }
+
+    .file-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-size {
+      font-size: 12px;
+      color: var(--muted2);
+      margin-top: 2px;
+    }
+
+    .file-clear {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted2);
+      padding: 4px;
+      border-radius: 6px;
+      transition: color .2s;
+      flex-shrink: 0;
+    }
+
+    .file-clear:hover { color: var(--rose) }
+
+    .file-clear svg {
+      width: 16px; height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn-glow {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .02em;
+      padding: 14px 32px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--teal), var(--violet));
+      color: #04050f;
+      box-shadow: 0 0 30px rgba(167,139,250,.35), 0 4px 20px rgba(0,0,0,.4);
+      transition: all .25s;
+    }
+
+    .btn-glow:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 55px rgba(167,139,250,.6), 0 8px 30px rgba(0,0,0,.5);
+    }
+
+    .btn-glow:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: .02em;
+      padding: 14px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: var(--glass);
+      color: var(--text);
+      border: 1px solid var(--glass-b);
+      backdrop-filter: blur(12px);
+      transition: all .25s;
+      margin-top: 10px;
+    }
+
+    .btn-ghost:hover {
+      background: var(--glass-hover);
+      border-color: rgba(255,255,255,.18);
+      transform: translateY(-3px);
+    }
+
+    .btn-ghost svg {
+      width: 15px; height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 24px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--glass-b);
+    }
+
+    .divider span {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* ─── ALLOWED TYPES ─── */
+    .types-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 24px;
+    }
+
+    .type-tag {
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: .04em;
+      padding: 4px 12px;
+      border-radius: 30px;
+      color: var(--muted2);
+      background: var(--glass);
+      border: 1px solid var(--glass-b);
+    }
+
+    .types-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      font-weight: 300;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--glass-b);
+      padding: 36px 40px;
+    }
+
+    .foot-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .foot-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      background: linear-gradient(130deg, var(--teal), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .foot-copy {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .foot-links {
+      display: flex;
+      gap: 20px;
+      list-style: none;
+    }
+
+    .foot-links a {
+      font-size: 13px;
+      color: var(--muted2);
+      text-decoration: none;
+      transition: color .2s;
+    }
+
+    .foot-links a:hover { color: #fff }
+  </style>
+</head>
+
+<body>
+
+  <!-- AURORA -->
+  <div class="aurora">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="/">webserv</a>
+    <ul class="nav-links">
+      <li><a href="/#about">About</a></li>
+      <li><a href="/#features">Features</a></li>
+      <li><a href="/#team">Team</a></li>
+      <li><a href="/#pipeline">Pipeline</a></li>
+    </ul>
+    <div class="nav-pill">
+      <div class="pulse"></div>
+      HTTP/1.1 · C++98
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="page">
+    <div class="upload-wrap">
+
+      <div class="upload-label-row">File Upload</div>
+
+      <h1 class="upload-title">Drop your <span>file.</span></h1>
+      <p class="upload-sub">
+        Push a file directly to the server — multipart/form-data,
+        boundary-parsed, saved to <code>/uploads/</code>.
+      </p>
+
+      <div class="upload-card">
+        <form action="/uploads" method="POST" enctype="multipart/form-data" id="upload-form">
+
+          <!-- DROP ZONE -->
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file" name="file" required>
+            <div class="drop-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <div class="drop-title">Drag & drop a file here</div>
+            <p class="drop-hint">or <strong>click to browse</strong> from your machine</p>
+          </div>
+
+          <!-- FILE CHOSEN -->
+          <div class="file-chosen" id="file-chosen">
+            <div class="file-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="file-meta">
+              <div class="file-name" id="file-name">—</div>
+              <div class="file-size" id="file-size">—</div>
+            </div>
+            <button type="button" class="file-clear" id="file-clear" title="Remove file">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <!-- SUBMIT -->
+          <button type="submit" class="btn-glow" id="submit-btn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#04050f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Upload to Server
+          </button>
+
+        </form>
+
+        <div class="divider"><span>or</span></div>
+
+        <a href="/" class="btn-ghost">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Home
+        </a>
+
+        <!-- ALLOWED TYPES -->
+        <div class="types-row">
+          <span class="type-tag">.txt</span>
+          <span class="type-tag">.html</span>
+          <span class="type-tag">.json</span>
+          <span class="type-tag">.csv</span>
+          <span class="type-tag">.pdf</span>
+          <span class="type-tag">.png</span>
+          <span class="type-tag">.jpg</span>
+          <span class="type-tag">.sh</span>
+          <span class="type-tag">.py</span>
+        </div>
+        <p class="types-label">Max body size enforced by server config</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-inner">
+      <div class="foot-logo">webserv</div>
+      <span class="foot-copy">© 2025 REDA, ELAMRANI, SIMO · 42 School</span>
+      <ul class="foot-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/404.html">404</a></li>
+        <li><a href="/500.html">500</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    const dropZone  = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file');
+    const fileChosen = document.getElementById('file-chosen');
+    const fileName  = document.getElementById('file-name');
+    const fileSize  = document.getElementById('file-size');
+    const fileClear = document.getElementById('file-clear');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function formatBytes(b) {
+      if (b < 1024) return b + ' B';
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+      return (b / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function showFile(file) {
+      fileName.textContent  = file.name;
+      fileSize.textContent  = formatBytes(file.size);
+      fileChosen.classList.add('visible');
+      submitBtn.disabled = false;
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      fileChosen.classList.remove('visible');
+      submitBtn.disabled = true;
+    }
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) showFile(fileInput.files[0]);
+    });
+
+    fileClear.addEventListener('click', clearFile);
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const dt = e.dataTransfer;
+      if (dt.files.length) {
+        // Assign dropped file to the input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(dt.files[0]);
+        fileInput.files = dataTransfer.files;
+        showFile(dt.files[0]);
+      }
+    });
+  </script>
+
+</body>
+</html>
