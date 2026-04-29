@@ -221,6 +221,8 @@ void	EventLoop::handleNewClient(int serverFd)
 
 void	EventLoop::handleClientDisconnected(int fd, size_t& i, HttpStatus code)
 {
+	if (code == HTTP_REQUEST_TIMEOUT)
+		logger.clientTimeout(fd);
 	logger.clientDisconnected(fd, code);
 	delete _clientMap[fd];
 	_clientMap.erase(fd);
