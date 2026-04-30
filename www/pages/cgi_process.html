@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process Info · webserv</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050505;
+      --glass: rgba(255, 255, 255, 0.03);
+      --gb: rgba(255, 255, 255, 0.08);
+      --orange: #fb923c;
+      --rose: #f43f5e;
+      --text: #f1f5f9;
+      --m2: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column; /* Changed to column to accommodate nav */
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    /* Header Navigation */
+    nav {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 64px);
+      max-width: 1160px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-radius: 18px;
+      background: rgba(4, 5, 15, 0.65);
+      backdrop-filter: blur(28px);
+      border: 1px solid var(--gb);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 18px;
+      letter-spacing: -.03em;
+      background: linear-gradient(130deg, var(--orange), var(--rose));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .nav-right { font-size: 12px; color: var(--m2); letter-spacing: .06em; }
+
+    .aurora { position: fixed; inset: 0; z-index: 0; }
+    .b1 { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(251, 146, 60, 0.15), transparent); filter: blur(120px); top: -300px; right: -200px; }
+    
+    main { position: relative; z-index: 1; text-align: center; width: 100%; max-width: 500px; padding-top: 80px; }
+    
+    .pulse-wrap {
+      width: 100px; height: 100px; border-radius: 50%;
+      background: rgba(251, 146, 60, 0.1);
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      margin: 0 auto 30px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .pulse-ring {
+      position: absolute; inset: 0; border-radius: 50%;
+      border: 1px solid var(--orange);
+      animation: pulse 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+    }
+    @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.8); opacity: 0; } }
+
+    .title { font-family: 'Syne', sans-serif; font-size: 56px; letter-spacing: -0.04em; margin-bottom: 10px; }
+    .title span { background: linear-gradient(135deg, var(--orange), var(--rose)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    .terminal {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--gb);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: left;
+      backdrop-filter: blur(20px);
+      margin-top: 30px;
+    }
+    .t-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-family: monospace; font-size: 14px; }
+    .t-label { color: var(--m2); }
+    .t-val { color: var(--orange); font-weight: 600; }
+    
+    footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 18px 40px; border-top: 1px solid var(--gb); display: flex; justify-content: space-between; font-size: 12px; color: var(--m2); background: rgba(4, 5, 15, 0.5); backdrop-filter: blur(20px); }
+  </style>
+</head>
+<body>
+  <div class="aurora"><div class="b1"></div></div>
+
+  <!-- Identical Header to cgi_success.html -->
+  <nav>
+    <a href="/" class="nav-logo">webserv</a>
+    <span class="nav-right">System Diagnostics</span>
+  </nav>
+
+  <main>
+    <div class="pulse-wrap">
+      <div class="pulse-ring"></div>
+      <span style="font-size: 32px;">⚡</span>
+    </div>
+    <h1 class="title">Shell <span>Active.</span></h1>
+    <p style="color: var(--m2); font-weight: 300;">CGI script executed via Bourne-Again SH</p>
+
+    <div class="terminal">
+      <div class="t-row"><span class="t-label">Interpreter:</span> <span class="t-val">/bin/bash</span></div>
+      <div class="t-row"><span class="t-label">Process ID:</span> <span class="t-val">{{PID}}</span></div>
+      <div class="t-row"><span class="t-label">Request Method:</span> <span class="t-val">{{METHOD}}</span></div>
+      <div class="t-row"><span class="t-label">System Uptime:</span> <span class="t-val">{{UPTIME}}</span></div>
+    </div>
+  </main>
+
+  <footer>
+    <span>webserv · 42 School · REDA, ELAMRANI, SIMO</span>
+    <span>v1.0 HTTP/1.0</span>
+  </footer>
+</body>
+</html>

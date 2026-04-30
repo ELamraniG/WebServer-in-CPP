@@ -98,31 +98,24 @@ std::string	EventLoop::extractCleanUri(const std::string& uri)
 	return (cleanUri);
 }
 
-bool	EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath, std::string& interpreter)
+void EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath)
 {
-	std::string											extension;
-	const std::map<std::string, std::string>&			cgiPass = route.getCgiPass();
-	std::map<std::string, std::string>::const_iterator	it;
-	std::string											cleanUri;
-	std::string											relativeUri;
-	std::string											root;
-	std::string											locationPath;
+	std::string	cleanUri;
+	std::string	relativePath;
+	std::string	root;
+	std::string	locationPath;
 
-	extension = extractExtention(uri);
-	it = cgiPass.find(extension);
-	if (it == cgiPass.end())
-		return (false);
-	interpreter = it->second;
-	cleanUri = extractCleanUri(uri);
 	root = route.getRoot();
 	locationPath = route.getLocationPath();
-	relativeUri = cleanUri;
-	if (!locationPath.empty() && cleanUri.compare(0, locationPath.size(), locationPath) == 0)
-		relativeUri = cleanUri.substr(locationPath.size());
-	if (!root.empty() && root[root.size() - 1] != '/' && !relativeUri.empty() && relativeUri[0] != '/')
-		root += '/';
-	scriptPath = root + relativeUri;
-	return (true);
+	cleanUri = extractCleanUri(uri);
+	relativePath = cleanUri;
+	if (!locationPath.empty() && cleanUri.find(locationPath) == 0)
+		relativePath = cleanUri.substr(locationPath.size());
+	if (!root.empty() && root[root.size() - 1] == '/')
+		root.erase(root.size() - 1);
+	if (relativePath.empty() || relativePath[0] != '/')
+		relativePath = "/" + relativePath;
+	scriptPath = root + relativePath;
 }
 
 bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
@@ -136,8 +129,7 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	HTTPRequest	req;
 
 	req = _clientMap[clientFd]->httpReq;
-	if (!resolveCGI(req.getURI(), route, scriptPath, interpreter))
-		return (false);
+	resolveCGI(req.getURI(), route, scriptPath);
 	cgi = new CGIHandler(scriptPath, interpreter, req.getMethod(),
 						req.getQueryString(), req.getBody(), req.getAllHeaders());
 	logger.cgiRun(clientFd, req.getURI());
@@ -330,7 +322,6 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 	}
 	else
 	{
-		std::cout << response.statusCode << std::endl;
 		logger.staticFile(method, route.getLocationPath(), (HttpStatus)response.statusCode);
 		client->setResponse(responseBuilder.build(response));
 		_pollFds[i].events = POLLOUT;

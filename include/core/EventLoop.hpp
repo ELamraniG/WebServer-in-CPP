@@ -45,7 +45,7 @@ class EventLoop
 		std::string	extractExtention(const std::string &uri);
 		std::string	extractCleanUri(const std::string &uri);
 		bool		isCGIRequest(const std::string &uri, const std::map<std::string, std::string> &cgiPass);
-		bool		resolveCGI(const std::string &uri, const RouteConfig &route, std::string &scriptPath, std::string &interpreter);
+		void		resolveCGI(const std::string &uri, const RouteConfig &route, std::string &scriptPath);
 		bool		startCGI(int clientFd, const RouteConfig &route);
 		void		handleCGIRead(int readFd, size_t &i);
 		void		handleCGIWrite(int writeFd, size_t &i);
