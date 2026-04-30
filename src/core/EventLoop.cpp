@@ -312,7 +312,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 		response = handler.handleDELETE(client->httpReq, route);
 	else
 	{
-		logger.error("Not Implemented");
+		logger.error("[501] NOT IMPLEMENTED");
 		_clientMap[fd]->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, "NOT IMPLEMENTED", route));
 		_pollFds[i].events = POLLOUT;
 		_clientMap[fd]->updateLastActivity();
@@ -324,7 +324,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 			_pollFds[i].events = PAUSE;
 		else
 		{
-			logger.error("INTERNAL_SERVER_ERROR");
+			logger.error("[500] INTERNAL SERVER ERROR");
 			_pollFds[i].events = POLLOUT;
 		}
 	}
@@ -363,7 +363,7 @@ void	EventLoop::handleReadEvent(int fd, size_t& i)
 				return ;
 			if (status == RequestParser::P_ERROR)
 			{
-				logger.error("BAD REQUEST");
+				logger.error("[400] BAD REQUEST");
 				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, "BAD REQUEST", getRoute(_clientMap[fd])));
 				_pollFds[i].events = POLLOUT;
 				return ;
@@ -385,7 +385,7 @@ void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 	{
 		if (cgi->isError())
 		{
-			logger.error("INTERNAL_SERVER_ERROR");
+			logger.error("[500] INTERNAL SERVER ERROR");
 			_cgiFdToClient[writeFd]->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR", getRoute(_cgiFdToClient[writeFd])));
 		}
 		_cgiFdToHandler.erase(writeFd);
@@ -407,7 +407,7 @@ void	EventLoop::handleWriteEvent(int fd, size_t& i)
 		bytes = _clientMap[fd]->writeToSocket();
 		if (bytes < 0)
 		{
-			logger.error("INTERNAL_SERVER_ERROR");
+			logger.error("[500] INTERNAL SERVER ERROR");
 			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
 		}
 		else if (_clientMap[fd]->hasNoPendingWrite())

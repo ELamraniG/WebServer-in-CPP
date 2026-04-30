@@ -144,7 +144,7 @@ void	Logger::cgiError(int fd, const std::string& script, HttpStatus code)
 
 void	Logger::error(const std::string& msg)
 {
-	std::cout << badge(BG_RED(), "ERROR")
+	std::cout << C_BOLD() << badge(BG_RED(), "ERROR")
 				<< C_RED() << msg << C_RESET()
 				<< std::endl;
 }
