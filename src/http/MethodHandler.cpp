@@ -291,7 +291,7 @@ static std::string buildAutoindex(const std::string &dirPath, const std::string 
          << "<span class=\"icon\">" << icon << "</span> " << display << "</a>";
   }
 
-  html << "</div><div class=\"footer\">WEBSERV v24.0 // HTTP/1.1</div></div></body></html>";
+  html << "</div><div class=\"footer\">WEBSERV v24.0 // HTTP/1.0</div></div></body></html>";
   return html.str();
 }
 

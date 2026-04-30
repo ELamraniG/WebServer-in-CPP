@@ -53,7 +53,7 @@ void	CGIHandler::buildEnv()
 	_envStrings.push_back("QUERY_STRING=" + _queryString);
 	_envStrings.push_back("SCRIPT_FILENAME=" + _scriptPath);
 	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
-	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
 	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	_envStrings.push_back("REDIRECT_STATUS=200");
 	_envStrings.push_back("PATH=" + getPathEnv());

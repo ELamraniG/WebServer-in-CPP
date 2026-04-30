@@ -349,11 +349,11 @@
     <div class="b1"></div>
     <div class="b2"></div>
   </div>
-  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.1 · Status Page</span></nav>
+  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.0 · Status Page</span></nav>
   <main>
     <div class="wrap">
       <div class="icon-wrap">✗</div>
-      <span class="label">// HTTP/1.1 · Server Error</span>
+      <span class="label">// HTTP/1.0 · Server Error</span>
       <span class="big">504</span>
       <h1 class="title">Gateway Timeout</h1>
       <p class="desc">The CGI script or upstream process took too long to respond. The server gave up waiting. Check for
@@ -362,7 +362,7 @@
         <div class="tbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span><span
             class="ttitle">webserv — response</span></div>
         <div class="tbody">
-          <div style="color:var(--muted)">GET /cgi-bin/slow.py HTTP/1.1</div>
+          <div style="color:var(--muted)">GET /cgi-bin/slow.py HTTP/1.0</div>
           <div style="color:#fb7185">✗ 504 Gateway Timeout</div>
           <div style="color:#fbbf24">⚠ CGI process exceeded time limit</div>
           <div style="color:var(--muted)">→ check for blocking calls or infinite loops</div>

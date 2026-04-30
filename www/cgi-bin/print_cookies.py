@@ -308,7 +308,7 @@ print(f"""<!DOCTYPE html>
       <li><a href="/#team">Team</a></li>
       <li><a href="/#pipeline">Pipeline</a></li>
     </ul>
-    <div class="nav-pill"><div class="pulse"></div>HTTP/1.1 · C++98</div>
+    <div class="nav-pill"><div class="pulse"></div>HTTP/1.0 · C++98</div>
   </nav>
 
   <div class="page">

@@ -349,11 +349,11 @@
     <div class="b1"></div>
     <div class="b2"></div>
   </div>
-  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.1 · Status Page</span></nav>
+  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.0 · Status Page</span></nav>
   <main>
     <div class="wrap">
       <div class="icon-wrap">✗</div>
-      <span class="label">// HTTP/1.1 · Client Error</span>
+      <span class="label">// HTTP/1.0 · Client Error</span>
       <span class="big">413</span>
       <h1 class="title">Payload Too Large</h1>
       <p class="desc">Your request body exceeds the server's configured limit. Check client_max_body_size in the config
@@ -362,7 +362,7 @@
         <div class="tbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span><span
             class="ttitle">webserv — response</span></div>
         <div class="tbody">
-          <div style="color:var(--muted)">POST /upload HTTP/1.1</div>
+          <div style="color:var(--muted)">POST /upload HTTP/1.0</div>
           <div style="color:#fb7185">✗ 413 Payload Too Large</div>
           <div style="color:#fbbf24">⚠ Content-Length exceeds client_max_body_size</div>
           <div style="color:var(--muted)">→ reduce file size or raise the limit</div>

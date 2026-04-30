@@ -311,17 +311,17 @@
   </div>
   <nav>
     <a href="/" class="logo">webserv</a>
-    <span class="nav-r">HTTP/1.1 · Error Page</span>
+    <span class="nav-r">HTTP/1.0 · Error Page</span>
   </nav>
   <main>
     <div class="wrap">
-      <span class="label">// HTTP/1.1 · Client Error</span>
+      <span class="label">// HTTP/1.0 · Client Error</span>
       <span class="big">404</span>
       <h1 class="title">Not Found</h1>
       <p class="desc">The resource you requested doesn't exist on this server. It may have been moved, deleted, or you
         may have mistyped the URL. SIMO's router checked everywhere.</p>
       <div class="glass-box">
-        <div class="td">GET {{ REQUEST_URI }} HTTP/1.1</div>
+        <div class="td">GET {{ REQUEST_URI }} HTTP/1.0</div>
         <div class="te">✗ 404 Not Found — no matching file</div>
         <div class="td">root: /var/www/html — checked index.html · index.php</div>
         <div class="tok">→ serving default error page instead</div>

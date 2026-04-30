@@ -303,10 +303,10 @@
     <div class="b1"></div>
     <div class="b2"></div>
   </div>
-  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.1 · Error Page</span></nav>
+  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.0 · Error Page</span></nav>
   <main>
     <div class="wrap">
-      <span class="label">// HTTP/1.1 · Client Error</span>
+      <span class="label">// HTTP/1.0 · Client Error</span>
       <span class="big">400</span>
       <h1 class="title">Bad Request</h1>
       <p class="desc">The server couldn't understand your request. The HTTP syntax was malformed, headers were invalid,
@@ -314,7 +314,7 @@
       <div class="glass-box">
         <div class="td">??? [MALFORMED_DATA] HTTP/???</div>
         <div class="te">✗ 400 Bad Request — parser rejected request</div>
-        <div class="tw">⚠ expected: "METHOD /path HTTP/1.1\r\n"</div>
+        <div class="tw">⚠ expected: "METHOD /path HTTP/1.0\r\n"</div>
         <div class="td">→ got something the HTTP parser couldn't stomach</div>
       </div>
       <div class="actions">

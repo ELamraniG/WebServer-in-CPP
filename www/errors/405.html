@@ -307,10 +307,10 @@
     <div class="b1"></div>
     <div class="b2"></div>
   </div>
-  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.1 · Error Page</span></nav>
+  <nav><a href="/" class="logo">webserv</a><span class="nav-r">HTTP/1.0 · Error Page</span></nav>
   <main>
     <div class="wrap">
-      <span class="label">// HTTP/1.1 · Client Error</span>
+      <span class="label">// HTTP/1.0 · Client Error</span>
       <span class="big">405</span>
       <h1 class="title">Method Not Allowed</h1>
       <p class="desc">The HTTP method you used is not permitted for this route. The server knows exactly which methods
@@ -318,7 +318,7 @@
           style="color:var(--c1);background:rgba(0,240,212,0.1);padding:2px 8px;border-radius:4px">Allow</code> header
         for what's accepted.</p>
       <div class="glass-box">
-        <div class="td">[METHOD] [requested_resource] HTTP/1.1</div>
+        <div class="td">[METHOD] [requested_resource] HTTP/1.0</div>
         <div class="te">✗ 405 Method Not Allowed</div>
         <div class="tc1">Allow: GET, POST</div>
         <div class="td">→ route config only allows listed methods — yours wasn't invited</div>
