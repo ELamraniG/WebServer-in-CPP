@@ -177,13 +177,14 @@ Response MethodHandler::makeError(int code, const std::string &msg,
   const std::map<int, std::string> &errPages = route.getErrorPages();
   std::map<int, std::string>::const_iterator it = errPages.find(code);
   if (it != errPages.end()) {
-    std::string path = it->second;
+	  std::string path = it->second;
     std::string content;
     if (readFileContent(path, content)) {
-      resp.body = content;
-      return resp;
+		resp.body = content;
+		return resp;
     }
     std::string rootPath = makeThePath(route.getRoot(), path);
+	// std::cout << "DEBUG .. " << rootPath << std::endl; // FIXME:
     if (readFileContent(rootPath, content)) {
       resp.body = content;
       return resp;

@@ -25,7 +25,7 @@ class Client
 		Client(int fd);
 		~Client();
 
-		HTTPRequest			httpReq;
+		HTTPRequest	httpReq;
 
 		int				getFd() const;
 		ssize_t			readFromSocket();
