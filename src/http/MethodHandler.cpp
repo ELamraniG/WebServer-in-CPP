@@ -184,7 +184,7 @@ Response MethodHandler::makeError(int code, const std::string &msg,
 		return resp;
     }
     std::string rootPath = makeThePath(route.getRoot(), path);
-	// std::cout << "DEBUG .. " << rootPath << std::endl; // FIXME:
+	// std::cout << "DEBUG .. " << rootPath << std::endl; // FIXME: cannot find 504 cgi timeout page
     if (readFileContent(rootPath, content)) {
       resp.body = content;
       return resp;
@@ -452,7 +452,7 @@ Response MethodHandler::handleGET(HTTPRequest &request,
   // neither dir or a file
   if (!fileExists(ourFilePath))
   {
-		// std::cout << ourFilePath << std::endl; // FIXME:
+		// std::cout << ourFilePath << std::endl; // FIXME: cannot find script who isn't in pass cgi, so i can serve them as a static files
 	  return applySession(request,
 		MethodHandler::makeError(404, "Not Found", route));
 }
