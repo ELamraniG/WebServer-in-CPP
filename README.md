@@ -22,7 +22,7 @@ The server is built to handle multiple simultaneous client connections using an 
 ### Core Server Capabilities
 - **Multi-client support** using `poll()` for event-driven I/O
 - **HTTP/1.0** protocol support
-- **Non-Persistent Connections** "One request per connection" model.
+- **Non-Persistent Connections** "One request per connection" model
 - **Chunked transfer encoding** for request bodies
 - **Large file uploads** with configurable size limits
 - **Directory autoindexing** with customizable HTML templates
