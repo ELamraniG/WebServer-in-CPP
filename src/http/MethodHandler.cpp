@@ -235,47 +235,63 @@ static bool tryCGI(const HTTPRequest &request, const RouteConfig &route) {
 }
 
 // sorted dirs and files
-static std::string buildAutoindex(const std::string &dirPath,
-                                  const std::string &uri) {
-  DIR *dir;
-  struct dirent *entry;
+static std::string buildAutoindex(const std::string &dirPath, const std::string &uri) {
+  DIR *dir = opendir(dirPath.c_str());
+  if (!dir) return "";
 
-  dir = opendir(dirPath.c_str());
-  if (!dir)
-    return "";
-  // collect entries
   std::vector<std::string> entries;
+  struct dirent *entry;
   while ((entry = readdir(dir)) != NULL) {
     std::string name = entry->d_name;
-    if (name == "." || name == "..")
-      continue;
+    if (name == "." || name == "..") continue;
     entries.push_back(name);
   }
   closedir(dir);
   std::sort(entries.begin(), entries.end());
-  // base URI must end with /
+
   std::string base = uri;
-  if (base.empty() || base[base.size() - 1] != '/')
-    base += "/";
+  if (base.empty() || base[base.size() - 1] != '/') base += "/";
+
   std::ostringstream html;
-  html << "<!DOCTYPE html>\n<html>\n<head>\n"
-       << "<title>Index of " << uri << "</title>\n"
-       << "<style>body{font-family:monospace;padding:1em}"
-       << "a{display:block;padding:2px 0}</style>\n"
-       << "</head>\n<body>\n"
-       << "<h1>Index of " << uri << "</h1><hr>\n";
+  html << "<!DOCTYPE html><html lang=\"en\"><head>"
+       << "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+       << "<title>Index of " << uri << "</title>"
+       << "<link href=\"https://fonts.googleapis.com/css2?family=Syne:wght@700&family=DM+Sans:wght@400;500&display=swap\" rel=\"stylesheet\">"
+       << "<style>"
+       << ":root{--bg:#04050f;--glass:rgba(255,255,255,0.05);--glass-b:rgba(255,255,255,0.1);--teal:#00f0d4;--violet:#a78bfa;--text:#e2e8f0;--muted:#94a3b8;}"
+       << "body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;margin:0;padding:40px;min-height:100vh;display:flex;justify-content:center;}"
+       << ".aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;background:#04050f;}"
+       << ".blob{position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(167,139,250,0.15),transparent);filter:blur(100px);top:-200px;left:-100px;}"
+       << ".container{width:100%;max-width:900px;z-index:1;}"
+       << "h1{font-family:'Syne',sans-serif;font-size:32px;margin-bottom:24px;background:linear-gradient(135deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}"
+       << ".list{background:var(--glass);border:1px solid var(--glass-b);border-radius:20px;backdrop-filter:blur(20px);overflow:hidden;}"
+       << ".item{display:flex;align-items:center;padding:14px 24px;text-decoration:none;color:var(--text);border-bottom:1px solid var(--glass-b);transition:all 0.2s;}"
+       << ".item:last-child{border-bottom:none;}"
+       << ".item:hover{background:rgba(255,255,255,0.08);padding-left:32px;color:var(--teal);}"
+       << ".icon{margin-right:16px;font-size:18px;opacity:0.7;}"
+       << ".footer{margin-top:20px;font-size:12px;color:var(--muted);text-align:right;letter-spacing:1px;}"
+       << "</style></head><body>"
+       << "<div class=\"aurora\"><div class=\"blob\"></div></div>"
+       << "<div class=\"container\">"
+       << "<h1>Index of " << uri << "</h1>"
+       << "<div class=\"list\">"
+       << "<a href=\"../\" class=\"item\"><span class=\"icon\">↩</span> Parent Directory</a>";
+
   for (size_t i = 0; i < entries.size(); i++) {
     const std::string &name = entries[i];
     std::string fullPath = dirPath;
-    if (fullPath[fullPath.size() - 1] != '/')
-      fullPath += "/";
+    if (fullPath[fullPath.size() - 1] != '/') fullPath += "/";
     fullPath += name;
-    std::string display = name;
-    if (isDirectory(fullPath))
-      display += "/";
-    html << "<a href=\"" << base << display << "\">" << display << "</a>\n";
+
+    bool isDir = isDirectory(fullPath);
+    std::string display = name + (isDir ? "/" : "");
+    std::string icon = isDir ? "📁" : "📄";
+
+    html << "<a href=\"" << base << display << "\" class=\"item\">"
+         << "<span class=\"icon\">" << icon << "</span> " << display << "</a>";
   }
-  html << "<hr></body>\n</html>\n";
+
+  html << "</div><div class=\"footer\">WEBSERV v24.0 // HTTP/1.1</div></div></body></html>";
   return html.str();
 }
 
@@ -435,8 +451,11 @@ Response MethodHandler::handleGET(HTTPRequest &request,
   }
   // neither dir or a file
   if (!fileExists(ourFilePath))
-    return applySession(request,
-                        MethodHandler::makeError(404, "Not Found", route));
+  {
+		// std::cout << ourFilePath << std::endl; // FIXME:
+	  return applySession(request,
+		MethodHandler::makeError(404, "Not Found", route));
+}
   if (!isReadable(ourFilePath))
     return applySession(request,
                         MethodHandler::makeError(403, "Forbidden", route));

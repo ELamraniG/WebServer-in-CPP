@@ -330,6 +330,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 	}
 	else
 	{
+		std::cout << response.statusCode << std::endl;
 		logger.staticFile(method, route.getLocationPath(), (HttpStatus)response.statusCode);
 		client->setResponse(responseBuilder.build(response));
 		_pollFds[i].events = POLLOUT;
