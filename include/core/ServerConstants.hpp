@@ -3,8 +3,8 @@
 const int	BUFFER_SIZE = 4096;
 const int	PAUSE = 0;
 const int	POLL_TIMEOUT = 5000;
-const int	CGI_TIMEOUT = 2;
-const int	TIMEOUT = 5;
+const int	CGI_TIMEOUT = 5;
+const int	TIMEOUT = 45;
 
 enum HttpStatus
 {

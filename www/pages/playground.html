@@ -430,6 +430,7 @@
       <li><a href="#demos">Demos</a></li>
       <li><a href="#builder">Builder</a></li>
       <li><a href="#codes">Codes</a></li>
+      <li><a href="#delete">Delete</a></li>
     </ul>
     <div class="nav-pill"><div class="pulse"></div>HTTP/1.0 · C++98</div>
   </nav>
@@ -609,6 +610,43 @@
             <span class="res-status-badge" id="bStatusBadge"></span>
           </div>
           <div class="builder-res-body" id="bResponseBody">— fire a request to see the response here —</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DELETE TESTER -->
+  <section class="section" id="delete" style="padding-top:0">
+    <div class="container">
+      <div class="sec-label">HTTP DELETE</div>
+      <h2 class="sec-title">Delete a <span>file.</span></h2>
+      <p class="sec-sub">Type a directory path, list its files, then fire a real <code>DELETE</code> request on any entry. 204 = gone.</p>
+
+      <div class="builder-wrap">
+        <!-- path bar -->
+        <div class="builder-top">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--rose);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.25);border-radius:8px;padding:8px 14px;white-space:nowrap;flex-shrink:0">DELETE</span>
+          <input class="builder-url-input" id="dPath" type="text" placeholder="/uploads/" value="/uploads/" style="border-color:rgba(251,113,133,.2)">
+          <button class="builder-send" id="dList" style="background:rgba(251,113,133,.15);color:var(--rose);border:1px solid rgba(251,113,133,.3);box-shadow:none">
+            <svg viewBox="0 0 24 24" style="stroke:var(--rose)"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            List Files
+          </button>
+        </div>
+
+        <!-- file list -->
+        <div id="dList-wrap" style="border-top:1px solid var(--glass-b);min-height:60px">
+          <div id="dState" style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">
+            Press <strong style="color:var(--muted2)">List Files</strong> to load entries from the path above.
+          </div>
+        </div>
+
+        <!-- result -->
+        <div class="builder-response">
+          <div class="builder-res-label">
+            Last DELETE
+            <span class="res-status-badge" id="dBadge"></span>
+          </div>
+          <div class="builder-res-body" id="dResult">— delete a file to see the server response —</div>
         </div>
       </div>
     </div>
@@ -865,6 +903,93 @@
 
     // also fire on Enter in the URL input
     bUrl.addEventListener('keydown', e => { if (e.key === 'Enter') bSend.click(); });
+
+    // ── DELETE Tester ────────────────────────────────────────
+    const dPath    = document.getElementById('dPath');
+    const dListBtn = document.getElementById('dList');
+    const dWrap    = document.getElementById('dList-wrap');
+    const dState   = document.getElementById('dState');
+    const dResult  = document.getElementById('dResult');
+    const dBadge   = document.getElementById('dBadge');
+
+    function setDResult(status, text, ok) {
+      dBadge.textContent = status;
+      dBadge.className   = 'res-status-badge ' + (ok ? 'ok' : 'err');
+      dResult.textContent = text || '(empty body)';
+      dResult.className   = 'builder-res-body ' + (ok ? 'ok-color' : 'err-color');
+    }
+
+    function parseFiles(html) {
+      const doc   = new DOMParser().parseFromString(html, 'text/html');
+      const links = doc.querySelectorAll('a.item.file');
+      const names = [];
+      links.forEach(a => {
+        const href  = a.getAttribute('href') || '';
+        const parts = href.split('/');
+        const name  = parts[parts.length - 1];
+        if (name) names.push(name);
+      });
+      return names;
+    }
+
+    async function loadDeleteList() {
+      const path = dPath.value.trim() || '/uploads/';
+      dWrap.innerHTML = '<div id="dState" style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Loading…</div>';
+      try {
+        const res  = await fetch(path);
+        const text = await res.text();
+        if (!res.ok) {
+          dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--rose)">Server returned ' + res.status + ' for ' + path + '</div>';
+          return;
+        }
+        const names = parseFiles(text);
+        if (names.length === 0) {
+          dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Directory is empty.</div>';
+          return;
+        }
+        dWrap.innerHTML = '';
+        const base = path.endsWith('/') ? path : path + '/';
+        names.forEach((name, i) => {
+          const row = document.createElement('div');
+          row.id = 'drow-' + i;
+          row.style.cssText = 'display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:1px solid var(--glass-b);animation:fadeU .3s ease both';
+          row.style.animationDelay = (i * 0.04) + 's';
+          row.innerHTML =
+            '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name + '</span>'
+          + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--muted)">' + base + name + '</span>'
+          + '<button style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:12px;background:rgba(251,113,133,.08);color:var(--rose);border:1px solid rgba(251,113,133,.2);border-radius:8px;padding:6px 16px;cursor:pointer;transition:all .2s;flex-shrink:0" '
+          + 'onmouseover="this.style.background=\'rgba(251,113,133,.18)\'" onmouseout="this.style.background=\'rgba(251,113,133,.08)\'"'
+          + ' onclick="deleteFile(\'' + base + name + '\', ' + i + ', \'' + name + '\')">Delete</button>';
+          dWrap.appendChild(row);
+        });
+      } catch (err) {
+        dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--rose)">' + err.message + '</div>';
+      }
+    }
+
+    async function deleteFile(fullPath, idx, name) {
+      const row = document.getElementById('drow-' + idx);
+      if (row) row.style.opacity = '0.4';
+      try {
+        const res  = await fetch(fullPath, { method: 'DELETE' });
+        const text = await res.text();
+        const ok   = res.ok || res.status === 204;
+        setDResult(res.status + ' ' + res.statusText, ok ? 'Deleted: ' + name : text, ok);
+        if (ok && row) {
+          row.remove();
+          if (dWrap.children.length === 0)
+            dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Directory is empty.</div>';
+        } else if (row) {
+          row.style.opacity = '1';
+        }
+      } catch (err) {
+        setDResult('Network Error', err.message, false);
+        if (row) row.style.opacity = '1';
+      }
+    }
+
+    dListBtn.addEventListener('click', loadDeleteList);
+    dPath.addEventListener('keydown', e => { if (e.key === 'Enter') loadDeleteList(); });
   </script>
 
 </body>

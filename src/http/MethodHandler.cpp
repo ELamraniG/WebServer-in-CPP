@@ -170,27 +170,40 @@ static bool canDeletePath(const std::string &path) {
 Response MethodHandler::makeError(int code, const std::string &msg,
                                   const RouteConfig &route) {
   Response resp;
-
   resp.statusCode = code;
   resp.contentType = "text/html";
 
   const std::map<int, std::string> &errPages = route.getErrorPages();
   std::map<int, std::string>::const_iterator it = errPages.find(code);
+  
   if (it != errPages.end()) {
-	  std::string path = it->second;
+    std::string errorUri = it->second; // e.g., "/errors/504.html"
     std::string content;
-    if (readFileContent(path, content)) {
-		resp.body = content;
-		return resp;
+
+    // 1. Try to find the file from the project root directly 
+    // (This works if the path in conf is "www/errors/504.html")
+    if (readFileContent(errorUri, content)) {
+        resp.body = content;
+        return resp;
     }
-    std::string rootPath = makeThePath(route.getRoot(), path);
-	// std::cout << "DEBUG .. " << rootPath << std::endl; // FIXME: cannot find 504 cgi timeout page
-    if (readFileContent(rootPath, content)) {
+
+    std::string rootPath = route.getRoot();
+    
+    // Check if we are inside cgi-bin and strip it for error pages
+    size_t cgiPos = rootPath.find("/cgi-bin");
+    if (cgiPos != std::string::npos) {
+        rootPath = rootPath.substr(0, cgiPos);
+    }
+    
+    std::string fullErrorPath = makeThePath(rootPath, errorUri);
+    
+    if (readFileContent(fullErrorPath, content)) {
       resp.body = content;
       return resp;
     }
   }
 
+  // Generic fallback if files are missing
   std::ostringstream body;
   body << "<!DOCTYPE html>\n<html><head><title>" << code << " " << msg
        << "</title></head>\n"
@@ -396,34 +409,52 @@ Response MethodHandler::handleGET(HTTPRequest &request,
 
   if (isSafeAndAllowed("GET", request, route, resp))
     return applySession(request, resp);
-  // check if there is redir in the config
+
   if (!route.getRedirect().empty())
     return applySession(request, makeRedirect(route.getRedirect()));
-  // check if the request in cgi file
+
   if (tryCGI(request, route)) {
     request.setIsCGI(true);
     return applySession(request, resp);
   }
-  std::string ourFilePath = makeThePath(route.getRoot(), request.getURI());
-  // check if dir
+
+  // --- FIX START: SMART PATH RESOLUTION ---
+  std::string root = route.getRoot();
+  std::string uri = RemoveQueryString(request.getURI());
+  std::string ourFilePath;
+
+  // Find the last component of the root (e.g., "cgi-bin" from "www/cgi-bin")
+  size_t lastSlash = root.find_last_of('/');
+  std::string lastFolder = (lastSlash == std::string::npos) ? root : root.substr(lastSlash + 1);
+
+  // If URI starts with the same folder name as the end of root, avoid duplication
+  // Example: root "www/cgi-bin" and URI "/cgi-bin/test.py" -> "www/cgi-bin/test.py"
+  std::string prefix = "/" + lastFolder;
+  if (!lastFolder.empty() && uri.compare(0, prefix.length(), prefix) == 0) {
+      std::string subPath = uri.substr(prefix.length());
+      ourFilePath = makeThePath(root, subPath);
+  } else {
+      ourFilePath = makeThePath(root, uri);
+  }
+  // --- FIX END ---
+
   if (isDirectory(ourFilePath)) {
-    // if it has no / at the end redirect to the same uri with / added
-    std::string currentUri = RemoveQueryString(request.getURI());
-    if (!currentUri.empty() && currentUri[currentUri.size() - 1] != '/')
-      return applySession(request, makeRedirect(currentUri + "/"));
-    // check if there is an index file in the config
+    if (!uri.empty() && uri[uri.size() - 1] != '/')
+      return applySession(request, makeRedirect(uri + "/"));
+
     std::string indexFile = route.getIndex();
     if (!indexFile.empty()) {
       std::string indexPath = ourFilePath;
       if (indexPath[indexPath.size() - 1] != '/')
         indexPath += "/";
       indexPath += indexFile;
+
       if (fileExists(indexPath)) {
         std::string baseURI = request.getURI();
         queryPos = baseURI.find('?');
         std::string justPath;
         std::string queryPart;
-        // get the query out of the directory URI
+
         if (queryPos != std::string::npos) {
           justPath = baseURI.substr(0, queryPos);
           queryPart = baseURI.substr(queryPos);
@@ -431,59 +462,57 @@ Response MethodHandler::handleGET(HTTPRequest &request,
           justPath = baseURI;
           queryPart = "";
         }
+        
         if (!justPath.empty() && justPath[justPath.size() - 1] != '/')
           justPath += "/";
+          
         std::string indexedURI = justPath + indexFile + queryPart;
         indexReq = request;
         indexReq.setURI(indexedURI);
+        
         if (tryCGI(indexReq, route)) {
           request.setIsCGI(true);
           return applySession(request, resp);
         }
+        
         if (!isReadable(indexPath))
-          return applySession(
-              request, MethodHandler::makeError(403, "Forbidden", route));
+          return applySession(request, MethodHandler::makeError(403, "Forbidden", route));
+
         std::string content;
         if (!readFileContent(indexPath, content))
-          return applySession(
-              request,
-              MethodHandler::makeError(500, "Internal Server Error", route));
+          return applySession(request, MethodHandler::makeError(500, "Internal Server Error", route));
+
         resp.statusCode = 200;
         resp.contentType = getTheFileType(indexPath);
         resp.body = content;
         return applySession(request, resp);
       }
     }
-    // check if autoindex is enabled
+
     if (route.getAutoindex()) {
-      std::string listing =
-          buildAutoindex(ourFilePath, RemoveQueryString(request.getURI()));
+      // Use the corrected ourFilePath for directory listing
+      std::string listing = buildAutoindex(ourFilePath, uri);
       if (listing.empty())
-        return applySession(request, MethodHandler::makeError(
-                                         500, "Internal Server Error", route));
+        return applySession(request, MethodHandler::makeError(500, "Internal Server Error", route));
+      
       resp.statusCode = 200;
       resp.contentType = "text/html";
       resp.body = listing;
       return applySession(request, resp);
     }
-    // no index no autoindex
-    return applySession(request,
-                        MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request, MethodHandler::makeError(403, "Forbidden", route));
   }
-  // neither dir or a file
+
   if (!fileExists(ourFilePath))
-  {
-		// std::cout << ourFilePath << std::endl; // FIXME: cannot find script who isn't in pass cgi, so i can serve them as a static files
-	  return applySession(request,
-		MethodHandler::makeError(404, "Not Found", route));
-}
+    return applySession(request, MethodHandler::makeError(404, "Not Found", route));
+
   if (!isReadable(ourFilePath))
-    return applySession(request,
-                        MethodHandler::makeError(403, "Forbidden", route));
+    return applySession(request, MethodHandler::makeError(403, "Forbidden", route));
+
   std::string content;
   if (!readFileContent(ourFilePath, content))
-    return applySession(
-        request, MethodHandler::makeError(500, "Internal Server Error", route));
+    return applySession(request, MethodHandler::makeError(500, "Internal Server Error", route));
+
   resp.statusCode = 200;
   resp.contentType = getTheFileType(ourFilePath);
   resp.body = content;
