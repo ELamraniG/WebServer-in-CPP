@@ -35,12 +35,12 @@ CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, 
 
 const std::string	CGIHandler::getPathEnv() const
 {
-	for (int i=0; environ[i]; i++)
-	{
-		if (strncmp(environ[i], "PATH=", 5) == 0)
-			return std::string(environ[i] + 5);
-	}
-	return ("/usr/local/bin:/usr/bin:/bin");
+	std::string	path;
+
+	path = std::getenv("PATH");
+	if (path.empty())
+		path = "/usr/local/bin:/usr/bin:/bin";
+	return (path);
 }
 
 void	CGIHandler::buildEnv()
