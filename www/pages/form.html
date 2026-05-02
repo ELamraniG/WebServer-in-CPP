@@ -606,16 +606,7 @@
 
           </form>
 
-          <!-- response preview (shown after submit via JS, degrades gracefully) -->
-          <div class="response-panel" id="respPanel">
-            <div class="resp-header">
-              <span class="resp-title">// Server Response</span>
-              <span class="resp-status">200 OK</span>
-            </div>
-            <div class="resp-body" id="respBody">
-              <div><span class="rd">waiting for CGI output...</span></div>
-            </div>
-          </div>
+
 
         </div>
       </div>
@@ -628,48 +619,7 @@
     <span><a href="/">← Home</a> · <a href="/404.html">404</a> · <a href="/500.html">500</a></span>
   </footer>
 
-  <script>
-    // Optional: intercept submit to show inline response (won't break normal POST)
-    const form = document.getElementById('postForm');
-    const panel = document.getElementById('respPanel');
-    const body = document.getElementById('respBody');
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      const params = new URLSearchParams(data);
-
-      // show panel loading
-      panel.classList.add('show');
-      body.innerHTML = '<span class="rd">⟳ Sending request to CGI...</span>';
-
-      try {
-        const res = await fetch(form.action, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: params.toString()
-        });
-
-        const text = await res.text();
-        const status = res.status;
-        const statusEl = panel.querySelector('.resp-status');
-
-        statusEl.textContent = status + ' ' + res.statusText;
-        statusEl.style.color = status === 200 ? '#4ade80' : '#fb7185';
-        statusEl.style.background = status === 200 ? 'rgba(74,222,128,0.1)' : 'rgba(251,113,133,0.1)';
-        statusEl.style.borderColor = status === 200 ? 'rgba(74,222,128,0.2)' : 'rgba(251,113,133,0.2)';
-
-        // render HTML naturally instead of escaping
-        body.innerHTML = text;
-      } catch (err) {
-        body.innerHTML = `<span class="rd">// request failed:</span>\n<span style="color:#fb7185">${escapeHtml(err.message)}</span>`;
-      }
-    });
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
-  </script>
 
 </body>
 
