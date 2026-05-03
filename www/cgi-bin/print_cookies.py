@@ -354,7 +354,7 @@ print(f"""<!DOCTYPE html>
   <footer>
     <div class="foot-inner">
       <div class="foot-logo">webserv</div>
-      <span class="foot-copy">© 2025 REDA, ELAMRANI, SIMO · 42 School</span>
+      <span class="foot-copy">© 2025 REDA, ELAMRANI, SIMO · 1337 School</span>
       <ul class="foot-links">
         <li><a href="/">Home</a></li>
         <li><a href="/404.html">404</a></li>

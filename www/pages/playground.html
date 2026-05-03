@@ -1,996 +1,552 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>webserv — playground.</title>
+  <title>Playground · webserv</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg:      #04050f;
       --glass:   rgba(255,255,255,0.05);
       --glass-b: rgba(255,255,255,0.09);
-      --glass-hover: rgba(255,255,255,0.09);
       --teal:    #00f0d4;
       --violet:  #a78bfa;
       --rose:    #fb7185;
       --blue:    #60a5fa;
+      --amber:   #fbbf24;
+      --green:   #4ade80;
       --text:    #e2e8f0;
       --muted:   #475569;
       --muted2:  #94a3b8;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
     html { scroll-behavior: smooth }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
-      overflow-x: hidden;
-      min-height: 100vh;
-    }
-
-    /* ─── AURORA ─── */
+    /* aurora */
     .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden }
     .blob { position: absolute; border-radius: 50%; filter: blur(120px); animation: drift 14s ease-in-out infinite }
-    .b1 { width:800px;height:800px;background:radial-gradient(circle,rgba(167,139,250,.35),rgba(96,165,250,.2));top:-300px;left:-200px;animation-delay:0s }
-    .b2 { width:600px;height:600px;background:radial-gradient(circle,rgba(0,240,212,.25),rgba(96,165,250,.15));top:50%;right:-150px;animation-delay:-5s }
-    .b3 { width:700px;height:700px;background:radial-gradient(circle,rgba(251,113,133,.2),rgba(167,139,250,.2));bottom:-200px;left:35%;animation-delay:-9s }
+    .b1 { width:700px;height:700px;background:radial-gradient(circle,rgba(167,139,250,.25),rgba(96,165,250,.12));top:-250px;left:-150px }
+    .b2 { width:550px;height:550px;background:radial-gradient(circle,rgba(0,240,212,.18),rgba(96,165,250,.08));bottom:-150px;right:-100px;animation-delay:-6s }
+    .b3 { width:500px;height:500px;background:radial-gradient(circle,rgba(251,113,133,.12),rgba(167,139,250,.1));top:40%;left:40%;animation-delay:-10s }
+    @keyframes drift { 0%,100%{transform:translate(0,0)scale(1)} 33%{transform:translate(40px,-35px)scale(1.05)} 66%{transform:translate(-25px,20px)scale(.97)} }
+    body::after { content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E") }
 
-    @keyframes drift {
-      0%,100% { transform:translate(0,0) scale(1) }
-      33%      { transform:translate(50px,-40px) scale(1.06) }
-      66%      { transform:translate(-30px,30px) scale(.96) }
-    }
-
-    body::after {
-      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-    }
-
-    /* ─── NAV ─── */
-    nav {
-      position: fixed; top: 18px; left: 50%; transform: translateX(-50%);
-      width: calc(100% - 64px); max-width: 1160px; z-index: 200;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 24px; border-radius: 18px;
-      background: rgba(4,5,15,.65); backdrop-filter: blur(28px);
-      border: 1px solid var(--glass-b);
-    }
-    .nav-logo {
-      font-family:'Syne',sans-serif; font-weight:800; font-size:18px;
-      letter-spacing:-.03em; text-decoration:none;
-      background:linear-gradient(130deg,var(--teal),var(--violet));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    }
-    .nav-links { display:flex; gap:4px; list-style:none }
-    .nav-links a {
-      color:var(--muted2); text-decoration:none; font-size:14px; font-weight:500;
-      padding:7px 14px; border-radius:10px; transition:all .2s;
-    }
-    .nav-links a:hover { color:#fff; background:var(--glass) }
-    .nav-links a.active { color:#fff; background:var(--glass) }
-    .nav-pill {
-      font-size:12px; font-weight:600; color:var(--teal);
-      background:rgba(0,240,212,.1); border:1px solid rgba(0,240,212,.2);
-      padding:6px 16px; border-radius:30px; display:flex; align-items:center; gap:6px;
-    }
+    /* nav */
+    nav { position:fixed;top:18px;left:50%;transform:translateX(-50%);width:calc(100% - 40px);max-width:1400px;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-radius:18px;background:rgba(4,5,15,.65);backdrop-filter:blur(28px);border:1px solid var(--glass-b) }
+    .nav-logo { font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.03em;text-decoration:none;background:linear-gradient(130deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .nav-links { display:flex;gap:2px;list-style:none }
+    .nav-links a { color:var(--muted2);text-decoration:none;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;transition:all .2s }
+    .nav-links a:hover { color:#fff;background:var(--glass) }
+    .nav-pill { font-size:12px;font-weight:600;color:var(--teal);background:rgba(0,240,212,.1);border:1px solid rgba(0,240,212,.2);padding:6px 16px;border-radius:30px;display:flex;align-items:center;gap:6px }
     .pulse { width:7px;height:7px;background:var(--teal);border-radius:50%;box-shadow:0 0 10px var(--teal);animation:blink 2s ease infinite }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-    /* ─── HERO ─── */
-    .hero {
-      min-height: 100vh; display:flex; align-items:center; justify-content:center;
-      padding: 120px 40px 80px; position:relative; z-index:1;
-    }
-    .hero-inner { max-width:860px; text-align:center }
+    /* page */
+    .page { position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:110px 40px 80px }
 
-    .hero-chip {
-      display:inline-flex; align-items:center; gap:8px;
-      background:rgba(167,139,250,.1); border:1px solid rgba(167,139,250,.25);
-      color:var(--violet); font-size:13px; font-weight:500;
-      padding:8px 20px; border-radius:40px; margin-bottom:36px;
-      letter-spacing:.03em; animation:fadeD .5s ease both;
-    }
+    /* hero */
+    .hero { text-align:center;margin-bottom:72px;animation:fadeU .6s ease both }
+    .hero-chip { display:inline-flex;align-items:center;gap:8px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);color:var(--violet);font-size:11px;font-weight:700;padding:7px 18px;border-radius:40px;margin-bottom:28px;letter-spacing:.1em;text-transform:uppercase }
+    .hero h1 { font-family:'Syne',sans-serif;font-size:clamp(42px,8vw,88px);font-weight:800;letter-spacing:-.04em;line-height:.92;margin-bottom:20px }
+    .hero h1 .t1 { display:block;color:#fff }
+    .hero h1 .t2 { display:block;background:linear-gradient(135deg,var(--teal) 0%,var(--violet) 55%,var(--rose) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .hero-sub { font-size:16px;color:var(--muted2);max-width:480px;margin:0 auto;font-weight:300;line-height:1.8 }
+    @keyframes fadeU { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
-    .hero-title {
-      font-family:'Syne',sans-serif; font-size:clamp(60px,11vw,120px);
-      font-weight:800; line-height:.95; letter-spacing:-.04em;
-      margin-bottom:30px; animation:fadeD .6s ease .1s both;
-    }
-    .hero-title .t1 { display:block; color:#fff }
-    .hero-title .t2 {
-      display:block;
-      background:linear-gradient(135deg,var(--teal) 0%,var(--violet) 55%,var(--rose) 100%);
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    }
+    /* section */
+    .section { margin-bottom:60px }
+    .sec-head { display:flex;align-items:center;gap:12px;margin-bottom:20px }
+    .sec-tag { font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:7px }
+    .sec-tag::before { content:'';width:14px;height:2px;border-radius:1px }
+    .sec-title { font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em }
+    .sec-count { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-left:auto }
 
-    .hero-desc {
-      font-size:18px; color:var(--muted2); max-width:560px;
-      margin:0 auto 48px; line-height:1.8; font-weight:300;
-      animation:fadeD .6s ease .2s both;
-    }
-    .hero-desc strong { color:var(--text); font-weight:500 }
+    /* grids */
+    .g2 { display:grid;grid-template-columns:repeat(2,1fr);gap:12px }
+    .g3 { display:grid;grid-template-columns:repeat(3,1fr);gap:12px }
+    .g4 { display:grid;grid-template-columns:repeat(4,1fr);gap:12px }
+    .g5 { display:grid;grid-template-columns:repeat(5,1fr);gap:12px }
+    .g6 { display:grid;grid-template-columns:repeat(6,1fr);gap:10px }
 
-    .hero-ctas {
-      display:flex; gap:14px; justify-content:center; margin-bottom:80px;
-      flex-wrap:wrap; animation:fadeD .6s ease .3s both;
-    }
+    /* test card — clickable link */
+    .tc { background:var(--glass);border:1px solid var(--glass-b);border-radius:16px;overflow:hidden;backdrop-filter:blur(22px);transition:all .22s;text-decoration:none;display:block;position:relative }
+    .tc::before { content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.04) 0%,transparent 60%);pointer-events:none }
+    .tc:hover { transform:translateY(-5px);border-color:rgba(255,255,255,.15);box-shadow:0 20px 50px rgba(0,0,0,.45) }
+    .tc:hover .tc-arr { opacity:1;transform:translateX(3px) }
+    .tc-stripe { height:3px }
+    .tc-body { padding:20px 22px }
+    .tc-icon { width:40px;height:40px;border-radius:11px;margin-bottom:14px;display:flex;align-items:center;justify-content:center }
+    .tc-icon svg { width:18px;height:18px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round }
+    .tc-badge { font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;display:inline-block;margin-bottom:9px }
+    .tc-title { font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;margin-bottom:5px }
+    .tc-desc { font-size:12px;color:var(--muted2);font-weight:300;line-height:1.6;margin-bottom:13px }
+    .tc-path { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px }
+    .tc-dot { width:4px;height:4px;border-radius:50%;flex-shrink:0 }
+    .tc-arr { position:absolute;top:18px;right:18px;width:26px;height:26px;border-radius:7px;background:var(--glass);border:1px solid var(--glass-b);display:flex;align-items:center;justify-content:center;opacity:0;transition:all .18s }
+    .tc-arr svg { width:12px;height:12px;stroke:var(--muted2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round }
 
-    .btn-glow {
-      font-family:'Syne',sans-serif; font-weight:700; font-size:14px;
-      letter-spacing:.02em; padding:14px 32px; border-radius:12px;
-      border:none; cursor:pointer; text-decoration:none;
-      background:linear-gradient(135deg,var(--teal),var(--violet));
-      color:#04050f;
-      box-shadow:0 0 30px rgba(167,139,250,.35),0 4px 20px rgba(0,0,0,.4);
-      transition:all .25s; display:inline-flex; align-items:center; gap:8px;
-    }
-    .btn-glow:hover { transform:translateY(-3px); box-shadow:0 0 55px rgba(167,139,250,.6),0 8px 30px rgba(0,0,0,.5) }
-    .btn-glow svg { width:15px;height:15px;stroke:#04050f;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round }
+    /* status code card */
+    .sc { background:var(--glass);border:1px solid var(--glass-b);border-radius:13px;padding:16px 18px;text-decoration:none;display:block;transition:all .2s }
+    .sc:hover { transform:translateY(-4px);border-color:rgba(255,255,255,.15) }
+    .sc-num { font-family:'Syne',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.03em;line-height:1;margin-bottom:5px }
+    .sc-name { font-size:12px;color:var(--text);font-weight:500;margin-bottom:2px }
+    .sc-desc { font-size:11px;color:var(--muted2);font-weight:300;line-height:1.5 }
 
-    .btn-ghost {
-      font-family:'Syne',sans-serif; font-weight:600; font-size:14px;
-      letter-spacing:.02em; padding:14px 32px; border-radius:12px;
-      cursor:pointer; text-decoration:none;
-      background:var(--glass); color:var(--text); border:1px solid var(--glass-b);
-      backdrop-filter:blur(12px); transition:all .25s;
-      display:inline-flex; align-items:center; gap:8px;
-    }
-    .btn-ghost:hover { background:var(--glass-hover); border-color:rgba(255,255,255,.18); transform:translateY(-3px) }
-    .btn-ghost svg { width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round }
+    /* builder / interactive card */
+    .bc { background:var(--glass);border:1px solid var(--glass-b);border-radius:16px;overflow:hidden;backdrop-filter:blur(22px) }
+    .bc-top { display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--glass-b);background:rgba(255,255,255,.02) }
+    .bc-top .fixed-method { font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.1em;padding:7px 12px;border-radius:8px;flex-shrink:0 }
+    .bc-method { font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;background:rgba(0,240,212,.1);color:var(--teal);border:1px solid rgba(0,240,212,.25);border-radius:8px;padding:7px 12px;cursor:pointer;outline:none;-webkit-appearance:none }
+    .bc-method option { background:#0d0f1e;color:var(--text) }
+    .bc-url { flex:1;background:rgba(255,255,255,.04);border:1px solid var(--glass-b);color:var(--text);border-radius:8px;padding:8px 13px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .2s }
+    .bc-url:focus { border-color:rgba(0,240,212,.4) }
+    .bc-url::placeholder { color:var(--muted) }
+    .bc-btn { font-family:'Syne',sans-serif;font-weight:700;font-size:12px;background:linear-gradient(135deg,var(--teal),var(--violet));color:#04050f;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0 }
+    .bc-btn:hover { transform:translateY(-2px);box-shadow:0 0 20px rgba(167,139,250,.35) }
+    .bc-btn svg { width:12px;height:12px;stroke:#04050f;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round }
+    .bc-btn.rose { background:rgba(251,113,133,.15);color:var(--rose);border:1px solid rgba(251,113,133,.3);box-shadow:none }
+    .bc-btn.rose svg { stroke:var(--rose) }
+    .bc-btn.rose:hover { background:rgba(251,113,133,.25) }
+    .bc-body-area { padding:12px 18px;border-bottom:1px solid var(--glass-b);display:none }
+    .bc-body-area.show { display:block }
+    .bc-body-lbl { font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin-bottom:7px }
+    .bc-body-inp { width:100%;background:rgba(255,255,255,.03);border:1px solid var(--glass-b);color:var(--text);border-radius:8px;padding:10px 13px;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;outline:none;min-height:65px;transition:border-color .2s }
+    .bc-body-inp:focus { border-color:rgba(0,240,212,.4) }
+    .bc-res { padding:14px 18px }
+    .bc-res-lbl { font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted2);margin-bottom:8px;display:flex;align-items:center;gap:8px }
+    .badge { font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;padding:2px 9px;border-radius:20px;display:none }
+    .badge.ok  { background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2);display:inline-block }
+    .badge.err { background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2);display:inline-block }
+    .bc-res-body { background:rgba(4,5,15,.7);border:1px solid var(--glass-b);border-radius:9px;padding:12px;min-height:60px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;color:var(--muted2);white-space:pre-wrap;word-break:break-all;max-height:280px;overflow-y:auto }
+    .bc-res-body.ok-c  { color:var(--green) }
+    .bc-res-body.err-c { color:var(--rose) }
 
-    /* live status row */
-    .status-row {
-      display:flex; justify-content:center; gap:2px;
-      animation:fadeD .6s ease .4s both;
-    }
-    .sstat {
-      background:var(--glass); border:1px solid var(--glass-b);
-      backdrop-filter:blur(20px); padding:20px 32px; text-align:center;
-      flex:1; max-width:200px;
-    }
-    .sstat:first-child { border-radius:14px 0 0 14px }
-    .sstat:last-child  { border-radius:0 14px 14px 0 }
-    .sstat-n {
-      font-family:'Syne',sans-serif; font-size:28px; font-weight:800;
-      background:linear-gradient(135deg,var(--teal),var(--violet));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-      display:block; line-height:1;
-    }
-    .sstat-l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.14em; font-weight:600; margin-top:6px }
+    /* raw request builder */
+    .raw-area { width:100%;background:rgba(255,255,255,.03);border:1px solid var(--glass-b);color:var(--text);border-radius:8px;padding:12px 14px;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;outline:none;min-height:110px;transition:border-color .2s }
+    .raw-area:focus { border-color:rgba(251,113,133,.4) }
+    .raw-wrap { padding:14px 18px;border-bottom:1px solid var(--glass-b) }
+    .raw-note { font-size:11px;color:var(--muted);font-weight:300;margin-top:8px;font-family:'JetBrains Mono',monospace }
 
-    @keyframes fadeD { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes fadeU { from{opacity:0;transform:translateY(18px)}  to{opacity:1;transform:translateY(0)} }
-
-    /* ─── SECTIONS ─── */
-    .section { position:relative; z-index:1; padding:110px 40px }
-    .container { max-width:1160px; margin:0 auto }
-
-    .sec-label {
-      font-size:11px; font-weight:700; letter-spacing:.22em; text-transform:uppercase;
-      color:var(--teal); margin-bottom:14px; display:flex; align-items:center; gap:10px;
-    }
-    .sec-label::before { content:''; width:22px; height:2px; background:var(--teal); border-radius:1px }
-
-    .sec-title {
-      font-family:'Syne',sans-serif; font-size:clamp(32px,5vw,58px);
-      font-weight:800; color:#fff; line-height:1.05; letter-spacing:-.03em; margin-bottom:16px;
-    }
-    .sec-title span {
-      background:linear-gradient(135deg,var(--teal),var(--violet));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    }
-    .sec-sub { font-size:17px; color:var(--muted2); max-width:520px; line-height:1.8; font-weight:300; margin-bottom:64px }
-
-    code {
-      color:var(--teal); background:rgba(0,240,212,.1);
-      padding:2px 8px; border-radius:5px; font-size:14px;
-      font-family:'JetBrains Mono',monospace;
-    }
-
-    /* ─── DEMO CARDS (CGI endpoints) ─── */
-    .demo-grid {
-      display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
-    }
-
-    .demo-card {
-      background:var(--glass); border:1px solid var(--glass-b);
-      border-radius:20px; overflow:hidden; backdrop-filter:blur(24px);
-      transition:all .3s; position:relative; cursor:pointer; text-decoration:none;
-      display:block;
-    }
-    .demo-card::before {
-      content:''; position:absolute; inset:0;
-      background:linear-gradient(145deg,rgba(255,255,255,.04) 0%,transparent 60%);
-      pointer-events:none; border-radius:20px;
-    }
-    .demo-card:hover { transform:translateY(-8px); border-color:rgba(255,255,255,.16); box-shadow:0 28px 70px rgba(0,0,0,.5) }
-
-    .demo-card-top { height:3px; width:100% }
-
-    .demo-card-body { padding:28px }
-
-    .demo-icon {
-      width:52px; height:52px; border-radius:14px; margin-bottom:20px;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .demo-icon svg { width:24px;height:24px;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round }
-
-    .demo-method {
-      font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:500;
-      letter-spacing:.14em; text-transform:uppercase;
-      padding:3px 10px; border-radius:20px; display:inline-block; margin-bottom:12px;
-    }
-
-    .demo-title {
-      font-family:'Syne',sans-serif; font-weight:700; font-size:18px;
-      color:#fff; margin-bottom:8px; letter-spacing:-.02em;
-    }
-
-    .demo-desc { font-size:13px; color:var(--muted2); font-weight:300; line-height:1.7; margin-bottom:20px }
-
-    .demo-path {
-      font-family:'JetBrains Mono',monospace; font-size:11px;
-      display:flex; align-items:center; gap:8px; color:var(--muted);
-    }
-    .demo-path-dot { width:5px;height:5px;border-radius:50%;flex-shrink:0 }
-
-    .demo-arrow {
-      position:absolute; top:28px; right:28px;
-      width:32px;height:32px;border-radius:8px;
-      background:var(--glass); border:1px solid var(--glass-b);
-      display:flex;align-items:center;justify-content:center;
-      opacity:0; transition:opacity .2s;
-    }
-    .demo-card:hover .demo-arrow { opacity:1 }
-    .demo-arrow svg { width:14px;height:14px;stroke:var(--text);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round }
-
-    /* ─── HTTP METHODS REFERENCE ─── */
-    .methods-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px }
-
-    .method-card {
-      background:var(--glass); border:1px solid var(--glass-b);
-      border-radius:16px; padding:24px 26px; backdrop-filter:blur(20px);
-      transition:all .25s;
-    }
-    .method-card:hover { background:var(--glass-hover); transform:translateY(-3px) }
-
-    .method-tag {
-      font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
-      letter-spacing:.1em; padding:4px 14px; border-radius:20px;
-      display:inline-block; margin-bottom:14px;
-    }
-
-    .method-title { font-family:'Syne',sans-serif; font-weight:700; font-size:16px; color:#fff; margin-bottom:8px }
-    .method-desc { font-size:13px; color:var(--muted2); font-weight:300; line-height:1.7 }
-
-    .method-codes { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px }
-    .mcode {
-      font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
-      padding:3px 10px; border-radius:6px; background:var(--glass); border:1px solid var(--glass-b);
-      color:var(--muted2);
-    }
-
-    /* ─── REQUEST BUILDER ─── */
-    .builder-wrap {
-      background:var(--glass); border:1px solid var(--glass-b);
-      border-radius:20px; overflow:hidden; backdrop-filter:blur(24px);
-    }
-
-    .builder-top {
-      display:flex; align-items:center; gap:14px;
-      padding:18px 24px; border-bottom:1px solid var(--glass-b);
-      background:rgba(255,255,255,.03);
-    }
-
-    .builder-method-sel {
-      font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500;
-      background:rgba(0,240,212,.1); color:var(--teal);
-      border:1px solid rgba(0,240,212,.25); border-radius:8px;
-      padding:8px 14px; cursor:pointer; outline:none;
-      -webkit-appearance:none; appearance:none;
-    }
-    .builder-method-sel option { background:#0d0f1e; color:var(--text) }
-
-    .builder-url-input {
-      flex:1; background:rgba(255,255,255,.04); border:1px solid var(--glass-b);
-      color:var(--text); border-radius:8px; padding:8px 14px;
-      font-family:'JetBrains Mono',monospace; font-size:13px; outline:none;
-      transition:border-color .2s;
-    }
-    .builder-url-input:focus { border-color:rgba(0,240,212,.4) }
-    .builder-url-input::placeholder { color:var(--muted) }
-
-    .builder-send {
-      font-family:'Syne',sans-serif; font-weight:700; font-size:13px;
-      background:linear-gradient(135deg,var(--teal),var(--violet));
-      color:#04050f; border:none; border-radius:8px;
-      padding:9px 22px; cursor:pointer; transition:all .2s;
-      display:flex; align-items:center; gap:6px;
-    }
-    .builder-send:hover { transform:translateY(-2px); box-shadow:0 0 24px rgba(167,139,250,.45) }
-    .builder-send svg { width:13px;height:13px;stroke:#04050f;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round }
-
-    .builder-body-area {
-      padding:20px 24px; border-bottom:1px solid var(--glass-b);
-      display:none;
-    }
-    .builder-body-area.visible { display:block }
-    .builder-body-label { font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted2);margin-bottom:10px }
-    .builder-body-input {
-      width:100%; background:rgba(255,255,255,.03); border:1px solid var(--glass-b);
-      color:var(--text); border-radius:8px; padding:12px 14px; resize:vertical;
-      font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7;
-      outline:none; min-height:80px; transition:border-color .2s;
-    }
-    .builder-body-input:focus { border-color:rgba(0,240,212,.4) }
-
-    .builder-response { padding:20px 24px }
-    .builder-res-label {
-      font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-      color:var(--muted2);margin-bottom:10px;display:flex;align-items:center;gap:10px;
-    }
-    .res-status-badge {
-      font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;
-      padding:2px 10px;border-radius:20px;display:none;
-    }
-    .res-status-badge.ok  { background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.2);display:inline-block }
-    .res-status-badge.err { background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2);display:inline-block }
-
-    .builder-res-body {
-      background:rgba(4,5,15,.7); border:1px solid var(--glass-b);
-      border-radius:10px; padding:16px; min-height:80px;
-      font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.8;
-      color:var(--muted2); white-space:pre-wrap; word-break:break-all;
-    }
-    .builder-res-body.loading { color:var(--muted); font-style:italic }
-    .builder-res-body.ok-color { color:#4ade80 }
-    .builder-res-body.err-color { color:var(--rose) }
-
-    /* ─── STATUS CODES ─── */
-    .codes-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
-
-    .code-card {
-      background:var(--glass); border:1px solid var(--glass-b);
-      border-radius:14px; padding:20px; text-decoration:none;
-      transition:all .25s; display:block;
-    }
-    .code-card:hover { transform:translateY(-4px); border-color:rgba(255,255,255,.15) }
-
-    .code-num {
-      font-family:'Syne',sans-serif; font-weight:800; font-size:32px;
-      letter-spacing:-.03em; line-height:1; margin-bottom:8px;
-    }
-    .code-name { font-size:13px; color:var(--text); font-weight:500; margin-bottom:4px }
-    .code-desc { font-size:12px; color:var(--muted2); font-weight:300; line-height:1.6 }
-
-    .code-2xx .code-num { color:#4ade80 }
-    .code-3xx .code-num { color:var(--blue) }
-    .code-4xx .code-num { color:var(--rose) }
-    .code-5xx .code-num { color:var(--violet) }
-
-    /* ─── PIPELINE ─── */
-    .pipeline { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:start; gap:0 }
-    .pcard {
-      background:var(--glass); border:1px solid var(--glass-b);
-      border-radius:18px; padding:28px; backdrop-filter:blur(20px);
-    }
-    .pp { font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px }
-    .pt { font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:#fff;margin-bottom:16px }
-    .pi { list-style:none }
-    .pi li { display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted2);padding:5px 0;font-weight:300 }
-    .pi li span { width:5px;height:5px;border-radius:50%;flex-shrink:0 }
-    .parr { font-size:28px;color:var(--muted);align-self:center;padding:0 10px }
-
-    /* ─── FOOTER ─── */
-    footer { position:relative;z-index:1;border-top:1px solid var(--glass-b);padding:60px 40px 40px }
-    .foot-inner { max-width:1160px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:60px;margin-bottom:48px }
-    .foot-logo {
-      font-family:'Syne',sans-serif; font-weight:800; font-size:22px; letter-spacing:-.03em;
-      background:linear-gradient(130deg,var(--teal),var(--violet));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-      margin-bottom:14px;
-    }
-    .foot-desc { font-size:14px;color:var(--muted);line-height:1.8;font-weight:300;max-width:340px }
-    .foot-h { font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;letter-spacing:.04em;margin-bottom:18px }
-    .foot-links { list-style:none }
-    .foot-links li { margin-bottom:10px }
-    .foot-links a { font-size:14px;color:var(--muted2);text-decoration:none;transition:color .2s;font-weight:300 }
+    /* footer */
+    footer { position:relative;z-index:1;border-top:1px solid var(--glass-b);padding:32px 40px;margin-top:20px }
+    .foot-inner { max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:20px }
+    .foot-logo { font-family:'Syne',sans-serif;font-weight:800;font-size:16px;background:linear-gradient(130deg,var(--teal),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .foot-copy { font-size:13px;color:var(--muted) }
+    .foot-links { display:flex;gap:18px;list-style:none }
+    .foot-links a { font-size:13px;color:var(--muted2);text-decoration:none;transition:color .2s }
     .foot-links a:hover { color:#fff }
-    .foot-bottom {
-      max-width:1160px; margin:0 auto;
-      border-top:1px solid var(--glass-b); padding-top:28px;
-      display:flex; justify-content:space-between;
-      font-size:13px; color:var(--muted);
-    }
+
+    mn { font-family:'JetBrains Mono',monospace;font-size:11px;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.3) }
   </style>
 </head>
-
 <body>
 
-  <div class="aurora">
-    <div class="blob b1"></div>
-    <div class="blob b2"></div>
-    <div class="blob b3"></div>
-  </div>
+<div class="aurora">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
 
-  <!-- NAV -->
-  <nav>
-    <a class="nav-logo" href="/">webserv</a>
-    <ul class="nav-links">
-      <li><a href="/">Home</a></li>
-      <li><a href="#demos">Demos</a></li>
-      <li><a href="#builder">Builder</a></li>
-      <li><a href="#codes">Codes</a></li>
-      <li><a href="#delete">Delete</a></li>
-    </ul>
-    <div class="nav-pill"><div class="pulse"></div>HTTP/1.0 · C++98</div>
-  </nav>
+<nav>
+  <a class="nav-logo" href="/">webserv</a>
+  <ul class="nav-links">
+    <li><a href="/">Home</a></li>
+    <li><a href="#cgi">CGI</a></li>
+    <li><a href="#files">Files</a></li>
+    <li><a href="#server">Server</a></li>
+    <li><a href="#builder">Builder</a></li>
+    <li><a href="#raw">Raw</a></li>
+    <li><a href="#quickfire">Quick Fire</a></li>
+    <li><a href="#errors">Errors</a></li>
+    <li><a href="#status">Status</a></li>
+  </ul>
+  <div class="nav-pill"><div class="pulse"></div>Playground</div>
+</nav>
+
+<div class="page">
 
   <!-- HERO -->
-  <section class="hero">
-    <div class="hero-inner">
-      <div class="hero-chip">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        Live Playground · webserv running
+  <div class="hero">
+    <div class="hero-chip">⚡ webserv · test everything</div>
+    <h1><span class="t1">the</span><span class="t2">playground.</span></h1>
+    <p class="hero-sub">Every route, method, CGI script, and edge case — test them all from one page.</p>
+  </div>
+
+  <!-- ── CGI SCRIPTS ── -->
+  <div class="section" id="cgi">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--teal)"><span style="width:14px;height:2px;background:var(--teal);border-radius:1px;display:inline-block"></span>CGI Scripts</div>
+      <span class="sec-title">Execute server-side code</span>
+      <span class="sec-count">5 scripts</span>
+    </div>
+    <div class="g3" style="margin-bottom:12px">
+
+      <a class="tc" href="/cgi-bin/print_cookies.py">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--teal),var(--blue))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(0,240,212,.1);border:1px solid rgba(0,240,212,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--teal)"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg></div>
+          <div class="tc-badge" style="background:rgba(0,240,212,.1);color:var(--teal);border:1px solid rgba(0,240,212,.2)">GET</div>
+          <div class="tc-title">Cookie Inspector</div>
+          <div class="tc-desc">Reads <mn>HTTP_COOKIE</mn> env var and renders every key-value pair from your request.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--teal)"></div>/cgi-bin/print_cookies.py</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/cgi-bin/session_check.py">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--violet),var(--rose))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--violet)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="tc-badge" style="background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2)">GET</div>
+          <div class="tc-title">Session Checker</div>
+          <div class="tc-desc">Checks for <mn>SESSION_ID</mn> cookie. Shows alive or absent, with the token value.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--violet)"></div>/cgi-bin/session_check.py</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/pages/form.html">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--rose),var(--amber))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--rose)"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+          <div class="tc-badge" style="background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)">POST</div>
+          <div class="tc-title">CGI POST Test</div>
+          <div class="tc-desc">Submits a form to the Python CGI. Parsed from stdin via <mn>CONTENT_LENGTH</mn>.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--rose)"></div>/cgi-bin/post_test.py</div>
+        </div>
+      </a>
+
+    </div>
+    <div class="g3">
+
+      <a class="tc" href="/cgi-bin/crash_early.py">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--rose),#7f1d1d)"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--rose)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+          <div class="tc-badge" style="background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)">GET → 502</div>
+          <div class="tc-title">Crash Early CGI</div>
+          <div class="tc-desc">Script exits immediately without writing headers. Server should return <mn>502 Bad Gateway</mn>.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--rose)"></div>/cgi-bin/crash.py</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/cgi-bin/slow.py">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--amber),var(--rose))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="tc-badge" style="background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)">GET → 504</div>
+          <div class="tc-title">Slow CGI (Timeout)</div>
+          <div class="tc-desc">Script sleeps longer than the CGI timeout. Server should return <mn>504 Gateway Timeout</mn>.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--amber)"></div>/cgi-bin/slow.py</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/pages/form2.html">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--blue),var(--teal))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--blue)"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+          <div class="tc-badge" style="background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)">POST</div>
+          <div class="tc-title">Normal POST Test</div>
+          <div class="tc-desc">Plain HTML form posting to <mn>/cgi-bin/post_test.py</mn>. No JS intercept — real browser POST.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--blue)"></div>/pages/form.html</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── FILE OPERATIONS ── -->
+  <div class="section" id="files">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--blue)"><span style="width:14px;height:2px;background:var(--blue);border-radius:1px;display:inline-block"></span>File Operations</div>
+      <span class="sec-title">Upload · Browse · Delete</span>
+      <span class="sec-count">3 routes</span>
+    </div>
+    <div class="g3">
+
+      <a class="tc" href="/pages/upload.html">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--blue),var(--teal))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--blue)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="tc-badge" style="background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)">POST</div>
+          <div class="tc-title">Upload File</div>
+          <div class="tc-desc">Drag & drop or browse. Sends <mn>multipart/form-data</mn> — boundary parsed by webserv.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--blue)"></div>POST /uploads</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/uploads/">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--violet),var(--blue))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--violet)"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="tc-badge" style="background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2)">GET</div>
+          <div class="tc-title">Browse Uploads</div>
+          <div class="tc-desc">autoindex listing of <mn>/uploads/</mn> — generated by <mn>buildAutoindex()</mn> from the HTML template.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--violet)"></div>GET /uploads/</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/pages/delete.html">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--rose),var(--violet))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--rose)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+          <div class="tc-badge" style="background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)">DELETE</div>
+          <div class="tc-title">Delete Files</div>
+          <div class="tc-desc">Lists uploaded files and fires real <mn>DELETE</mn> requests. 204 = gone.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--rose)"></div>DELETE /uploads/{file}</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── SERVER FEATURES ── -->
+  <div class="section" id="server">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--amber)"><span style="width:14px;height:2px;background:var(--amber);border-radius:1px;display:inline-block"></span>Server Features</div>
+      <span class="sec-title">Autoindex · Redirect · PHP</span>
+      <span class="sec-count">3 routes</span>
+    </div>
+    <div class="g3">
+
+      <a class="tc" href="/pages">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--amber),var(--teal))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--amber)"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+          <div class="tc-badge" style="background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2)">GET</div>
+          <div class="tc-title">Pages Autoindex</div>
+          <div class="tc-desc">Directory listing for <mn>/pages</mn> — rendered from <mn>autoindex.html</mn> template, not hardcoded.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--amber)"></div>GET /pages/</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/old">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--blue),var(--violet))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--blue)"><polyline points="15 3 21 3 21 9"/><path d="M21 3L9 15"/><path d="M10 3H3v18h18v-7"/></svg></div>
+          <div class="tc-badge" style="background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)">GET → 301</div>
+          <div class="tc-title">Redirect Test</div>
+          <div class="tc-desc">Triggers a <mn>301 Moved Permanently</mn>. Browser follows the Location header automatically.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--blue)"></div>GET /old → 301</div>
+        </div>
+      </a>
+
+      <a class="tc" href="/cgi-bin/test.php">
+        <div class="tc-stripe" style="background:linear-gradient(90deg,var(--violet),var(--blue))"></div>
+        <div class="tc-body">
+          <div class="tc-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+          <div class="tc-icon" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2)"><svg viewBox="0 0 24 24" style="stroke:var(--violet)"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+          <div class="tc-badge" style="background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2)">CGI</div>
+          <div class="tc-title">PHP CGI Test</div>
+          <div class="tc-desc">Runs <mn>php-cgi</mn> as a subprocess. Dumps <mn>$_SERVER</mn>, PHP version, and any POST body.</div>
+          <div class="tc-path"><div class="tc-dot" style="background:var(--violet)"></div>/cgi-bin/test.php</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── REQUEST BUILDER ── -->
+  <div class="section" id="builder">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--teal)"><span style="width:14px;height:2px;background:var(--teal);border-radius:1px;display:inline-block"></span>Request Builder</div>
+      <span class="sec-title">Send a raw request</span>
+    </div>
+    <div class="bc">
+      <div class="bc-top">
+        <select class="bc-method" id="bMeth">
+          <option>GET</option>
+          <option>POST</option>
+          <option>DELETE</option>
+        </select>
+        <input class="bc-url" id="bUrl" type="text" placeholder="/cgi-bin/print_cookies.py" value="/cgi-bin/print_cookies.py">
+        <button class="bc-btn" id="bSend">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send
+        </button>
       </div>
-
-      <h1 class="hero-title">
-        <span class="t1">try the</span>
-        <span class="t2">server.</span>
-      </h1>
-
-      <p class="hero-desc">
-        Hit real endpoints. Trigger CGI scripts. Upload files. Inspect cookies.
-        <strong>Everything runs on our C++98 HTTP/1.0 server</strong> — no framework, no cheat codes.
-      </p>
-
-      <div class="hero-ctas">
-        <a href="#demos" class="btn-glow">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-          Explore Demos
-        </a>
-        <a href="#builder" class="btn-ghost">
-          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          Request Builder
-        </a>
-        <a href="/pages/upload.html" class="btn-ghost">
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Upload File
-        </a>
+      <div class="bc-body-area" id="bBodyArea">
+        <div class="bc-body-lbl">Request Body</div>
+        <textarea class="bc-body-inp" id="bBodyInp" placeholder="name=reda&email=reda@42.fr&message=hello"></textarea>
       </div>
-
-      <div class="status-row">
-        <div class="sstat">
-          <span class="sstat-n">3</span>
-          <div class="sstat-l">CGI Scripts</div>
-        </div>
-        <div class="sstat">
-          <span class="sstat-n">5</span>
-          <div class="sstat-l">HTTP Methods</div>
-        </div>
-        <div class="sstat">
-          <span class="sstat-n">8081</span>
-          <div class="sstat-l">Port</div>
-        </div>
-        <div class="sstat">
-          <span class="sstat-n">0</span>
-          <div class="sstat-l">Ext. Libraries</div>
-        </div>
+      <div class="bc-res">
+        <div class="bc-res-lbl">Response <span class="badge" id="bBadge"></span></div>
+        <div class="bc-res-body" id="bResBody">— pick a method, type a path, hit Send —</div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- DEMO CARDS -->
-  <section class="section" id="demos" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">Live endpoints</div>
-      <h2 class="sec-title">Hit real <span>CGI scripts.</span></h2>
-      <p class="sec-sub">Every card below is a live route served by webserv. Click to open it in your browser — the response is generated in real-time by a CGI subprocess.</p>
-
-      <div class="demo-grid">
-
-        <!-- Cookie Inspector -->
-        <a class="demo-card" href="/cgi-bin/print_cookies.py">
-          <div class="demo-card-top" style="background:linear-gradient(90deg,var(--teal),var(--blue))"></div>
-          <div class="demo-card-body">
-            <div class="demo-arrow">
-              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-            <div class="demo-icon" style="background:rgba(0,240,212,.1);border:1px solid rgba(0,240,212,.2)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--teal)">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/>
-              </svg>
-            </div>
-            <div class="demo-method" style="background:rgba(0,240,212,.1);color:var(--teal);border:1px solid rgba(0,240,212,.2)">GET</div>
-            <div class="demo-title">Cookie Inspector</div>
-            <div class="demo-desc">Parses the <code>HTTP_COOKIE</code> environment variable and renders every key-value pair from the current request.</div>
-            <div class="demo-path">
-              <div class="demo-path-dot" style="background:var(--teal)"></div>
-              /cgi-bin/cookies.py
-            </div>
-          </div>
-        </a>
-
-        <!-- Session Checker -->
-        <a class="demo-card" href="/cgi-bin/session_check.py">
-          <div class="demo-card-top" style="background:linear-gradient(90deg,var(--violet),var(--rose))"></div>
-          <div class="demo-card-body">
-            <div class="demo-arrow">
-              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-            <div class="demo-icon" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--violet)">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </div>
-            <div class="demo-method" style="background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2)">GET</div>
-            <div class="demo-title">Session Checker</div>
-            <div class="demo-desc">Looks for a <code>SESSION_ID</code> cookie in the request. Shows a live status — alive or absent — with the token value.</div>
-            <div class="demo-path">
-              <div class="demo-path-dot" style="background:var(--violet)"></div>
-              /cgi-bin/session.py
-            </div>
-          </div>
-        </a>
-
-        <!-- File Upload -->
-        <a class="demo-card" href="/pages/upload.html">
-          <div class="demo-card-top" style="background:linear-gradient(90deg,var(--rose),var(--violet))"></div>
-          <div class="demo-card-body">
-            <div class="demo-arrow">
-              <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-            <div class="demo-icon" style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2)">
-              <svg viewBox="0 0 24 24" style="stroke:var(--rose)">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-            </div>
-            <div class="demo-method" style="background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)">POST</div>
-            <div class="demo-title">File Upload</div>
-            <div class="demo-desc">multipart/form-data upload handled natively. Boundary-parsed by the server, no framework. Supports drag & drop.</div>
-            <div class="demo-path">
-              <div class="demo-path-dot" style="background:var(--rose)"></div>
-              POST /uploads
-            </div>
-          </div>
-        </a>
-
+  <!-- ── RAW BAD REQUEST BUILDER ── -->
+  <div class="section" id="raw">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--rose)"><span style="width:14px;height:2px;background:var(--rose);border-radius:1px;display:inline-block"></span>Raw / Bad Request</div>
+      <span class="sec-title">Send a malformed HTTP request</span>
+    </div>
+    <div class="bc">
+      <div class="raw-wrap">
+        <div class="bc-body-lbl">Raw HTTP Request</div>
+        <textarea class="raw-area" id="rawInput">GET /404-this-does-not-exist HTTP/1.0
+Host: localhost:8080
+X-Test: bad-request</textarea>
+        <div class="raw-note">⚠ Sent as-is over fetch with method extracted from first line. Test malformed paths, bad headers, missing fields.</div>
+      </div>
+      <div class="bc-top" style="border-top:1px solid var(--glass-b);border-bottom:none">
+        <select class="bc-method" id="rawMeth" style="color:var(--rose);background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.25)">
+          <option>GET</option>
+          <option>POST</option>
+          <option>DELETE</option>
+          <option>INVALID</option>
+          <option>FOOBAR</option>
+        </select>
+        <input class="bc-url" id="rawUrl" type="text" placeholder="/path" value="/404-this-does-not-exist" style="border-color:rgba(251,113,133,.15)">
+        <button class="bc-btn rose" id="rawSend">
+          <svg viewBox="0 0 24 24"><polyline points="12 5 12 19"/><polyline points="19 12 12 19 5 12"/></svg>
+          Fire Bad Request
+        </button>
+      </div>
+      <div class="bc-res">
+        <div class="bc-res-lbl">Server Response <span class="badge" id="rawBadge"></span></div>
+        <div class="bc-res-body" id="rawResBody">— the server's response to your raw/malformed request will appear here —</div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- REQUEST BUILDER -->
-  <section class="section" id="builder" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">Request Builder</div>
-      <h2 class="sec-title">Send a raw <span>request.</span></h2>
-      <p class="sec-sub">Pick a method, type a path, fire it. The response body comes back below. No DevTools needed.</p>
-
-      <div class="builder-wrap">
-        <!-- URL bar -->
-        <div class="builder-top">
-          <select class="builder-method-sel" id="bMethod">
-            <option>GET</option>
-            <option>POST</option>
-            <option>DELETE</option>
-            <option>HEAD</option>
-          </select>
-          <input class="builder-url-input" id="bUrl" type="text" placeholder="/cgi-bin/print_cookies.py" value="/cgi-bin/print_cookies.py">
-          <button class="builder-send" id="bSend">
-            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            Send
-          </button>
-        </div>
-
-        <!-- body (shown for POST) -->
-        <div class="builder-body-area" id="bBodyArea">
-          <div class="builder-body-label">Request Body</div>
-          <textarea class="builder-body-input" id="bBody" placeholder="Raw body or form data..."></textarea>
-        </div>
-
-        <!-- response -->
-        <div class="builder-response">
-          <div class="builder-res-label">
-            Response
-            <span class="res-status-badge" id="bStatusBadge"></span>
-          </div>
-          <div class="builder-res-body" id="bResponseBody">— fire a request to see the response here —</div>
-        </div>
+  <!-- ── QUICK FIRE (DELETE) ── -->
+  <div class="section" id="quickfire">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--rose)"><span style="width:14px;height:2px;background:var(--rose);border-radius:1px;display:inline-block"></span>Quick Fire</div>
+      <span class="sec-title">One-click DELETE test</span>
+    </div>
+    <div class="bc">
+      <div class="bc-top">
+        <span class="fixed-method" style="color:var(--rose);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.2)">DELETE</span>
+        <input class="bc-url" id="dUrl" type="text" placeholder="/uploads/filename.txt" style="border-color:rgba(251,113,133,.15)">
+        <button class="bc-btn rose" id="dSend">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Delete
+        </button>
+      </div>
+      <div class="bc-res">
+        <div class="bc-res-lbl">Response <span class="badge" id="dBadge"></span></div>
+        <div class="bc-res-body" id="dResBody">— type a file path and fire the DELETE —</div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- DELETE TESTER -->
-  <section class="section" id="delete" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">HTTP DELETE</div>
-      <h2 class="sec-title">Delete a <span>file.</span></h2>
-      <p class="sec-sub">Type a directory path, list its files, then fire a real <code>DELETE</code> request on any entry. 204 = gone.</p>
-
-      <div class="builder-wrap">
-        <!-- path bar -->
-        <div class="builder-top">
-          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--rose);background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.25);border-radius:8px;padding:8px 14px;white-space:nowrap;flex-shrink:0">DELETE</span>
-          <input class="builder-url-input" id="dPath" type="text" placeholder="/uploads/" value="/uploads/" style="border-color:rgba(251,113,133,.2)">
-          <button class="builder-send" id="dList" style="background:rgba(251,113,133,.15);color:var(--rose);border:1px solid rgba(251,113,133,.3);box-shadow:none">
-            <svg viewBox="0 0 24 24" style="stroke:var(--rose)"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            List Files
-          </button>
-        </div>
-
-        <!-- file list -->
-        <div id="dList-wrap" style="border-top:1px solid var(--glass-b);min-height:60px">
-          <div id="dState" style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">
-            Press <strong style="color:var(--muted2)">List Files</strong> to load entries from the path above.
-          </div>
-        </div>
-
-        <!-- result -->
-        <div class="builder-response">
-          <div class="builder-res-label">
-            Last DELETE
-            <span class="res-status-badge" id="dBadge"></span>
-          </div>
-          <div class="builder-res-body" id="dResult">— delete a file to see the server response —</div>
-        </div>
-      </div>
+  <!-- ── ERROR PAGES ── -->
+  <div class="section" id="errors">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--rose)"><span style="width:14px;height:2px;background:var(--rose);border-radius:1px;display:inline-block"></span>Error Pages</div>
+      <span class="sec-title">Custom HTTP error responses</span>
+      <span class="sec-count">10 pages</span>
     </div>
-  </section>
-
-  <!-- HTTP METHODS -->
-  <section class="section" id="methods" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">HTTP Methods</div>
-      <h2 class="sec-title">What webserv <span>handles.</span></h2>
-      <p class="sec-sub">Every method implemented from scratch — no libc HTTP helpers, no frameworks. Just raw parsing and POSIX I/O.</p>
-
-      <div class="methods-grid">
-        <div class="method-card">
-          <div class="method-tag" style="background:rgba(96,165,250,.1);color:var(--blue);border:1px solid rgba(96,165,250,.2)">GET</div>
-          <div class="method-title">Retrieve a resource</div>
-          <div class="method-desc">Serves static files, triggers CGI, or returns a directory listing when autoindex is on. The workhorse of the server.</div>
-          <div class="method-codes">
-            <span class="mcode" style="color:#4ade80">200 OK</span>
-            <span class="mcode" style="color:var(--rose)">404 Not Found</span>
-            <span class="mcode" style="color:var(--rose)">403 Forbidden</span>
-          </div>
-        </div>
-
-        <div class="method-card">
-          <div class="method-tag" style="background:rgba(0,240,212,.1);color:var(--teal);border:1px solid rgba(0,240,212,.2)">POST</div>
-          <div class="method-title">Submit data</div>
-          <div class="method-desc">Handles <code>multipart/form-data</code> file uploads and passes body data to CGI scripts via <code>CONTENT_LENGTH</code> + stdin pipe.</div>
-          <div class="method-codes">
-            <span class="mcode" style="color:#4ade80">201 Created</span>
-            <span class="mcode" style="color:#4ade80">200 OK</span>
-            <span class="mcode" style="color:var(--rose)">413 Too Large</span>
-          </div>
-        </div>
-
-        <div class="method-card">
-          <div class="method-tag" style="background:rgba(251,113,133,.1);color:var(--rose);border:1px solid rgba(251,113,133,.2)">DELETE</div>
-          <div class="method-title">Remove a resource</div>
-          <div class="method-desc">Deletes files from <code>/uploads/</code> when the route allows it. Returns 204 on success, 403 or 404 otherwise.</div>
-          <div class="method-codes">
-            <span class="mcode" style="color:#4ade80">204 No Content</span>
-            <span class="mcode" style="color:var(--rose)">404 Not Found</span>
-            <span class="mcode" style="color:var(--rose)">403 Forbidden</span>
-          </div>
-        </div>
-
-        <div class="method-card">
-          <div class="method-tag" style="background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2)">HEAD</div>
-          <div class="method-title">Headers only</div>
-          <div class="method-desc">Identical to GET but the response body is suppressed. Useful for checking if a resource exists without downloading it.</div>
-          <div class="method-codes">
-            <span class="mcode" style="color:#4ade80">200 OK</span>
-            <span class="mcode" style="color:var(--rose)">404 Not Found</span>
-          </div>
-        </div>
-      </div>
+    <div class="g5">
+      <a class="sc" href="/../errors/400.html"><div class="sc-num" style="color:var(--rose)">400</div><div class="sc-name">Bad Request</div><div class="sc-desc">Malformed request line or headers</div></a>
+      <a class="sc" href="/../errors/403.html"><div class="sc-num" style="color:var(--rose)">403</div><div class="sc-name">Forbidden</div><div class="sc-desc">Method or path not permitted</div></a>
+      <a class="sc" href="/../errors/404.html"><div class="sc-num" style="color:var(--rose)">404</div><div class="sc-name">Not Found</div><div class="sc-desc">Resource doesn't exist on server</div></a>
+      <a class="sc" href="/../errors/405.html"><div class="sc-num" style="color:var(--rose)">405</div><div class="sc-name">Not Allowed</div><div class="sc-desc">HTTP method not permitted here</div></a>
+      <a class="sc" href="/../errors/408.html"><div class="sc-num" style="color:var(--amber)">408</div><div class="sc-name">Timeout</div><div class="sc-desc">Client too slow to send request</div></a>
+      <a class="sc" href="/../errors/413.html"><div class="sc-num" style="color:var(--amber)">413</div><div class="sc-name">Too Large</div><div class="sc-desc">Body exceeds client_max_body_size</div></a>
+      <a class="sc" href="/../errors/500.html"><div class="sc-num" style="color:var(--violet)">500</div><div class="sc-name">Server Error</div><div class="sc-desc">Internal failure or bad CGI output</div></a>
+      <a class="sc" href="/../errors/501.html"><div class="sc-num" style="color:var(--violet)">501</div><div class="sc-name">Not Implemented</div><div class="sc-desc">Method not implemented at all</div></a>
+      <a class="sc" href="/../errors/502.html"><div class="sc-num" style="color:var(--violet)">502</div><div class="sc-name">Bad Gateway</div><div class="sc-desc">CGI process crashed or bad output</div></a>
+      <a class="sc" href="/../errors/504.html"><div class="sc-num" style="color:var(--violet)">504</div><div class="sc-name">Gateway Timeout</div><div class="sc-desc">CGI exceeded timeout limit</div></a>
     </div>
-  </section>
+  </div>
 
-  <!-- STATUS CODES -->
-  <section class="section" id="codes" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">Status codes</div>
-      <h2 class="sec-title">Pages <span>we serve.</span></h2>
-      <p class="sec-sub">Custom pages for every status code webserv can return. Click any to see the live page.</p>
-
-      <div class="codes-grid">
-        <a class="code-card code-2xx" href="/../pages/200.html">
-          <div class="code-num">200</div>
-          <div class="code-name">OK</div>
-          <div class="code-desc">Request succeeded. Body contains the resource.</div>
-        </a>
-        <a class="code-card code-2xx" href="/../pages/201.html">
-          <div class="code-num">201</div>
-          <div class="code-name">Created</div>
-          <div class="code-desc">Resource was created (upload success).</div>
-        </a>
-        <a class="code-card code-2xx" href="/../pages/204.html">
-          <div class="code-num">204</div>
-          <div class="code-name">No Content</div>
-          <div class="code-desc">DELETE succeeded. No body returned.</div>
-        </a>
-        <a class="code-card code-3xx" href="/../pages/301.html">
-          <div class="code-num">301</div>
-          <div class="code-name">Moved</div>
-          <div class="code-desc">Permanent redirect via Location header.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/400.html">
-          <div class="code-num">400</div>
-          <div class="code-name">Bad Request</div>
-          <div class="code-desc">Malformed request line or headers.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/403.html">
-          <div class="code-num">403</div>
-          <div class="code-name">Forbidden</div>
-          <div class="code-desc">Method not allowed on this route.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/404.html">
-          <div class="code-num">404</div>
-          <div class="code-name">Not Found</div>
-          <div class="code-desc">Resource doesn't exist on server.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/405.html">
-          <div class="code-num">405</div>
-          <div class="code-name">Not Allowed</div>
-          <div class="code-desc">HTTP method not permitted here.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/413.html">
-          <div class="code-num">413</div>
-          <div class="code-name">Too Large</div>
-          <div class="code-desc">Body exceeds client_max_body_size.</div>
-        </a>
-        <a class="code-card code-4xx" href="/../errors/408.html">
-          <div class="code-num">408</div>
-          <div class="code-name">Timeout</div>
-          <div class="code-desc">Client took too long to send request.</div>
-        </a>
-        <a class="code-card code-5xx" href="/../errors/500.html">
-          <div class="code-num">500</div>
-          <div class="code-name">Server Error</div>
-          <div class="code-desc">Internal failure — check CGI or config.</div>
-        </a>
-        <a class="code-card code-5xx" href="/../errors/502.html">
-          <div class="code-num">502</div>
-          <div class="code-name">Bad Gateway</div>
-          <div class="code-desc">CGI process exited with error.</div>
-        </a>
-      </div>
+  <!-- ── STATUS CODES ── -->
+  <div class="section" id="status">
+    <div class="sec-head">
+      <div class="sec-tag" style="color:var(--green)"><span style="width:14px;height:2px;background:var(--green);border-radius:1px;display:inline-block"></span>Success & Redirect</div>
+      <span class="sec-title">2xx · 3xx responses</span>
+      <span class="sec-count">5 codes</span>
     </div>
-  </section>
-
-  <!-- REQUEST PIPELINE -->
-  <section class="section" id="pipeline" style="padding-top:0">
-    <div class="container">
-      <div class="sec-label">Request lifecycle</div>
-      <h2 class="sec-title">How a request <span>flows.</span></h2>
-      <p class="sec-sub">Every HTTP request passes through three layers — each owned by a different person on the team.</p>
-      <div class="pipeline">
-        <div class="pcard">
-          <div class="pp" style="color:#60a5fa">REDA · Network</div>
-          <div class="pt">TCP + poll()</div>
-          <ul class="pi">
-            <li><span style="background:#60a5fa"></span>accept() connection</li>
-            <li><span style="background:#60a5fa"></span>poll() readiness</li>
-            <li><span style="background:#60a5fa"></span>recv() raw bytes</li>
-            <li><span style="background:#60a5fa"></span>CGI Processing</li>
-          </ul>
-        </div>
-        <div class="parr">→</div>
-        <div class="pcard">
-          <div class="pp" style="color:#a78bfa">ELAMRANI · Protocol</div>
-          <div class="pt">HTTP Parsing</div>
-          <ul class="pi">
-            <li><span style="background:#a78bfa"></span>Parse request line</li>
-            <li><span style="background:#a78bfa"></span>Parse headers + body</li>
-            <li><span style="background:#a78bfa"></span>Handle methods</li>
-            <li><span style="background:#a78bfa"></span>Build HTTP response</li>
-          </ul>
-        </div>
-        <div class="parr">→</div>
-        <div class="pcard">
-          <div class="pp" style="color:#00f0d4">SIMO · Application</div>
-          <div class="pt">Route + Serve</div>
-          <ul class="pi">
-            <li><span style="background:#00f0d4"></span>Match location config</li>
-            <li><span style="background:#00f0d4"></span>Serve file or error</li>
-            <li><span style="background:#00f0d4"></span>Directory autoindex</li>
-            <li><span style="background:#00f0d4"></span>POLLOUT → send()</li>
-          </ul>
-        </div>
-      </div>
+    <div class="g5">
+      <a class="sc" href="/pages/200.html"><div class="sc-num" style="color:var(--green)">200</div><div class="sc-name">OK</div><div class="sc-desc">Request succeeded, body returned</div></a>
+      <a class="sc" href="/pages/201.html"><div class="sc-num" style="color:var(--green)">201</div><div class="sc-name">Created</div><div class="sc-desc">File upload succeeded</div></a>
+      <a class="sc" href="/pages/204.html"><div class="sc-num" style="color:var(--green)">204</div><div class="sc-name">No Content</div><div class="sc-desc">DELETE succeeded, no body</div></a>
+      <a class="sc" href="/pages/301.html"><div class="sc-num" style="color:var(--blue)">301</div><div class="sc-name">Moved Permanently</div><div class="sc-desc">Permanent redirect via config</div></a>
+      <a class="sc" href="/pages/302.html"><div class="sc-num" style="color:var(--blue)">302</div><div class="sc-name">Found</div><div class="sc-desc">Temporary redirect</div></a>
     </div>
-  </section>
+  </div>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="foot-inner">
-      <div>
-        <div class="foot-logo">webserv</div>
-        <p class="foot-desc">A custom HTTP/1.0 server built from scratch in C++98 as part of the 42 school Common Core curriculum. No external libraries. No mercy for blocking I/O.</p>
-      </div>
-      <div>
-        <div class="foot-h">Pages</div>
-        <ul class="foot-links">
-          <li><a href="/index.html">Home</a></li>
-          <li><a href="/index2.html">Playground</a></li>
-          <li><a href="/upload.html">Upload</a></li>
-          <li><a href="/../errors/400.html">400 Bad Request</a></li>
-          <li><a href="/../errors/403.html">403 Forbidden</a></li>
-          <li><a href="/../errors/404.html">404 Not Found</a></li>
-          <li><a href="/../errors/500.html">500 Server Error</a></li>
-        </ul>
-      </div>
-      <div>
-        <div class="foot-h">Built with</div>
-        <ul class="foot-links">
-          <li><a href="#">C++98 Standard</a></li>
-          <li><a href="#">poll() I/O multiplexing</a></li>
-          <li><a href="#">Raw POSIX Sockets</a></li>
-          <li><a href="#">RFC 7230 (HTTP/1.0)</a></li>
-          <li><a href="#">python3 CGI</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="foot-bottom">
-      <span>© 2025 REDA, ELAMRANI, SIMO · 42 School</span>
-      <span>webserv v24.0 · HTTP/1.0 · C++98</span>
-    </div>
-  </footer>
+</div><!-- /page -->
 
-  <script>
-    // ── Request Builder ──────────────────────────────────────
-    const bMethod   = document.getElementById('bMethod');
-    const bUrl      = document.getElementById('bUrl');
-    const bSend     = document.getElementById('bSend');
-    const bBody     = document.getElementById('bBody');
-    const bBodyArea = document.getElementById('bBodyArea');
-    const bResBody  = document.getElementById('bResponseBody');
-    const bBadge    = document.getElementById('bStatusBadge');
+<footer>
+  <div class="foot-inner">
+    <div class="foot-logo">webserv</div>
+    <span class="foot-copy">© 2025 REDA, ELAMRANI, SIMO · 1337 School</span>
+    <ul class="foot-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/pages/upload.html">Upload</a></li>
+      <li><a href="/../errors/404.html">404</a></li>
+      <li><a href="/../errors/500.html">500</a></li>
+    </ul>
+  </div>
+</footer>
 
-    // show body textarea only for POST
-    bMethod.addEventListener('change', () => {
-      bBodyArea.classList.toggle('visible', bMethod.value === 'POST');
-    });
-
-    bSend.addEventListener('click', async () => {
-      const method = bMethod.value;
-      const url    = bUrl.value.trim() || '/';
-
-      bResBody.textContent = 'Sending…';
-      bResBody.className   = 'builder-res-body loading';
-      bBadge.className     = 'res-status-badge';
-      bBadge.textContent   = '';
-
-      try {
-        const opts = { method };
-        if (method === 'POST' && bBody.value) {
-          opts.body = bBody.value;
-        }
-        const res  = await fetch(url, opts);
-        const text = await res.text();
-
-        bBadge.textContent = res.status + ' ' + res.statusText;
-        bBadge.className   = 'res-status-badge ' + (res.ok ? 'ok' : 'err');
-        bResBody.textContent = text || '(empty body)';
-        bResBody.className   = 'builder-res-body ' + (res.ok ? 'ok-color' : 'err-color');
-      } catch (err) {
-        bBadge.textContent = 'Network Error';
-        bBadge.className   = 'res-status-badge err';
-        bResBody.textContent = err.message;
-        bResBody.className   = 'builder-res-body err-color';
+<script>
+  // ── generic fire ─────────────────────────────────────────
+  async function fire(method, url, body, badgeId, bodyId, contentType) {
+    const badge   = document.getElementById(badgeId);
+    const resBody = document.getElementById(bodyId);
+    resBody.textContent = 'Sending…';
+    resBody.className   = 'bc-res-body';
+    badge.className     = 'badge';
+    badge.textContent   = '';
+    try {
+      const opts = { method };
+      if (body) {
+        opts.body = body;
+        opts.headers = { 'Content-Type': contentType || 'application/x-www-form-urlencoded' };
       }
-    });
-
-    // also fire on Enter in the URL input
-    bUrl.addEventListener('keydown', e => { if (e.key === 'Enter') bSend.click(); });
-
-    // ── DELETE Tester ────────────────────────────────────────
-    const dPath    = document.getElementById('dPath');
-    const dListBtn = document.getElementById('dList');
-    const dWrap    = document.getElementById('dList-wrap');
-    const dState   = document.getElementById('dState');
-    const dResult  = document.getElementById('dResult');
-    const dBadge   = document.getElementById('dBadge');
-
-    function setDResult(status, text, ok) {
-      dBadge.textContent = status;
-      dBadge.className   = 'res-status-badge ' + (ok ? 'ok' : 'err');
-      dResult.textContent = text || '(empty body)';
-      dResult.className   = 'builder-res-body ' + (ok ? 'ok-color' : 'err-color');
+      const res  = await fetch(url, opts);
+      const text = await res.text();
+      badge.textContent = res.status + ' ' + res.statusText;
+      badge.className   = 'badge ' + (res.ok ? 'ok' : 'err');
+      resBody.textContent = text || '(empty body)';
+      resBody.className   = 'bc-res-body ' + (res.ok ? 'ok-c' : 'err-c');
+    } catch (err) {
+      badge.textContent   = 'Network Error';
+      badge.className     = 'badge err';
+      resBody.textContent = err.message;
+      resBody.className   = 'bc-res-body err-c';
     }
+  }
 
-    function parseFiles(html) {
-      const doc   = new DOMParser().parseFromString(html, 'text/html');
-      const links = doc.querySelectorAll('a.item.file');
-      const names = [];
-      links.forEach(a => {
-        const href  = a.getAttribute('href') || '';
-        const parts = href.split('/');
-        const name  = parts[parts.length - 1];
-        if (name) names.push(name);
-      });
-      return names;
-    }
+  // ── Request Builder ──────────────────────────────────────
+  const bMeth = document.getElementById('bMeth');
+  bMeth.addEventListener('change', () =>
+    document.getElementById('bBodyArea').classList.toggle('show', bMeth.value === 'POST'));
+  document.getElementById('bSend').addEventListener('click', () => {
+    const body = bMeth.value === 'POST' ? document.getElementById('bBodyInp').value : null;
+    fire(bMeth.value, document.getElementById('bUrl').value.trim() || '/', body, 'bBadge', 'bResBody');
+  });
+  document.getElementById('bUrl').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('bSend').click() });
 
-    async function loadDeleteList() {
-      const path = dPath.value.trim() || '/uploads/';
-      dWrap.innerHTML = '<div id="dState" style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Loading…</div>';
-      try {
-        const res  = await fetch(path);
-        const text = await res.text();
-        if (!res.ok) {
-          dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--rose)">Server returned ' + res.status + ' for ' + path + '</div>';
-          return;
-        }
-        const names = parseFiles(text);
-        if (names.length === 0) {
-          dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Directory is empty.</div>';
-          return;
-        }
-        dWrap.innerHTML = '';
-        const base = path.endsWith('/') ? path : path + '/';
-        names.forEach((name, i) => {
-          const row = document.createElement('div');
-          row.id = 'drow-' + i;
-          row.style.cssText = 'display:flex;align-items:center;gap:14px;padding:13px 24px;border-bottom:1px solid var(--glass-b);animation:fadeU .3s ease both';
-          row.style.animationDelay = (i * 0.04) + 's';
-          row.innerHTML =
-            '<span style="font-family:\'JetBrains Mono\',monospace;font-size:13px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + name + '</span>'
-          + '<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--muted)">' + base + name + '</span>'
-          + '<button style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:12px;background:rgba(251,113,133,.08);color:var(--rose);border:1px solid rgba(251,113,133,.2);border-radius:8px;padding:6px 16px;cursor:pointer;transition:all .2s;flex-shrink:0" '
-          + 'onmouseover="this.style.background=\'rgba(251,113,133,.18)\'" onmouseout="this.style.background=\'rgba(251,113,133,.08)\'"'
-          + ' onclick="deleteFile(\'' + base + name + '\', ' + i + ', \'' + name + '\')">Delete</button>';
-          dWrap.appendChild(row);
-        });
-      } catch (err) {
-        dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--rose)">' + err.message + '</div>';
-      }
-    }
+  // ── Raw / Bad Request ────────────────────────────────────
+  document.getElementById('rawSend').addEventListener('click', () => {
+    const method = document.getElementById('rawMeth').value;
+    const url    = document.getElementById('rawUrl').value.trim() || '/';
+    // for truly invalid methods, fetch will throw — we catch it and show the error
+    fire(method, url, null, 'rawBadge', 'rawResBody');
+  });
 
-    async function deleteFile(fullPath, idx, name) {
-      const row = document.getElementById('drow-' + idx);
-      if (row) row.style.opacity = '0.4';
-      try {
-        const res  = await fetch(fullPath, { method: 'DELETE' });
-        const text = await res.text();
-        const ok   = res.ok || res.status === 204;
-        setDResult(res.status + ' ' + res.statusText, ok ? 'Deleted: ' + name : text, ok);
-        if (ok && row) {
-          row.remove();
-          if (dWrap.children.length === 0)
-            dWrap.innerHTML = '<div style="padding:28px 24px;font-size:13px;color:var(--muted);font-style:italic">Directory is empty.</div>';
-        } else if (row) {
-          row.style.opacity = '1';
-        }
-      } catch (err) {
-        setDResult('Network Error', err.message, false);
-        if (row) row.style.opacity = '1';
-      }
-    }
-
-    dListBtn.addEventListener('click', loadDeleteList);
-    dPath.addEventListener('keydown', e => { if (e.key === 'Enter') loadDeleteList(); });
-  </script>
+  // ── DELETE Quick Fire ────────────────────────────────────
+  document.getElementById('dSend').addEventListener('click', () =>
+    fire('DELETE', document.getElementById('dUrl').value.trim() || '/', null, 'dBadge', 'dResBody'));
+  document.getElementById('dUrl').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('dSend').click() });
+</script>
 
 </body>
 </html>
