@@ -1,144 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>webserv — storage node</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #0a0505;
-  --glass: rgba(255,255,255,0.04);
-  --glass-b: rgba(255,255,255,0.08);
-  --glass-hover: rgba(255,255,255,0.12);
-  --orange: #fb923c;
-  --amber: #fbbf24;
-  --rose: #f43f5e;
-  --gold: #eab308;
-  --text: #f1f5f9;
-  --muted: #64748b;
-  --muted2: #94a3b8;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;min-height:100vh}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>webserv // node_02</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #080400;
+      --bg2:     #0f0700;
+      --glass:   rgba(255,255,255,0.04);
+      --glass-b: rgba(255,255,255,0.08);
+      --orange:  #fb923c;
+      --amber:   #fbbf24;
+      --rose:    #f43f5e;
+      --text:    #f1f5f9;
+      --muted:   #57534e;
+      --muted2:  #a8a29e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    html { scroll-behavior: smooth }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-/* ─── AURORA (Sunset Palette) ─── */
-.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.blob{position:absolute;border-radius:50%;filter:blur(140px);animation:drift 18s ease-in-out infinite}
-.b1{width:900px;height:900px;background:radial-gradient(circle,rgba(244,63,94,0.25),rgba(251,146,60,0.15));top:-400px;right:-100px;animation-delay:0s}
-.b2{width:700px;height:700px;background:radial-gradient(circle,rgba(234,179,8,0.15),rgba(244,63,94,0.1));bottom:-100px;left:-200px;animation-delay:-4s}
-@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-40px,60px) scale(1.1)}}
+    /* aurora */
+    .aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden }
+    .b1 { position:absolute;width:900px;height:900px;background:radial-gradient(circle,rgba(251,146,60,.22),rgba(244,63,94,.1),transparent 70%);top:-350px;right:-200px;filter:blur(130px);animation:drift 16s ease-in-out infinite }
+    .b2 { position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(234,179,8,.14),rgba(251,146,60,.08),transparent 70%);bottom:-200px;left:-150px;filter:blur(120px);animation:drift 20s ease-in-out infinite;animation-delay:-7s }
+    .b3 { position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(244,63,94,.1),transparent 70%);top:40%;left:30%;filter:blur(110px);animation:drift 14s ease-in-out infinite;animation-delay:-12s }
+    @keyframes drift { 0%,100%{transform:translate(0,0) scale(1)} 40%{transform:translate(-50px,60px) scale(1.08)} 70%{transform:translate(30px,-30px) scale(.95)} }
+    body::after { content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E") }
 
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+    /* nav */
+    nav { position:fixed;top:18px;left:50%;transform:translateX(-50%);width:calc(100% - 64px);max-width:1160px;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-radius:18px;background:rgba(8,4,0,.72);backdrop-filter:blur(32px);border:1px solid rgba(251,146,60,.12) }
+    .nav-logo { font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.03em;text-decoration:none;background:linear-gradient(130deg,var(--orange),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .nav-links { display:flex;gap:4px;list-style:none }
+    .nav-links a { color:var(--muted2);text-decoration:none;font-size:14px;font-weight:500;padding:7px 14px;border-radius:10px;transition:all .2s }
+    .nav-links a:hover { color:#fff;background:rgba(255,255,255,.06) }
+    .nav-pill { font-size:12px;font-weight:600;color:var(--orange);background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.22);padding:6px 16px;border-radius:30px;display:flex;align-items:center;gap:6px }
+    .pulse { width:7px;height:7px;background:var(--orange);border-radius:50%;box-shadow:0 0 12px var(--orange);animation:blink 2s ease infinite }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-/* ─── NAV ─── */
-nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);width:calc(100% - 64px);max-width:1160px;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-radius:18px;background:rgba(10,5,5,0.7);backdrop-filter:blur(30px);border:1px solid var(--glass-b)}
-.nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;letter-spacing:-.03em;background:linear-gradient(130deg,var(--orange),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.nav-links{display:flex;gap:4px;list-style:none}
-.nav-links a{color:var(--muted2);text-decoration:none;font-size:14px;font-weight:500;padding:7px 14px;border-radius:10px;transition:all .2s}
-.nav-links a:hover{color:#fff;background:var(--glass)}
-.nav-pill{font-size:12px;font-weight:600;color:var(--orange);background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.2);padding:6px 16px;border-radius:30px;display:flex;align-items:center;gap:6px}
-.pulse{width:7px;height:7px;background:var(--orange);border-radius:50%;box-shadow:0 0 10px var(--orange);animation:blink 2s ease infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+    /* hero */
+    .hero { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 40px 80px;position:relative;z-index:1 }
+    .hero-inner { max-width:900px;width:100%;text-align:center }
+    .hero-eyebrow { display:inline-flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:32px;animation:fadeD .5s ease both }
+    .hero-eyebrow::before,.hero-eyebrow::after { content:'──';opacity:.35 }
+    .hero-title { font-family:'Syne',sans-serif;font-size:clamp(56px,11vw,118px);font-weight:800;line-height:.92;letter-spacing:-.04em;margin-bottom:28px;animation:fadeD .6s ease .1s both }
+    .t1 { display:block;color:#fff }
+    .t2 { display:block;background:linear-gradient(135deg,var(--amber) 0%,var(--orange) 40%,var(--rose) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .hero-desc { font-size:17px;color:var(--muted2);max-width:520px;margin:0 auto 48px;line-height:1.9;font-weight:300;animation:fadeD .6s ease .2s both }
+    .hero-desc strong { color:var(--text);font-weight:500 }
+    .hero-ctas { display:flex;gap:12px;justify-content:center;margin-bottom:72px;flex-wrap:wrap;animation:fadeD .6s ease .3s both }
 
-/* ─── HERO ─── */
-.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 40px 80px;position:relative;z-index:1}
-.hero-inner{max-width:860px;text-align:center}
-.hero-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.2);color:var(--rose);font-size:13px;font-weight:500;padding:8px 20px;border-radius:40px;margin-bottom:36px;letter-spacing:.03em;animation:fadeD .5s ease both}
-.hero-title{font-family:'Syne',sans-serif;font-size:clamp(60px,11vw,110px);font-weight:800;line-height:.95;letter-spacing:-.04em;margin-bottom:30px;animation:fadeD .6s ease .1s both}
-.hero-title .t1{display:block;color:#fff}
-.hero-title .t2{display:block;background:linear-gradient(135deg,var(--orange) 0%,var(--rose) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero-desc{font-size:18px;color:var(--muted2);max-width:560px;margin:0 auto 48px;line-height:1.8;font-weight:300;animation:fadeD .6s ease .2s both}
-.hero-ctas{display:flex;gap:14px;justify-content:center;margin-bottom:80px;animation:fadeD .6s ease .3s both}
-.btn-glow{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;padding:14px 32px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--rose));color:#0a0505;box-shadow:0 0 30px rgba(244,63,94,.3);text-decoration:none;transition:all .25s}
-.btn-glow:hover{transform:translateY(-3px);box-shadow:0 0 50px rgba(244,63,94,.5)}
+    .btn-glow { font-family:'Syne',sans-serif;font-weight:700;font-size:14px;padding:13px 30px;border-radius:12px;border:none;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--amber),var(--orange),var(--rose));color:#1c0800;box-shadow:0 0 32px rgba(251,146,60,.35),0 4px 20px rgba(0,0,0,.5);transition:all .25s }
+    .btn-glow:hover { transform:translateY(-3px);box-shadow:0 0 60px rgba(251,146,60,.55),0 8px 32px rgba(0,0,0,.6) }
+    .btn-glow svg { width:15px;height:15px;stroke:#1c0800;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round }
+    .btn-ghost { font-family:'Syne',sans-serif;font-weight:600;font-size:14px;padding:13px 30px;border-radius:12px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;background:var(--glass);color:var(--text);border:1px solid rgba(251,146,60,.18);backdrop-filter:blur(12px);transition:all .25s }
+    .btn-ghost:hover { background:rgba(255,255,255,.07);border-color:rgba(251,146,60,.4);transform:translateY(-3px) }
 
-.stats-row{display:flex;justify-content:center;gap:2px;animation:fadeD .6s ease .4s both}
-.stat{background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(20px);padding:20px 36px;flex:1;max-width:220px}
-.stat:first-child{border-radius:14px 0 0 14px}
-.stat:last-child{border-radius:0 14px 14px 0}
-.stat-n{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;background:linear-gradient(135deg,var(--orange),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block}
-.stat-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;font-weight:600;margin-top:6px}
+    .stats-row { display:flex;justify-content:center;gap:2px;animation:fadeD .6s ease .4s both }
+    .stat { background:var(--glass);border:1px solid var(--glass-b);backdrop-filter:blur(20px);padding:22px 36px;flex:1;max-width:300px;text-align:center }
+    .stat:first-child { border-radius:14px 0 0 14px }
+    .stat:last-child  { border-radius:0 14px 14px 0 }
+    .stat-n { font-family:'Syne',sans-serif;font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--amber),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;line-height:1 }
+    .stat-l { font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.16em;font-weight:700;margin-top:7px }
 
-@keyframes fadeD{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeD { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeU { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
 
-/* ─── TERMINAL ─── */
-.terminal{background:rgba(15,10,10,.95);border:1px solid var(--glass-b);border-radius:18px;overflow:hidden;box-shadow:0 28px 70px rgba(0,0,0,.7)}
-.tbar{display:flex;align-items:center;gap:8px;padding:14px 20px;border-bottom:1px solid var(--glass-b);background:rgba(255,255,255,.02)}
-.dot{width:12px;height:12px;border-radius:50%}
-.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
-.tbody{padding:24px;font-family:monospace;font-size:13px;line-height:2.1;color:var(--muted2)}
-.tp{color:var(--orange)}.tok{color:#4ade80}.te{color:var(--rose)}
+    /* section */
+    .section { position:relative;z-index:1;padding:100px 40px }
+    .container { max-width:1160px;margin:0 auto }
+    .sec-label { font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;display:flex;align-items:center;gap:10px }
+    .sec-label::before { content:'';width:20px;height:2px;background:var(--orange);border-radius:1px }
+    .sec-title { font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,52px);font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:14px }
+    .sec-title span { background:linear-gradient(135deg,var(--amber),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text }
+    .sec-sub { font-size:16px;color:var(--muted2);max-width:500px;line-height:1.8;font-weight:300;margin-bottom:56px }
 
-/* ─── FOOTER ─── */
-footer{margin:80px 32px 0;border-radius:24px 24px 0 0;border:1px solid var(--glass-b);background:rgba(10,5,5,.8);backdrop-filter:blur(28px);padding:64px 56px 48px}
-.foot-logo{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--orange),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px}
-.foot-desc{font-size:14px;color:var(--muted);line-height:1.8;max-width:400px}
-</style>
+    /* features */
+    .feat-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:16px }
+    .feat-card { background:var(--glass);border:1px solid var(--glass-b);border-radius:20px;padding:30px;backdrop-filter:blur(22px);transition:all .28s;position:relative;overflow:hidden }
+    .feat-card::before { content:'';position:absolute;inset:0;background:linear-gradient(145deg,rgba(255,255,255,.04) 0%,transparent 60%);pointer-events:none }
+    .feat-card:hover { transform:translateY(-6px);border-color:rgba(251,146,60,.25);box-shadow:0 24px 60px rgba(0,0,0,.5) }
+    .feat-icon { width:48px;height:48px;border-radius:13px;margin-bottom:20px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);display:flex;align-items:center;justify-content:center }
+    .feat-icon svg { width:22px;height:22px;stroke:var(--orange);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round }
+    .feat-title { font-family:'Syne',sans-serif;font-weight:700;font-size:17px;color:#fff;margin-bottom:10px }
+    .feat-desc { font-size:13px;color:var(--muted2);line-height:1.7;font-weight:300 }
+    .feat-desc code { font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--orange) }
+
+    /* terminal */
+    .terminal { background:rgba(10,5,0,.96);border:1px solid rgba(251,146,60,.12);border-radius:18px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.7) }
+    .tbar { display:flex;align-items:center;gap:8px;padding:14px 20px;border-bottom:1px solid rgba(251,146,60,.08);background:rgba(255,255,255,.02) }
+    .dot { width:12px;height:12px;border-radius:50% }
+    .dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+    .t-title { font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin:0 auto }
+    .tbody { padding:24px 28px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.1 }
+    .tp{color:var(--orange)}.tok{color:#4ade80}.te{color:var(--rose)}.tw{color:var(--amber)}.tc{color:var(--muted2)}
+    .cursor { display:inline-block;width:8px;height:14px;background:var(--orange);animation:cur .9s step-end infinite;vertical-align:middle;margin-left:3px;border-radius:1px }
+    @keyframes cur { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* routes */
+    .routes-card { background:var(--glass);border:1px solid var(--glass-b);border-radius:18px;overflow:hidden;backdrop-filter:blur(22px) }
+    .routes-head { display:grid;grid-template-columns:90px 1fr 160px 130px;padding:12px 24px;border-bottom:1px solid var(--glass-b);background:rgba(255,255,255,.02) }
+    .rh { font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted) }
+    .route-row { display:grid;grid-template-columns:90px 1fr 160px 130px;align-items:center;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s }
+    .route-row:last-child { border-bottom:none }
+    .route-row:hover { background:rgba(255,255,255,.03) }
+    .mb { font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;padding:3px 9px;border-radius:6px;display:inline-block }
+    .m-get  { background:rgba(74,222,128,.1); color:#4ade80;  border:1px solid rgba(74,222,128,.2) }
+    .m-post { background:rgba(251,146,60,.1); color:var(--orange); border:1px solid rgba(251,146,60,.2) }
+    .m-del  { background:rgba(244,63,94,.1);  color:var(--rose);   border:1px solid rgba(244,63,94,.2) }
+    .m-any  { background:rgba(251,191,36,.1); color:var(--amber);  border:1px solid rgba(251,191,36,.2) }
+    .r-path { font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text) }
+    .r-desc { font-size:13px;color:var(--muted2);font-weight:300 }
+    .r-status { font-family:'JetBrains Mono',monospace;font-size:11px }
+    .s-ok   { color:#4ade80 }
+    .s-redir{ color:var(--amber) }
+    .s-err  { color:var(--rose) }
+
+    .divider { border:none;border-top:1px solid var(--glass-b);margin:0 }
+
+    /* footer */
+    footer { position:relative;z-index:1;margin:0 32px;border-radius:24px 24px 0 0;border:1px solid rgba(251,146,60,.1);border-bottom:none;background:rgba(15,7,0,.85);backdrop-filter:blur(28px);padding:56px 56px 48px }
+    .foot-inner { max-width:1160px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:56px;margin-bottom:40px }
+    .foot-logo { font-family:'Syne',sans-serif;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--amber),var(--orange),var(--rose));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px }
+    .foot-desc { font-size:14px;color:var(--muted);line-height:1.8;font-weight:300;max-width:360px }
+    .foot-h { font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;margin-bottom:16px;letter-spacing:.04em }
+    .foot-links { list-style:none }
+    .foot-links li { margin-bottom:10px }
+    .foot-links a { font-size:14px;color:var(--muted2);text-decoration:none;transition:color .2s;font-weight:300 }
+    .foot-links a:hover { color:var(--orange) }
+    .foot-bottom { max-width:1160px;margin:0 auto;border-top:1px solid var(--glass-b);padding-top:24px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace }
+  </style>
 </head>
 <body>
 
-<div class="aurora">
-  <div class="blob b1"></div>
-  <div class="blob b2"></div>
-</div>
+  <div class="aurora">
+    <div class="b1"></div><div class="b2"></div><div class="b3"></div>
+  </div>
 
-<nav>
-  <div class="nav-logo">webserv // node_02</div>
-  <ul class="nav-links">
-    <li><a href="#">Files</a></li>
-    <li><a href="#">Metrics</a></li>
-    <li><a href="#">Logs</a></li>
-  </ul>
-  <div class="nav-pill"><span class="pulse"></span>Storage Active</div>
-</nav>
+  <nav>
+    <a class="nav-logo" href="/">webserv // node_02</a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#logs">Logs</a></li>
+      <li><a href="#routes">Routes</a></li>
+    </ul>
+    <div class="nav-pill"><span class="pulse"></span>node_02 · online</div>
+  </nav>
 
-<div class="hero">
-  <div class="hero-inner">
-    <div class="hero-chip">📦 Node: Static Asset Server · Disk I/O Optmized</div>
-    <h1 class="hero-title">
-      <span class="t1">Static Content —</span>
-      <span class="t2">delivered fast.</span>
-    </h1>
-    <p class="hero-desc">
-      This secondary node is dedicated to <strong>high-concurrency file delivery</strong>. Optimized for <code>GET</code> requests with heavy directory indexing and auto-indexing enabled.
-    </p>
-    
-    <div class="hero-ctas">
-      <a href="#" class="btn-glow">Browse Assets</a>
-      <a href="#" class="btn-ghost">Node Config →</a>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat"><span class="stat-n">1.2GB</span><div class="stat-l">Cache Size</div></div>
-      <div class="stat"><span class="stat-n">15ms</span><div class="stat-l">Avg Latency</div></div>
-      <div class="stat"><span class="stat-n">∞</span><div class="stat-l">Uptime</div></div>
-    </div>
-
-    <br><br>
-    
-    <div class="terminal">
-      <div class="tbar">
-        <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">node_02 &nbsp;·&nbsp; static asset server &nbsp;·&nbsp; port 8081</div>
+      <h1 class="hero-title">
+        <span class="t1">Static Content —</span>
+        <span class="t2">delivered raw.</span>
+      </h1>
+      <p class="hero-desc">
+        A second <strong>webserv</strong> instance — same C++98 engine,
+        different config. Dedicated to file delivery, directory indexing,
+        and testing edge cases the primary node can't touch.
+      </p>
+      <div class="hero-ctas">
+        <a href="/uploads/" class="btn-glow">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          Browse Files
+        </a>
+        <a href="#routes" class="btn-ghost">View Routes →</a>
+        <a href="http://localhost:8080" class="btn-ghost" style="border-color:rgba(255,255,255,.1)">← Node 01</a>
       </div>
-      <div class="tbody" style="text-align: left;">
-        <div><span class="tp">node_02 ❯</span> tail -f access.log</div>
-        <div class="tok">[INFO] 192.168.1.42 - "GET /assets/hero-bg.webp HTTP/1.0" 200</div>
-        <div class="tok">[INFO] 192.168.1.42 - "GET /css/main.min.css HTTP/1.0" 200</div>
-        <div class="tok">[INFO] 192.168.1.10 - "GET /api/v1/status HTTP/1.0" 200</div>
-        <div class="te">[WARN] 192.168.1.88 - "GET /admin HTTP/1.0" 403</div>
-        <div class="tok">[INFO] 192.168.1.42 - "GET /js/app.bundle.js HTTP/1.0" 200</div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-n">8081</span><div class="stat-l">Port</div></div>
+        <div class="stat"><span class="stat-n">GET</span><div class="stat-l">Primary Method</div></div>
+        <div class="stat"><span class="stat-n">on</span><div class="stat-l">Autoindex</div></div>
+        <div class="stat"><span class="stat-n">C++98</span><div class="stat-l">Engine</div></div>
       </div>
     </div>
   </div>
-</div>
 
-<footer>
-  <div class="foot-logo">webserv</div>
-  <p class="foot-desc">Dedicated storage node part of the webserv cluster. Built for speed, stability, and zero-overhead file streaming using C++98 and raw POSIX syscalls.</p>
-</footer>
+  <!-- FEATURES -->
+  <div class="section" id="features">
+    <div class="container">
+      <div class="sec-label">Why node_02</div>
+      <h2 class="sec-title">What this <span>instance does.</span></h2>
+      <p class="sec-sub">A second webserv process with its own config file, port, and route table. Different behavior, same binary.</p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="feat-title">Autoindex ON</div>
+          <div class="feat-desc">Every directory request returns a styled listing rendered from the <code>autoindex.html</code> template. Files are sorted, typed, and linkable.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="feat-title">File Upload</div>
+          <div class="feat-desc">POST <code>multipart/form-data</code> directly to <code>/uploads</code>. Boundary parsed in C++, saved to disk. No CGI needed.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></div>
+          <div class="feat-title">DELETE Enabled</div>
+          <div class="feat-desc">Files in <code>/uploads/</code> can be removed via HTTP DELETE. Returns 204 on success — no body, no noise.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><path d="M21 3L9 15"/><path d="M10 3H3v18h18v-7"/></svg></div>
+          <div class="feat-title">301 Redirects</div>
+          <div class="feat-desc">Config-defined redirects via the <code>return</code> directive. No CGI, no handlers — pure config-level Location header.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+          <div class="feat-title">Separate Config</div>
+          <div class="feat-desc">Runs from its own <code>.conf</code> file — different root, different error pages, different max body size. Same binary, zero code changes.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div class="feat-title">Timeout Handling</div>
+          <div class="feat-desc">CGI processes that exceed the timeout threshold are killed → 504. Slow clients that stall mid-request → 408.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- TERMINAL -->
+  <div class="section" id="logs" style="padding-bottom:0">
+    <div class="container">
+      <div class="sec-label">Access Log</div>
+      <h2 class="sec-title">Server <span>activity.</span></h2>
+      <p class="sec-sub">Simulated access log — what the server would be printing to stdout right now.</p>
+      <div class="terminal">
+        <div class="tbar">
+          <span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+          <span class="t-title">webserv // node_02 · access.log</span>
+        </div>
+        <div class="tbody">
+          <div><span class="tc">[2025-05-03 09:12:44]</span> <span class="tp">192.168.1.42</span> <span class="tw">"GET /uploads/ HTTP/1.0"</span> <span class="tok">200</span> <span class="tc">autoindex</span></div>
+          <div><span class="tc">[2025-05-03 09:12:47]</span> <span class="tp">192.168.1.42</span> <span class="tw">"GET /uploads/report.pdf HTTP/1.0"</span> <span class="tok">200</span> <span class="tc">4.2MB</span></div>
+          <div><span class="tc">[2025-05-03 09:12:51]</span> <span class="tp">192.168.1.10</span> <span class="tw">"POST /uploads HTTP/1.0"</span> <span class="tok">201</span> <span class="tc">multipart</span></div>
+          <div><span class="tc">[2025-05-03 09:12:55]</span> <span class="tp">192.168.1.88</span> <span class="tw">"GET /admin HTTP/1.0"</span> <span class="te">403</span> <span class="tc">forbidden</span></div>
+          <div><span class="tc">[2025-05-03 09:13:01]</span> <span class="tp">192.168.1.10</span> <span class="tw">"DELETE /uploads/old.txt HTTP/1.0"</span> <span class="tok">204</span> <span class="tc">deleted</span></div>
+          <div><span class="tc">[2025-05-03 09:13:08]</span> <span class="tp">192.168.1.42</span> <span class="tw">"GET /nonexistent HTTP/1.0"</span> <span class="te">404</span> <span class="tc">not found</span></div>
+          <div><span class="tc">[2025-05-03 09:13:14]</span> <span class="tp">192.168.1.05</span> <span class="tw">"GET /old HTTP/1.0"</span> <span class="tw">301</span> <span class="tc">→ /new</span></div>
+          <div><span class="tc">[2025-05-03 09:13:19]</span> <span class="tp">192.168.1.42</span> <span class="tw">"POST /uploads HTTP/1.0"</span> <span class="te">413</span> <span class="tc">body too large</span></div>
+          <div><span class="tc">[2025-05-03 09:13:22]</span> <span class="tp">192.168.1.10</span> <span class="tw">"GET /uploads/ HTTP/1.0"</span> <span class="tok">200</span> <span class="tc">3 entries</span></div>
+          <div><span class="tp">node_02 ❯</span><span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROUTES -->
+  <div class="section" id="routes">
+    <div class="container">
+      <div class="sec-label">Route Table</div>
+      <h2 class="sec-title">Configured <span>routes.</span></h2>
+      <p class="sec-sub">Every route in this node's config file — method, path, behavior, and expected response.</p>
+      <div class="routes-card">
+        <div class="routes-head">
+          <div class="rh">Method</div>
+          <div class="rh">Path</div>
+          <div class="rh">Behavior</div>
+          <div class="rh">Response</div>
+        </div>
+        <div class="route-row"><div><span class="mb m-get">GET</span></div><div class="r-path">/</div><div class="r-desc">Serve index2.html</div><div class="r-status s-ok">200 OK</div></div>
+        <div class="route-row"><div><span class="mb m-get">GET</span></div><div class="r-path">/uploads/</div><div class="r-desc">Autoindex listing</div><div class="r-status s-ok">200 OK</div></div>
+        <div class="route-row"><div><span class="mb m-post">POST</span></div><div class="r-path">/uploads</div><div class="r-desc">multipart upload</div><div class="r-status s-ok">201 Created</div></div>
+        <div class="route-row"><div><span class="mb m-del">DELETE</span></div><div class="r-path">/uploads/*</div><div class="r-desc">Delete file</div><div class="r-status s-ok">204 No Content</div></div>
+        <div class="route-row"><div><span class="mb m-get">GET</span></div><div class="r-path">/old</div><div class="r-desc">Permanent redirect</div><div class="r-status s-redir">301 Moved</div></div>
+        <div class="route-row"><div><span class="mb m-get">GET</span></div><div class="r-path">/pages/</div><div class="r-desc">Autoindex listing</div><div class="r-status s-ok">200 OK</div></div>
+        <div class="route-row"><div><span class="mb m-get">GET</span></div><div class="r-path">/* (miss)</div><div class="r-desc">Custom 404 page</div><div class="r-status s-err">404 Not Found</div></div>
+		<div class="route-row"><div><span class="mb m-any">ANY</span></div><div class="r-path">/cgi-bin</div><div class="r-desc">CGI scripts directory</div><div class="r-status s-ok">200 OK</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="foot-inner">
+      <div>
+        <div class="foot-logo">webserv // node_02</div>
+        <p class="foot-desc">Secondary webserv instance running on port 8081. Same C++98 engine as node_01 — different config, different purpose. Part of the 42 School Common Core.</p>
+      </div>
+      <div>
+        <div class="foot-h">This Node</div>
+        <ul class="foot-links">
+          <li><a href="/uploads/">Browse Files</a></li>
+          <li><a href="/pages/upload.html">Upload</a></li>
+          <li><a href="/pages/delete.html">Delete</a></li>
+          <li><a href="/pages/playground.html">Playground</a></li>
+          <li><a href="/../errors/404.html">404 Page</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="foot-h">Network</div>
+        <ul class="foot-links">
+          <li><a href="http://localhost:8080">node_01 · :8080</a></li>
+          <li><a href="http://localhost:8081">node_02 · :8081</a></li>
+          <li><a href="#">C++98 Standard</a></li>
+          <li><a href="#">poll() I/O</a></li>
+          <li><a href="#">RFC 7230</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2025 REDA · ELAMRANI · SIMO // 42 School</span>
+      <span>webserv v24.0 · node_02 · HTTP/1.0 · C++98</span>
+    </div>
+  </footer>
 
 </body>
 </html>
