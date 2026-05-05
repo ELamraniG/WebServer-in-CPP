@@ -343,7 +343,7 @@ print(f"""<!DOCTYPE html>
         {cards_html}
       </div>
 
-      <a href="/" class="btn-ghost">
+      <a href="/pages/playground.html" class="btn-ghost">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Home
       </a>

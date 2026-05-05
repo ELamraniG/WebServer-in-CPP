@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../core/ServerConstants.hpp"
+#include "../../include/http/RouteConfig.hpp"
 
 #include <string>
 #include <map>
@@ -53,16 +54,21 @@ class CGIHandler
 					const std::map<std::string, std::string>& headers);
 		~CGIHandler();
 
-		HttpStatus	start();
-		int			getReadFd() const;
-		int			getWriteFd() const;
-		int			getCode() const;
-		std::string	getOutput() const;
-		bool		isWriteBodyDone() const;
-		bool		isDone() const;
-		bool		isError() const;
-		void		readOutput();
-		void		setCode(int code);
-		void        writeBody();
-		void		cleanup();
+		HttpStatus			start();
+		int					getReadFd() const;
+		int					getWriteFd() const;
+		int					getCode() const;
+		std::string			getOutput() const;
+		bool				isWriteBodyDone() const;
+		bool				isDone() const;
+		bool				isError() const;
+		void				readOutput();
+		void				setCode(int code);
+		void		        writeBody();
+		void				cleanup();
+		static std::string	extractExtention(const std::string& uri);
+		static bool			isCGIRequest(const HTTPRequest& request, const RouteConfig& route);
+		static std::string	extractCleanUri(const std::string& uri);
+		static void			resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath);
+		
 };

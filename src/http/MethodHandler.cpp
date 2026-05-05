@@ -1,6 +1,7 @@
 #include "../../include/http/MethodHandler.hpp"
 #include "../../include/http/FileUpload.hpp"
 #include "../../include/http/RouteConfig.hpp"
+#include "../../include/cgi/CGIHandler.hpp"
 #include <algorithm>
 #include <cstdio>
 #include <ctime>
@@ -16,21 +17,6 @@ MethodHandler::MethodHandler() {}
 
 static std::map<std::string, std::string> AllSession;
 static unsigned long gSessionCounter = 0;
-
-std::string extractExtention(const std::string &uri) {
-  size_t dot;
-  size_t queryStartAt;
-  std::string extension;
-
-  dot = uri.find_last_of('.');
-  if (dot == std::string::npos)
-    return ("");
-  extension = uri.substr(dot);
-  queryStartAt = extension.find('?');
-  if (queryStartAt != std::string::npos)
-    extension = extension.substr(0, queryStartAt);
-  return (extension);
-}
 
 static std::string makeSessionId() {
   std::ostringstream SesId;
@@ -237,16 +223,6 @@ static Response makeRedirect(const std::string &location) {
   return resp;
 }
 
-static bool tryCGI(const HTTPRequest &request, const RouteConfig &route) {
-  std::string extension;
-  const std::map<std::string, std::string> &cgiPass = route.getCgiPass();
-
-  extension = extractExtention(request.getURI());
-  if (extension.empty() || cgiPass.empty())
-    return (false);
-  return (cgiPass.count(extension));
-}
-
 static std::string buildAutoindex(const std::string &dirPath,
                                   const std::string &uri) {
   DIR *dir = opendir(dirPath.c_str());
@@ -413,7 +389,7 @@ Response MethodHandler::handleGET(HTTPRequest &request,
   if (!route.getRedirect().empty())
     return applySession(request, makeRedirect(route.getRedirect()));
 
-  if (tryCGI(request, route)) {
+  if (CGIHandler::isCGIRequest(request, route)) {
     request.setIsCGI(true);
     return applySession(request, resp);
   }
@@ -470,7 +446,7 @@ Response MethodHandler::handleGET(HTTPRequest &request,
         indexReq = request;
         indexReq.setURI(indexedURI);
         
-        if (tryCGI(indexReq, route)) {
+        if (CGIHandler::isCGIRequest(indexReq, route)) {
           request.setIsCGI(true);
           return applySession(request, resp);
         }
@@ -535,7 +511,7 @@ Response MethodHandler::handlePOST(HTTPRequest &request,
       request.getBody().size() > route.getMaxBodySize())
     return applySession(
         request, MethodHandler::makeError(413, "Payload Too Large", route));
-  if (tryCGI(request, route)) {
+  if (CGIHandler::isCGIRequest(request, route)) {
     request.setIsCGI(true);
     return applySession(request, resp);
   }

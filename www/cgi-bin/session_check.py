@@ -298,7 +298,7 @@ print(f"""<!DOCTYPE html>
 
       {'<!-- session id card --><div class="session-card"><div class="session-card-label">SESSION_ID</div><div class="session-id-value"><div class="sid-dot"></div>' + session_id + '</div></div>' if has_session else '<!-- hint card --><div class="hint-card"><div class="hint-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="hint-text">The server found no <strong>SESSION_ID</strong> in <code style="font-family:monospace;font-size:12px">HTTP_COOKIE</code>. Start a session to see it appear here.</div></div>'}
 
-      <a href="/" class="btn-ghost">
+      <a href="/pages/playground.html" class="btn-ghost">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Home
       </a>

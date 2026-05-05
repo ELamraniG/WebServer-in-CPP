@@ -88,6 +88,65 @@ void	CGIHandler::buildEnv()
 	_envp.push_back(NULL);
 }
 
+std::string	CGIHandler::extractCleanUri(const std::string& uri)
+{
+	std::string	cleanUri;
+	std::size_t	queryStartAt;
+
+	queryStartAt = uri.find('?');
+	if (queryStartAt == std::string::npos)
+		return (uri);
+	cleanUri = uri.substr(0, queryStartAt);
+	return (cleanUri);
+}
+
+void	CGIHandler::resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath)
+{
+	std::string	cleanUri;
+	std::string	relativePath;
+	std::string	root;
+	std::string	locationPath;
+
+	root = route.getRoot();
+	locationPath = route.getLocationPath();
+	cleanUri = extractCleanUri(uri);
+	relativePath = cleanUri;
+	if (!locationPath.empty() && cleanUri.find(locationPath) == 0)
+		relativePath = cleanUri.substr(locationPath.size());
+	if (!root.empty() && root[root.size() - 1] == '/')
+		root.erase(root.size() - 1);
+	if (relativePath.empty() || relativePath[0] != '/')
+		relativePath = "/" + relativePath;
+	scriptPath = root + relativePath;
+}
+
+std::string	CGIHandler::extractExtention(const std::string& uri)
+{
+	size_t		dot;
+	size_t		queryStartAt;
+	std::string	extension;
+
+	dot = uri.find_last_of('.');
+	if (dot == std::string::npos)
+		return ("");
+	extension = uri.substr(dot);
+	queryStartAt = extension.find('?');
+	if (queryStartAt != std::string::npos)
+		extension = extension.substr(0, queryStartAt);
+	return (extension);
+}
+
+bool	CGIHandler::isCGIRequest(const HTTPRequest& request, const RouteConfig& route)
+{
+	std::string									extension;
+	const std::map<std::string, std::string>	&cgiPass = route.getCgiPass();
+
+	extension = CGIHandler::extractExtention(request.getURI());
+	if (extension.empty() || cgiPass.empty())
+		return (false);
+	return (cgiPass.count(extension));
+}
+
 void	CGIHandler::setCode(int code)
 {
 	_code = code;

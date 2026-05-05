@@ -78,8 +78,8 @@
     <a class="nav-logo" href="/">webserv</a>
     <ul class="nav-links">
       <li><a href="/">Home</a></li>
-      <li><a href="/upload.html">Upload</a></li>
-      <li><a href="/index2.html">Playground</a></li>
+      <li><a href="/pages/upload.html">Upload</a></li>
+      <li><a href="/pages/playground.html">Playground</a></li>
     </ul>
     <div class="nav-pill"><div class="pulse"></div>CGI · PHP</div>
   </nav>

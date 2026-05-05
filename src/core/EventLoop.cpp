@@ -60,64 +60,6 @@ bool	EventLoop::isError(int fd, short revents) const
 	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (revents & (POLLERR | POLLHUP)));
 }
 
-std::string	EventLoop::extractExtention(const std::string& uri)
-{
-	size_t		dot;
-	size_t		queryStartAt;
-	std::string	extension;
-
-	dot = uri.find_last_of('.');
-	if (dot == std::string::npos)
-		return ("");
-	extension = uri.substr(dot);
-	queryStartAt = extension.find('?');
-	if (queryStartAt != std::string::npos)
-		extension = extension.substr(0, queryStartAt);
-	return (extension);
-}
-
-bool	EventLoop::isCGIRequest(const std::string& uri, const std::map<std::string, std::string>& cgiPass)
-{
-	std::string	extension;
-
-	extension = extractExtention(uri);
-	if (extension.empty() || cgiPass.empty())
-		return (false);
-	return (cgiPass.count(extension));
-}
-
-std::string	EventLoop::extractCleanUri(const std::string& uri)
-{
-	std::string	cleanUri;
-	std::size_t	queryStartAt;
-
-	queryStartAt = uri.find('?');
-	if (queryStartAt == std::string::npos)
-		return (uri);
-	cleanUri = uri.substr(0, queryStartAt);
-	return (cleanUri);
-}
-
-void EventLoop::resolveCGI(const std::string& uri, const RouteConfig& route, std::string& scriptPath)
-{
-	std::string	cleanUri;
-	std::string	relativePath;
-	std::string	root;
-	std::string	locationPath;
-
-	root = route.getRoot();
-	locationPath = route.getLocationPath();
-	cleanUri = extractCleanUri(uri);
-	relativePath = cleanUri;
-	if (!locationPath.empty() && cleanUri.find(locationPath) == 0)
-		relativePath = cleanUri.substr(locationPath.size());
-	if (!root.empty() && root[root.size() - 1] == '/')
-		root.erase(root.size() - 1);
-	if (relativePath.empty() || relativePath[0] != '/')
-		relativePath = "/" + relativePath;
-	scriptPath = root + relativePath;
-}
-
 bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 {
 	int			writeFd;
@@ -129,7 +71,7 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	HTTPRequest	req;
 
 	req = _clientMap[clientFd]->httpReq;
-	resolveCGI(req.getURI(), route, scriptPath);
+	CGIHandler::resolveCGI(req.getURI(), route, scriptPath);
 	cgi = new CGIHandler(scriptPath, interpreter, req.getMethod(),
 						req.getQueryString(), req.getBody(), req.getAllHeaders());
 	logger.cgiRun(clientFd, req.getURI());
