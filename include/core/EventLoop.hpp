@@ -3,6 +3,7 @@
 #include "../cgi/CGIHandler.hpp"
 #include "../core/ServerConstants.hpp"
 #include "../http/RouteConfig.hpp"
+#include "../http/Response.hpp"
 #include "Client.hpp"
 #include "Server.hpp"
 
@@ -27,32 +28,40 @@ class EventLoop
 		std::map<int, time_t>		_cgiStartTime;
 
 		EventLoop();
-		EventLoop(const EventLoop &obj);
-		EventLoop &operator=(const EventLoop &obj);
+		EventLoop(const EventLoop& obj);
+		EventLoop &operator=(const EventLoop& obj);
 
 		void		addToPoll(int fd, short event);
-		void		removeFromPoll(size_t &i);
+		void		removeFromPoll(size_t& i);
 		void		handleNewClient(int fd);
-		void		handleClientDisconnected(int fd, size_t &i, HttpStatus code);
-		void		handleReadEvent(int fd, size_t &i);
-		void		handleWriteEvent(int fd, size_t &i);
+		void		handleClientDisconnected(int fd, size_t& i, HttpStatus code);
+		void		handleReadEvent(int fd, size_t& i);
+		void		handleWriteEvent(int fd, size_t& i);
 		bool		isTimeout(int fd);
 		bool		isError(int fd, short revents) const;
 		bool		isServer(int fd) const;
 		void		handleError();
 		bool		isReadable(const short revents) const;
 		bool		isWritable(const short revents) const;
-		bool		startCGI(int clientFd, const RouteConfig &route);
-		void		handleCGIRead(int readFd, size_t &i);
-		void		handleCGIWrite(int writeFd, size_t &i);
+		bool		startCGI(int clientFd, const RouteConfig& route);
+		void		handleCGIRead(int readFd, size_t& i);
+		void		handleCGIWrite(int writeFd, size_t& i);
 		bool		isCGITimeout(int fd) const;
 		void		cleanupCGIWriteFd(int writeFd);
-		void		handleCGITimeout(int fd, size_t &i);
-		void		handleRequestComplete(int fd, size_t &i, const RouteConfig &routeConfig);
-		RouteConfig getRoute(const Client *client);
+		void		handleCGITimeout(int fd, size_t& i);
+		void		handleRequestComplete(int fd, size_t i, const RouteConfig& routeConfig);
+		RouteConfig getRoute(const Client* client);
+		void		cgiCleanup(int fd, size_t& i);
+		void		changeEvent(int fd, short event);
+		void		registerCGI(int fd, CGIHandler *cgi);
+		void		handleClientRead(int fd, size_t& i);
+		bool		checkRequestParsing(Client* client, size_t& i);
+		void		processEvents();
+		bool		handleCGIIfNeeded(int fd, size_t i, const RouteConfig& route);
+		Response	dispatchMethod(Client* client, const RouteConfig& route);
 
 	public:
-		EventLoop(const std::vector<Server *> &servers, const std::vector<Server_block> serverBlocks);
+		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);
 		~EventLoop();
 
 		void	run();

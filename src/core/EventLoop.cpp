@@ -8,7 +8,10 @@
 #include "../../include/logger/Logger.hpp"
 
 #include <cstddef>
+#include <exception>
 #include <stdexcept>
+#include <string>
+#include <sys/poll.h>
 
 extern		bool g_running;
 Logger		logger;
@@ -60,17 +63,45 @@ bool	EventLoop::isError(int fd, short revents) const
 	return (!isServer(fd) && !_cgiFdToHandler.count(fd) && (revents & (POLLERR | POLLHUP)));
 }
 
+void	EventLoop::cgiCleanup(int fd, size_t& i)
+{
+	delete _cgiFdToHandler[fd];
+	_cgiFdToHandler.erase(fd);
+	_cgiStartTime.erase(fd);
+	_cgiFdToClient.erase(fd);
+	removeFromPoll(i);
+}
+
+void	EventLoop::registerCGI(int fd, CGIHandler* cgi)
+{
+	int	writeFd;
+	int	readFd;
+
+	readFd = cgi->getReadFd();
+	writeFd = cgi->getWriteFd();
+	_cgiStartTime[readFd] = time(NULL);
+	_cgiFdToHandler[readFd] = cgi;
+	_cgiFdToClient[readFd] = _clientMap[fd];
+	addToPoll(readFd, POLLIN);
+	if (writeFd != -1)
+	{
+		_cgiFdToHandler[writeFd] = cgi;
+		_cgiFdToClient[writeFd] = _clientMap[fd];
+		addToPoll(writeFd, POLLOUT);
+	}
+}
+
 bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 {
-	int			writeFd;
-	int			readFd;
 	CGIHandler*	cgi;
 	std::string	scriptPath;
 	std::string	interpreter;
 	HttpStatus	code;
 	HTTPRequest	req;
+	Client*		client;
 
-	req = _clientMap[clientFd]->httpReq;
+	client = _clientMap[clientFd];
+	req = client->httpReq;
 	CGIHandler::resolveCGI(req.getURI(), route, scriptPath);
 	cgi = new CGIHandler(scriptPath, interpreter, req.getMethod(),
 						req.getQueryString(), req.getBody(), req.getAllHeaders());
@@ -79,22 +110,11 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	if (code != HTTP_OK)
 	{
 		logger.cgiError(clientFd, scriptPath, code);
-		_clientMap[clientFd]->setResponse(builderResponse(code, "", route));
+		client->setResponse(builderResponse(code, "", route));
 		delete cgi;
 		return (false);
 	}
-	readFd = cgi->getReadFd();
-	writeFd = cgi->getWriteFd();
-	_cgiStartTime[readFd] = time(NULL);
-	_cgiFdToHandler[readFd] = cgi;
-	_cgiFdToClient[readFd] = _clientMap[clientFd];
-	addToPoll(readFd, POLLIN);
-	if (writeFd != -1)
-	{
-		_cgiFdToHandler[writeFd] = cgi;
-		_cgiFdToClient[writeFd] = _clientMap[clientFd];
-		addToPoll(writeFd, POLLOUT);
-	}
+	registerCGI(clientFd, cgi);
 	return (true);
 }
 
@@ -129,6 +149,18 @@ void	EventLoop::cleanupCGIWriteFd(int writeFd)
 	}
 	_cgiFdToHandler.erase(writeFd);
 	_cgiFdToClient.erase(writeFd);
+}
+
+void	EventLoop::changeEvent(int fd, short event)
+{
+	for (size_t i = 0; i < _pollFds.size(); i++)
+	{
+		if (fd == _pollFds[i].fd)
+		{
+			_pollFds[i].events = event;
+			return ;
+		}
+	}
 }
 
 void	EventLoop::handleNewClient(int serverFd)
@@ -169,22 +201,11 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 
 	writeFd	= _cgiFdToHandler[fd]->getWriteFd();
 	logger.cgiTimeout(_cgiFdToClient[fd]->getFd(), _cgiFdToClient[fd]->httpReq.getURI());
-	for (size_t j = 0; j < _pollFds.size(); j++)
-	{
-		if (_cgiFdToClient[fd]->getFd() == _pollFds[j].fd)
-		{
-			_pollFds[j].events = POLLOUT;
-			break ;
-		}
-	}
+	changeEvent(_cgiFdToClient[fd]->getFd(), POLLOUT);
 	_cgiFdToHandler[fd]->cleanup();
 	cleanupCGIWriteFd(writeFd);
 	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, "GATEWAY TIMEOUT", getRoute(_cgiFdToClient[fd])));
-	delete _cgiFdToHandler[fd];
-	_cgiFdToHandler.erase(fd);
-	_cgiStartTime.erase(fd);
-	_cgiFdToClient.erase(fd);
-	removeFromPoll(i);
+	cgiCleanup(fd, i);
 }
 
 void	EventLoop::handleCGIRead(int readFd, size_t& i)
@@ -192,12 +213,10 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 	CGIHandler*		cgi;
 	Client*			client;
 	ResponseBuilder	build;
-	int				writeFd;
-	
+
 	client = _cgiFdToClient[readFd];
 	RouteConfig		route = getRoute(client);
 	cgi	= _cgiFdToHandler[readFd];
-	writeFd	= cgi->getWriteFd();
 	cgi->readOutput();
 	if (cgi->isDone() || cgi->isError())
 	{
@@ -211,32 +230,18 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 			logger.cgiDone(client->getFd(), client->httpReq.getURI(), HTTP_OK);
 			client->setResponse(build.buildCgiResponse(cgi->getOutput(), route));
 		}
-		for (size_t j = 0; j < _pollFds.size(); j++)
-		{
-			if (_pollFds[j].fd == client->getFd())
-			{
-				_pollFds[j].events = POLLOUT;
-				break ;
-			}
-		}
-		cleanupCGIWriteFd(writeFd);
-		removeFromPoll(i);
-		delete cgi;
-		_cgiFdToHandler.erase(readFd);
-		_cgiFdToClient.erase(readFd);
-		_cgiStartTime.erase(readFd);
+		changeEvent(client->getFd(), POLLOUT);
+		cleanupCGIWriteFd(cgi->getWriteFd());
+		cgiCleanup(readFd, i);
 	}
 }
 
-void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& route)
+Response	EventLoop::dispatchMethod(Client* client, const RouteConfig& route)
 {
-	MethodHandler	handler;
-	ResponseBuilder	responseBuilder;
 	std::string		method;
-	Client*			client;
+	MethodHandler	handler;
 	Response		response;
 
-	client = _clientMap[fd];
 	method = client->httpReq.getMethod();
 	if (method == "GET")
 		response = handler.handleGET(client->httpReq, route);
@@ -245,13 +250,15 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 	else if (method == "DELETE")
 		response = handler.handleDELETE(client->httpReq, route);
 	else
-	{
-		logger.error("[501] NOT IMPLEMENTED");
-		_clientMap[fd]->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, "NOT IMPLEMENTED", route));
-		_pollFds[i].events = POLLOUT;
-		_clientMap[fd]->updateLastActivity();
-		return ;
-	}
+		throw std::runtime_error("[501] NOT IMPLEMENTED");
+	return (response);
+}
+
+bool	EventLoop::handleCGIIfNeeded(int fd, size_t i, const RouteConfig& route)
+{
+	Client*	client;
+
+	client = _clientMap[fd];
 	if (client->httpReq.getIsCGI())
 	{
 		if (startCGI(fd, route))
@@ -261,65 +268,94 @@ void	EventLoop::handleRequestComplete(int fd, size_t& i, const RouteConfig& rout
 			logger.error("[500] INTERNAL SERVER ERROR");
 			_pollFds[i].events = POLLOUT;
 		}
+		return (true);
 	}
-	else
+	return (false);
+}
+
+void	EventLoop::handleRequestComplete(int fd, size_t i, const RouteConfig& route)
+{
+	ResponseBuilder	responseBuilder;
+	std::string		method;
+	Client*			client;
+	Response		response;
+
+	try
 	{
+		client = _clientMap[fd];
+		method = client->httpReq.getMethod();
+		response = dispatchMethod(client, route);
+		if (handleCGIIfNeeded(fd, i, route))
+			return (client->updateLastActivity());
 		logger.staticFile(method, route.getLocationPath(), (HttpStatus)response.statusCode);
 		client->setResponse(responseBuilder.build(response));
-		_pollFds[i].events = POLLOUT;
 	}
-	_clientMap[fd]->updateLastActivity();
+	catch(const std::exception& e)
+	{
+		logger.error(e.what());
+		client->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, "NOT IMPLEMENTED", route));
+	}
+	_pollFds[i].events = POLLOUT;
+	client->updateLastActivity();
+}
+
+bool	EventLoop::checkRequestParsing(Client* client, size_t& i)
+{
+	RequestParser::ParsingStatus	status;
+	RequestParser					reqParser;
+
+	status = reqParser.parseRequest(client->getRequestBuffer(), client->httpReq);
+	if (status == RequestParser::P_INCOMPLETE)
+		return (false);
+	if (status == RequestParser::P_ERROR)
+	{
+		logger.error("[400] BAD REQUEST");
+		client->setResponse(builderResponse(HTTP_BAD_REQUEST, "BAD REQUEST", getRoute(client)));
+		_pollFds[i].events = POLLOUT;
+		return (false);
+	}
+	return (true);
+}
+
+void	EventLoop::handleClientRead(int fd, size_t& i)
+{
+	ssize_t	bytes;
+	Client*	client;
+
+	client = _clientMap[fd];
+	bytes = client->readFromSocket();
+	if (bytes < 0)
+		return (handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR));
+	else if (bytes == 0)
+		return (handleClientDisconnected(fd, i, HTTP_CLIENT_DISCONNECTED));
+	if (checkRequestParsing(client, i))
+		handleRequestComplete(fd, i, getRoute(client));
 }
 
 void	EventLoop::handleReadEvent(int fd, size_t& i)
 {
-	ssize_t							bytes;
-	RequestParser					reqParser;
-	RequestParser::ParsingStatus	status;
-	location_block*					locationBlock;
-
 	if (isServer(fd))
 		handleNewClient(fd);
 	else if (_cgiFdToHandler.count(fd))
 		handleCGIRead(fd, i);
 	else
-	{
-		bytes = _clientMap[fd]->readFromSocket();
-		if (bytes < 0)
-			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
-		else if (bytes == 0)
-			handleClientDisconnected(fd, i, HTTP_CLIENT_DISCONNECTED);
-		else
-		{
-			status = reqParser.parseRequest(_clientMap[fd]->getRequestBuffer(), _clientMap[fd]->httpReq);
-			if (status == RequestParser::P_INCOMPLETE)
-				return ;
-			if (status == RequestParser::P_ERROR)
-			{
-				logger.error("[400] BAD REQUEST");
-				_clientMap[fd]->setResponse(builderResponse(HTTP_BAD_REQUEST, "BAD REQUEST", getRoute(_clientMap[fd])));
-				_pollFds[i].events = POLLOUT;
-				return ;
-			}
-			Server_block& serverBlock = Router::match_server(_clientMap[fd]->httpReq, _serverBlocks);
-			locationBlock = Router::match_location(_clientMap[fd]->httpReq, serverBlock);
-			RouteConfig	route(serverBlock, locationBlock);
-			handleRequestComplete(fd, i, route);
-		}
-	}
+		handleClientRead(fd, i);
 }
 
 void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 {
 	CGIHandler*	cgi;
+	Client*		client;
 
 	cgi = _cgiFdToHandler[writeFd];
+	client = _cgiFdToClient[writeFd];
 	if (cgi->isError() || cgi->isWriteBodyDone())
 	{
 		if (cgi->isError())
 		{
 			logger.error("[500] INTERNAL SERVER ERROR");
-			_cgiFdToClient[writeFd]->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR", getRoute(_cgiFdToClient[writeFd])));
+			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR,
+												"INTERNAL SERVER ERROR", getRoute(client)));
 		}
 		_cgiFdToHandler.erase(writeFd);
 		_cgiFdToClient.erase(writeFd);
@@ -348,34 +384,40 @@ void	EventLoop::handleWriteEvent(int fd, size_t& i)
 	}
 }
 
-void	EventLoop::run()
+void	EventLoop::processEvents()
 {
 	int		fd;
 	short	revents;
 
+	for (size_t i = 0; i < _pollFds.size(); i++)
+	{
+		fd = _pollFds[i].fd;
+		revents = _pollFds[i].revents;
+		if (isCGITimeout(fd))
+			handleCGITimeout(fd, i);
+		else if (isTimeout(fd))
+			handleClientDisconnected(fd, i, HTTP_REQUEST_TIMEOUT);
+		else if (isError(fd, revents))
+			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
+		else if (isReadable(revents))
+			handleReadEvent(fd, i);
+		else if (isWritable(revents))
+			handleWriteEvent(fd, i);
+	}
+}
+
+void	EventLoop::run()
+{
+	int	ret;
+
 	while (g_running)
 	{
-		if (poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT) < 0)
-		{
-			if (!g_running)
-				break ;
+		ret = poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT);
+		if (!g_running)
+			break ;
+		if (ret < 0)
 			throw std::runtime_error("Error: poll.");
-		}
-		for (size_t i=0; i<_pollFds.size(); i++)
-		{
-			fd = _pollFds[i].fd;
-			revents = _pollFds[i].revents;
-			if (isCGITimeout(fd))
-				handleCGITimeout(fd, i);
-			else if (isTimeout(fd))
-				handleClientDisconnected(fd, i, HTTP_REQUEST_TIMEOUT);
-			else if (isError(fd, revents))
-				handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
-			else if (isReadable(revents))
-				handleReadEvent(fd, i);
-			else if (isWritable(revents))
-				handleWriteEvent(fd, i);
-		}
+		processEvents();
 	}
 }
 
