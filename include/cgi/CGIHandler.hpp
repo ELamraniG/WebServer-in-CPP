@@ -25,7 +25,6 @@ class CGIHandler
 		pid_t								_pid;
 		bool								_done;
 		bool								_error;
-		int									_code;
 		std::string							_output;
 		std::string							_scriptPath;
 		std::string							_interpreter;
@@ -37,6 +36,12 @@ class CGIHandler
 		std::vector<char*>					_envp;
 
 		void				buildEnv();
+		void				addBaseEnv();
+		void				addPostEnv();
+		void				addHeaderEnv();
+		bool				isSpecialHeader(const std::string& key);
+		std::string			formatHeaderKey(const std::string& key);
+		void				buildEnvp();
 		bool				setNonBlocking(int fd);
 		bool				openPipe(int pipeFd[2]);
 		bool				openPipes();
@@ -45,6 +50,9 @@ class CGIHandler
 		void				checkExitStatus();
 		const std::string	getPathEnv() const;
 		void				runChild();
+		void				setupPipes();
+		std::vector<char*>	buildArgv();
+		void				execProgram(const std::vector<char*>& argv);
 		void				runParent();
 		const std::string	getExtension();
 
@@ -57,13 +65,11 @@ class CGIHandler
 		HttpStatus			start();
 		int					getReadFd() const;
 		int					getWriteFd() const;
-		int					getCode() const;
 		std::string			getOutput() const;
 		bool				isWriteBodyDone() const;
 		bool				isDone() const;
 		bool				isError() const;
 		void				readOutput();
-		void				setCode(int code);
 		void		        writeBody();
 		void				cleanup();
 		static std::string	extractExtention(const std::string& uri);

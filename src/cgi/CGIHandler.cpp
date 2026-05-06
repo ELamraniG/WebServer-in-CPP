@@ -20,7 +20,6 @@ CGIHandler::CGIHandler(const std::string& path, const std::string& interpreter, 
 	_pid(-1),
 	_done(false),
 	_error(false),
-	_code(200),
 	_scriptPath(path),
 	_interpreter(interpreter),
 	_method(method),
@@ -43,20 +42,51 @@ const std::string	CGIHandler::getPathEnv() const
 	return (path);
 }
 
-void	CGIHandler::buildEnv()
+void	CGIHandler::buildEnvp()
+{
+	for (size_t i = 0; i < _envStrings.size(); i++)
+		_envp.push_back(const_cast<char*>(_envStrings[i].c_str()));
+	_envp.push_back(NULL);
+}
+
+bool	CGIHandler::isSpecialHeader(const std::string& key)
+{
+	return (key == "content-type" || key == "content-length" || key == "transfer-encoding");
+}
+
+std::string	CGIHandler::formatHeaderKey(const std::string& key)
+{
+	std::string	result;
+
+	result = "HTTP_";
+	for (size_t i = 0; i < key.size(); i++)
+	{
+		if (key[i] == '-')
+			result += '_';
+		else
+			result += std::toupper(key[i]);
+	}
+	return (result);
+}
+
+void	CGIHandler::addHeaderEnv()
 {
 	std::map<std::string, std::string>::const_iterator	it;
 	std::string											key;
-	std::ostringstream									oss;
 
-	_envStrings.push_back("REQUEST_METHOD=" + _method);
-	_envStrings.push_back("QUERY_STRING=" + _queryString);
-	_envStrings.push_back("SCRIPT_FILENAME=" + _scriptPath);
-	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
-	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
-	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	_envStrings.push_back("REDIRECT_STATUS=200");
-	_envStrings.push_back("PATH=" + getPathEnv());
+	for (it = _headers.begin(); it != _headers.end(); it++)
+	{
+		if (isSpecialHeader(it->first))
+			continue ;
+		key = formatHeaderKey(it->first);
+		_envStrings.push_back(key + "=" + it->second);
+	}
+}
+
+void	CGIHandler::addPostEnv()
+{
+	std::ostringstream	oss;
+
 	if (_method == "POST")
 	{
 		if (_headers.count("content-type"))
@@ -69,23 +99,26 @@ void	CGIHandler::buildEnv()
 		else if (_headers.count("content-length"))
 			_envStrings.push_back("CONTENT_LENGTH=" +  _headers["content-length"]);
 	}
-	for (it = _headers.begin(); it != _headers.end(); it++)
-	{
-		if (it->first == "content-type" || it->first == "content-length" || it->first == "transfer-encoding")
-			continue ;
-		key = "HTTP_";
-		for (size_t i = 0; i < it->first.size(); i++)
-		{
-			if (it->first[i] == '-')
-				key += '_';
-			else
-				key += std::toupper(it->first[i]);
-		}
-		_envStrings.push_back(key + "=" + it->second);
-	}
-	for (size_t i = 0; i < _envStrings.size(); i++)
-		_envp.push_back(const_cast<char*>(_envStrings[i].c_str()));
-	_envp.push_back(NULL);
+}
+
+void	CGIHandler::addBaseEnv()
+{
+	_envStrings.push_back("REQUEST_METHOD=" + _method);
+	_envStrings.push_back("QUERY_STRING=" + _queryString);
+	_envStrings.push_back("SCRIPT_FILENAME=" + _scriptPath);
+	_envStrings.push_back("SCRIPT_NAME=" + _scriptPath);
+	_envStrings.push_back("SERVER_PROTOCOL=HTTP/1.0");
+	_envStrings.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	_envStrings.push_back("REDIRECT_STATUS=200");
+	_envStrings.push_back("PATH=" + getPathEnv());	
+}
+
+void	CGIHandler::buildEnv()
+{
+	addBaseEnv();
+	addPostEnv();
+	addHeaderEnv();
+	buildEnvp();
 }
 
 std::string	CGIHandler::extractCleanUri(const std::string& uri)
@@ -145,11 +178,6 @@ bool	CGIHandler::isCGIRequest(const HTTPRequest& request, const RouteConfig& rou
 	if (extension.empty() || cgiPass.empty())
 		return (false);
 	return (cgiPass.count(extension));
-}
-
-void	CGIHandler::setCode(int code)
-{
-	_code = code;
 }
 
 bool	CGIHandler::setNonBlocking(int fd)
@@ -234,11 +262,37 @@ void	CGIHandler::closePipe(int& pipe)
 	}
 }
 
-void CGIHandler::runChild()
+void	CGIHandler::execProgram(const std::vector<char*>& argv)
+{
+	const char*	bin;
+
+	if (!_interpreter.empty())
+		bin = _interpreter.c_str();
+	else
+		bin = _scriptPath.c_str();
+	execve(bin, argv.data(), _envp.data());
+	exit(1);
+}
+
+std::vector<char*>	CGIHandler::buildArgv()
 {
 	std::vector<char*>	argv;
-	const char*			bin;
 
+	if (!_interpreter.empty())
+	{
+		argv.push_back(const_cast<char*>(_interpreter.c_str()));
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
+	}
+	else
+	{
+		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
+	}
+	argv.push_back(NULL);
+	return (argv);
+}
+
+void	CGIHandler::setupPipes()
+{
 	closePipe(_pipeIn[1]);
 	closePipe(_pipeOut[0]);
 	if (dup2(_pipeOut[1], STDOUT_FILENO) == -1)
@@ -247,21 +301,15 @@ void CGIHandler::runChild()
 		exit(1);
 	closePipe(_pipeOut[1]);
 	closePipe(_pipeIn[0]);
+}
 
-	if (!_interpreter.empty())
-	{
-		argv.push_back(const_cast<char*>(_interpreter.c_str()));
-		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
-		bin = _interpreter.c_str();
-	}
-	else
-	{
-		argv.push_back(const_cast<char*>(_scriptPath.c_str()));
-		bin = _scriptPath.c_str();
-	}
-	argv.push_back(NULL);
-	execve(bin, argv.data(), _envp.data());
-	exit(1);
+void	CGIHandler::runChild()
+{
+	std::vector<char*>	argv;
+
+	setupPipes();
+	argv = buildArgv();
+	execProgram(argv);
 }
 
 void	CGIHandler::runParent()
@@ -306,11 +354,6 @@ int	CGIHandler::getReadFd() const
 int	CGIHandler::getWriteFd() const
 {
 	return (_pipeIn[1]);
-}
-
-int CGIHandler::getCode() const
-{
-	return (_code);
 }
 
 bool	CGIHandler::isDone() const
