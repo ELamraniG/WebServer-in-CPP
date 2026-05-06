@@ -98,10 +98,8 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	std::string	interpreter;
 	HttpStatus	code;
 	HTTPRequest	req;
-	Client*		client;
 
-	client = _clientMap[clientFd];
-	req = client->httpReq;
+	req = _clientMap[clientFd]->httpReq;
 	CGIHandler::resolveCGI(req.getURI(), route, scriptPath);
 	cgi = new CGIHandler(scriptPath, interpreter, req.getMethod(),
 						req.getQueryString(), req.getBody(), req.getAllHeaders());
@@ -110,7 +108,7 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	if (code != HTTP_OK)
 	{
 		logger.cgiError(clientFd, scriptPath, code);
-		client->setResponse(builderResponse(code, "", route));
+		_clientMap[clientFd]->setResponse(builderResponse(code, "", route));
 		delete cgi;
 		return (false);
 	}
