@@ -18,9 +18,12 @@ class Server
 		int				_fd;
 		Server_block	_serverBlock;
 
-		void	createSocket();
-		void	bindSocket();
-		void	startListening() const;
+		void				createSocket();
+		struct sockaddr_in	buildAddress();
+		struct sockaddr_in	buildAnyAddress(int port);
+		struct sockaddr_in	resolveAddress(const char* host, const char* port);
+		void				bindSocket();
+		void				startListening() const;
 
 	public:
 		~Server();
