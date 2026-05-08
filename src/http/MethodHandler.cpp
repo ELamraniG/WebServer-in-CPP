@@ -249,7 +249,7 @@ static std::string buildAutoindex(const std::string &dirPath,
        << "<span class=\"ico\">&#8629;</span>"
        << "<span class=\"name\">../</span></a>";
 
-  for (size_t i = 0; i < entries.size(); i++) {
+for (size_t i = 0; i < entries.size(); i++) {
     const std::string &name = entries[i];
     std::string fullPath = dirPath;
     if (fullPath[fullPath.size() - 1] != '/')
@@ -259,7 +259,14 @@ static std::string buildAutoindex(const std::string &dirPath,
     std::string display = name + (dir ? "/" : "");
     std::string cls = dir ? "dir" : "file";
     std::string ico = dir ? "&#128193;" : "&#128196;";
-    rows << "<a href=\"" << base << display << "\" class=\"item " << cls << "\">"
+    std::string href;
+	if (dir)
+		href = base + display;
+	else if (base.find("/uploads") != std::string::npos)
+		href = "/pages/viewer.html?file=" + base + name;
+	else
+		href = base + display;
+    rows << "<a href=\"" << href << "\" class=\"item " << cls << "\">"
          << "<span class=\"ico\">" << ico << "</span>"
          << "<span class=\"name\">" << display << "</span></a>";
   }
