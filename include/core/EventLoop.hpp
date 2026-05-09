@@ -37,7 +37,7 @@ class EventLoop
 		void		handleClientDisconnected(int fd, size_t& i, HttpStatus code);
 		void		handleReadEvent(int fd, size_t& i);
 		void		handleWriteEvent(int fd, size_t& i);
-		bool		isTimeout(int fd);
+		bool		isClientTimeout(int fd);
 		bool		isError(int fd, short revents) const;
 		bool		isServer(int fd) const;
 		void		handleError();

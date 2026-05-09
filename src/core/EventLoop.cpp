@@ -48,7 +48,7 @@ bool	EventLoop::isWritable(const short revents) const
 	return (revents & POLLOUT);
 }
 
-bool	EventLoop::isTimeout(int fd)
+bool	EventLoop::isClientTimeout(int fd)
 {
 	return (!isServer(fd) && _clientMap.count(fd) && _clientMap[fd]->isTimedOut());
 }
@@ -165,7 +165,7 @@ void	EventLoop::handleNewClient(int serverFd)
 {
 	int		clientFd;
 	size_t	i;
-	
+
 	clientFd = -1;
 	for (i=0; i<_serverList.size(); i++)
 	{
@@ -393,7 +393,7 @@ void	EventLoop::processEvents()
 		revents = _pollFds[i].revents;
 		if (isCGITimeout(fd))
 			handleCGITimeout(fd, i);
-		else if (isTimeout(fd))
+		else if (isClientTimeout(fd))
 			handleClientDisconnected(fd, i, HTTP_REQUEST_TIMEOUT);
 		else if (isError(fd, revents))
 			handleClientDisconnected(fd, i, HTTP_INTERNAL_SERVER_ERROR);
