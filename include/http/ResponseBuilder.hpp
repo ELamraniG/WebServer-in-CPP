@@ -14,7 +14,6 @@ class ResponseBuilder
 		RouteConfig &Route) const;
 	std::string build(const Response &resp) const;
 	std::string buildError(int code) const;
-
-  private:
-	static std::string reasonPhrase(int code);
+	static std::string reasonPhrase(unsigned int code);
+	static std::string errorBody(int code);
 };

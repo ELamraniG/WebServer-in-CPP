@@ -7,7 +7,7 @@ ResponseBuilder::ResponseBuilder()
 {
 }
 
-std::string ResponseBuilder::reasonPhrase(int code)
+std::string ResponseBuilder::reasonPhrase(unsigned int code)
 {
 	switch (code)
 	{
@@ -119,18 +119,31 @@ std::string ResponseBuilder::build(const Response &resp) const
 	return (out.str());
 }
 
+std::string ResponseBuilder::errorBody(int code)
+{
+    std::string r = reasonPhrase(code);
+    std::ostringstream b;
+    b << "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+      << "<title>" << code << "</title>"
+      << "<style>"
+      << "*{margin:0;padding:0;box-sizing:border-box}"
+      << "body{background:#0a0a0a;color:#888;font-family:monospace;"
+      << "display:flex;align-items:center;justify-content:center;height:100vh}"
+      << "main{text-align:center;border:1px solid #1e1e1e;padding:48px 64px}"
+      << "h1{font-size:72px;font-weight:400;color:#fff;letter-spacing:-2px}"
+      << "p{margin-top:12px;font-size:13px;letter-spacing:2px;text-transform:uppercase}"
+      << "</style></head>"
+      << "<body><main><h1>" << code << "</h1><p>" << r << "</p></main></body></html>";
+    return b.str();
+}
+
 std::string ResponseBuilder::buildError(int code) const
 {
-	Response resp;
-	resp.statusCode = code;
-	resp.contentType = "text/html";
-
-	std::string reason = reasonPhrase(code);
-	std::ostringstream body;
-	body << "<!DOCTYPE html>\n<html><head><title>" << code << " " << reason << "</title></head>\n<body><h1>" << code << " " << reason << "</h1></body></html>\n";
-	resp.body = body.str();
-
-	return (build(resp));
+    Response resp;
+    resp.statusCode = code;
+    resp.contentType = "text/html";
+    resp.body = errorBody(code);
+    return build(resp);
 }
 
 std::string ResponseBuilder::buildCgiResponse(std::string cgiResult, RouteConfig &Route) const
@@ -143,7 +156,7 @@ std::string ResponseBuilder::buildCgiResponse(std::string cgiResult, RouteConfig
 	size_t sep = cgiResult.find("\r\n\r\n");
 	if (sep == std::string::npos)
   {
-    Response r = MethodHandler::makeError(500, "Internal Server Error", Route);
+    Response r = MethodHandler::makeError(500, Route);
     std::string res = build(r);
 		return (res);
   }

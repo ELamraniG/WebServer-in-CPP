@@ -16,11 +16,11 @@
 extern		bool g_running;
 Logger		logger;
 
-std::string	builderResponse(HttpStatus code, const std::string &msg, const RouteConfig& route)
+std::string	builderResponse(HttpStatus code, const RouteConfig& route)
 {
 	ResponseBuilder	builder;
 
-	return (builder.build(MethodHandler::makeError(code, msg, route)));
+	return (builder.build(MethodHandler::makeError(code, route)));
 }
 
 RouteConfig	EventLoop::getRoute(const Client* client)
@@ -108,7 +108,7 @@ bool	EventLoop::startCGI(int clientFd, const RouteConfig& route)
 	if (code != HTTP_OK)
 	{
 		logger.cgiError(clientFd, scriptPath, code);
-		_clientMap[clientFd]->setResponse(builderResponse(code, "", route));
+		_clientMap[clientFd]->setResponse(builderResponse(code, route));
 		delete cgi;
 		return (false);
 	}
@@ -202,7 +202,7 @@ void	EventLoop::handleCGITimeout(int fd, size_t& i)
 	changeEvent(_cgiFdToClient[fd]->getFd(), POLLOUT);
 	_cgiFdToHandler[fd]->cleanup();
 	cleanupCGIWriteFd(writeFd);
-	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, "GATEWAY TIMEOUT", getRoute(_cgiFdToClient[fd])));
+	_cgiFdToClient[fd]->setResponse(builderResponse(HTTP_GATEWAY_TIMEOUT, getRoute(_cgiFdToClient[fd])));
 	cgiCleanup(fd, i);
 }
 
@@ -221,7 +221,7 @@ void	EventLoop::handleCGIRead(int readFd, size_t& i)
 		if (cgi->isError())
 		{
 			logger.cgiError(readFd, client->httpReq.getURI(), HTTP_INTERNAL_SERVER_ERROR);
-			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, "INTERNAL SERVER ERROR", route));
+			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, route));
 		}
 		else
 		{
@@ -291,7 +291,7 @@ void	EventLoop::handleRequestComplete(int fd, size_t i, const RouteConfig& route
 	catch(const std::exception& e)
 	{
 		logger.error(e.what());
-		client->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, "NOT IMPLEMENTED", route));
+		client->setResponse(builderResponse(HTTP_NOT_IMPLEMENTED, route));
 	}
 	_pollFds[i].events = POLLOUT;
 	client->updateLastActivity();
@@ -308,7 +308,7 @@ bool	EventLoop::checkRequestParsing(Client* client, size_t& i)
 	if (status == RequestParser::P_ERROR)
 	{
 		logger.error("[400] BAD REQUEST");
-		client->setResponse(builderResponse(HTTP_BAD_REQUEST, "BAD REQUEST", getRoute(client)));
+		client->setResponse(builderResponse(HTTP_BAD_REQUEST, getRoute(client)));
 		_pollFds[i].events = POLLOUT;
 		return (false);
 	}
@@ -352,8 +352,7 @@ void	EventLoop::handleCGIWrite(int writeFd, size_t& i)
 		if (cgi->isError())
 		{
 			logger.error("[500] INTERNAL SERVER ERROR");
-			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR,
-												"INTERNAL SERVER ERROR", getRoute(client)));
+			client->setResponse(builderResponse(HTTP_INTERNAL_SERVER_ERROR, getRoute(client)));
 		}
 		_cgiFdToHandler.erase(writeFd);
 		_cgiFdToClient.erase(writeFd);
