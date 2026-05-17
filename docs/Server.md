@@ -2,9 +2,9 @@
 
 ## Overview
 
-`Server` represents a single **listening TCP socket** bound to a specific host and port. Its sole job during startup is to create the socket, bind it to the configured address, and start listening for incoming connections. After setup, it provides `accept()` to hand new client connections to the `EventLoop`.
+`Server` represents a single listening TCP socket bound to a host/port as specified in one `Server_block` config entry. It owns the socket via a `SocketGuard` (RAII wrapper) and is responsible for the full socket setup lifecycle: create → bind → listen. Once running, its only ongoing role is accepting new connections.
 
-**Problem it solves:** The server needs to open a low-level OS socket, configure it correctly (non-blocking, reusable address), resolve the hostname, bind to the port, and start listening — all of which involve several POSIX syscalls that can fail. `Server` encapsulates all of this complexity and throws a `std::runtime_error` with a clear message on any failure, allowing `main()` to abort cleanly.
+**Problem it solves:** Isolates all the low-level socket setup (`socket()`, `setsockopt()`, `bind()`, `listen()`) and address resolution behind a clean object. `EventLoop` only needs to call `getFd()` to poll it and `accept()` to get new clients — it never touches socket syscalls directly.
 
 ---
 
@@ -12,69 +12,66 @@
 
 | Member | Type | Purpose |
 |---|---|---|
-| `_fd` | `int` | The file descriptor of the listening socket |
-| `_serverBlock` | `Server_block` | A copy of the config block, used for host/port during binding |
+| `_socket` | `SocketGuard` | RAII wrapper that owns the listening socket fd and closes it on destruction |
+| `_config` | `Server_block` | The parsed config block for this server (host, port, server names, locations, etc.) |
+
+> `Server` is non-copyable. Copy constructor and assignment operator are private and unimplemented.
 
 ---
 
-## Public Functions
+## Constructor & Destructor
 
-### `Server(const Server_block& serverBlock)` — Constructor
-**Purpose:** The entire setup sequence: creates the socket, binds it to the address, and begins listening. All in one constructor call.
+### `Server(const Server_block& serverBlock)`
+Stores the config, then runs the full socket setup sequence:
+1. `createSocket()` — allocates the TCP socket fd.
+2. `buildAddress()` — resolves the bind address.
+3. `bindSocket()` — binds to the address.
+4. `startListening()` — calls `listen()` to accept incoming connections.
 
-**How it works:**
-Calls in sequence:
-1. `createSocket()` — creates the socket fd.
-2. `bindSocket()` — resolves the host and binds to host:port.
-3. `startListening()` — calls `listen()` and logs the server start event.
+Throws on any failure so that `ServerFactory` can abort early rather than run with a broken server.
 
-If any step fails, a `std::runtime_error` is thrown. The destructor always closes `_fd` if it was opened.
-
----
-
-### `accept() const` → `int`
-**Purpose:** Accepts a new incoming TCP connection and returns the client's file descriptor. Called by `EventLoop::handleNewClient()` when `poll()` reports the listening socket as readable.
-
-**Problem:** When a client connects, `accept()` must be called to get a file descriptor for that specific connection. The returned fd must immediately be set to non-blocking mode, because the entire server is non-blocking — any blocking fd would stall the event loop.
-
-**How it works:**
-1. Calls `::accept(_fd, &clientAddr, &clientLen)` to get the client fd.
-2. Returns `-1` (prints an error) if `accept` fails.
-3. Calls `fcntl(clientFd, F_SETFL, O_NONBLOCK)` to set the client fd to non-blocking.
-4. Returns `-1` (closes the fd and prints an error) if `fcntl` fails.
-5. Returns the valid, non-blocking client fd on success.
+### `~Server()`
+`SocketGuard` destructor closes the fd automatically.
 
 ---
 
-### `getFd() const` → `int`
-**Purpose:** Returns the listening socket's file descriptor. Used by `EventLoop` to register the server fd with `poll()` for `POLLIN` events.
+## Public Methods
+
+### `accept()` → `int`
+**Purpose:** Accepts one pending connection from the listening socket.
+
+**Returns:** The new client fd, already set to non-blocking mode (`O_NONBLOCK`). Returns `-1` on failure (e.g., `EAGAIN` if no connection is pending).
+
+The event loop calls this when `poll()` reports `POLLIN` on this server's fd.
 
 ---
 
-## Private Functions
-
-### `createSocket()` — Private
-**Purpose:** Creates the raw TCP socket and configures it.
-
-**How it works:**
-1. Calls `socket(AF_INET, SOCK_STREAM, 0)` to create a TCP socket.
-2. Calls `fcntl(_fd, F_SETFL, O_NONBLOCK)` to make it non-blocking immediately.
-3. Calls `setsockopt(SOL_SOCKET, SO_REUSEADDR, ...)` so the server can restart and reuse the same port without waiting for the OS `TIME_WAIT` to expire.
+### `getFd()` → `int`
+Returns `_socket.fd` — the listening socket file descriptor registered with `poll()`.
 
 ---
 
-### `bindSocket()` — Private
-**Purpose:** Resolves the hostname configured in `_serverBlock.host` and binds the socket to that address and port.
-
-**How it works:**
-1. If `host == "0.0.0.0"`: fills `sockaddr_in` directly with `INADDR_ANY` (listen on all interfaces) and the configured port.
-2. Otherwise: calls `getaddrinfo()` to resolve the hostname to an IP address, fills `sockaddr_in` from the result, and calls `freeaddrinfo()`.
-3. Calls `bind(_fd, &serverAddr, sizeof(serverAddr))`. Throws on failure.
+### `getConfig()` → `const Server_block&`
+Returns the server's parsed config. Used by `EventLoop` and the routing logic to access server names, locations, and limits for the server that accepted a given client.
 
 ---
 
-### `startListening() const` — Private
-**Purpose:** Calls the OS `listen()` syscall to mark the socket as passive (ready to accept connections) and logs the event.
+## Private Methods
 
-**How it works:**
-Calls `listen(_fd, SOMAXCONN)` where `SOMAXCONN` is the maximum OS-level connection backlog. Throws on failure. Then calls `Logger::serverStart()` to print the server's address to the terminal.
+### `createSocket()`
+Calls `socket(AF_INET, SOCK_STREAM, 0)` and sets `SO_REUSEADDR` to avoid `bind()` failures on restart. Stores the fd in `_socket.fd`.
+
+### `buildAddress()` → `struct sockaddr_in`
+Delegates to `resolveAddress()` or `buildAnyAddress()` depending on whether the config specifies a specific host or `0.0.0.0`.
+
+### `buildAnyAddress(int port)` → `struct sockaddr_in`
+Builds a `sockaddr_in` with `INADDR_ANY` and the configured port. Used when the server should accept connections on all interfaces.
+
+### `resolveAddress(const char* host, const char* port)` → `struct sockaddr_in`
+Resolves a specific hostname to an IP using `getaddrinfo()`. Used when the config specifies a non-wildcard host.
+
+### `bindSocket()`
+Calls `bind()` with the resolved address. Throws on failure.
+
+### `startListening() const`
+Calls `listen()` with `SOMAXCONN`. Throws on failure.

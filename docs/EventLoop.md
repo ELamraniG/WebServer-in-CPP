@@ -2,9 +2,9 @@
 
 ## Overview
 
-`EventLoop` is the **central nervous system** of the web server. It is a single-threaded, non-blocking multiplexed event loop built on top of `poll()`. It manages all file descriptors simultaneously — server listening sockets, client sockets, and CGI pipe file descriptors — and dispatches events to the appropriate handler functions. It runs forever until the server receives a shutdown signal (`g_running = false`).
+`EventLoop` is the **central nervous system** of the web server. It is a single-threaded, non-blocking multiplexed event loop built on top of `poll()`. It manages all file descriptors simultaneously — server listening sockets, client sockets, and CGI pipe file descriptors — and dispatches events to the appropriate handler functions. It runs until the process receives a shutdown signal.
 
-**Problem it solves:** A web server must handle many concurrent clients without using one thread per client (which wastes resources). The solution is I/O multiplexing: use `poll()` to wait until *any* file descriptor becomes ready, then handle that specific fd. This allows one thread to manage hundreds of concurrent connections efficiently.
+**Problem it solves:** A web server must handle many concurrent clients without one thread per client. The solution is I/O multiplexing: use `poll()` to wait until *any* fd becomes ready, then handle only that fd. One thread manages hundreds of concurrent connections efficiently.
 
 ---
 
@@ -12,53 +12,85 @@
 
 | Member | Type | Purpose |
 |---|---|---|
-| `_pollFds` | `vector<pollfd>` | The array passed to `poll()`. Each entry is an fd + events mask + returned events mask |
-| `_serverList` | `vector<Server*>` | The listening server sockets |
-| `_serverBlocks` | `vector<Server_block>` | The raw config data, used for routing |
-| `_listeningFds` | `set<int>` | Set of server fd numbers, for quick O(log n) lookup |
-| `_clientMap` | `map<int, Client*>` | Maps client fd → `Client*` object |
-| `_cgiFdToHandler` | `map<int, CGIHandler*>` | Maps a CGI pipe fd → its `CGIHandler` |
-| `_cgiFdToClient` | `map<int, Client*>` | Maps a CGI pipe fd → the `Client` that made the CGI request |
-| `_cgiStartTime` | `map<int, time_t>` | Maps CGI read fd → the time the CGI was started, for timeout tracking |
+| `_pollFds` | `vector<pollfd>` | The array passed to `poll()` each iteration |
+| `_serverList` | `vector<Server*>` | All listening `Server` objects |
+| `_listeningFds` | `set<int>` | Fast O(log n) lookup to identify server fds |
+| `_clientMap` | `map<int, Client*>` | Maps client fd → `Client*` |
+| `_cgiFdToHandler` | `map<int, CGIHandler*>` | Maps CGI pipe fd → its `CGIHandler` |
+| `_cgiFdToClient` | `map<int, Client*>` | Maps CGI pipe fd → the `Client` that spawned it |
+| `_cgiStartTime` | `map<int, time_t>` | Maps CGI read fd → start time for timeout detection |
+
+> `EventLoop` is non-copyable. Copy constructor and assignment operator are private and unimplemented.
 
 ---
 
-## Public Functions
+## Constructor & Destructor
 
-### `EventLoop(servers, serverBlocks)` — Constructor
-**Purpose:** Registers all listening server sockets with `poll()` for `POLLIN` events.
+### `EventLoop(const vector<Server*>& servers)`
+Registers all server listening fds into `_listeningFds` and calls `addToPoll(fd, POLLIN)` for each. After this, the loop is ready to call `run()`.
 
-**How it works:**
-Iterates over `serverList`, inserts each server's fd into `_listeningFds`, and calls `addToPoll(fd, POLLIN)` for each.
+### `~EventLoop()`
+Deletes all `Client*` objects in `_clientMap` and all `CGIHandler*` objects in `_cgiFdToHandler`.
 
 ---
+
+## Public Methods
 
 ### `run()`
 **Purpose:** The main infinite loop. Drives the entire server.
 
 **How it works:**
-1. Calls `poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT)`.
-2. Iterates over all fds in `_pollFds` and for each fd:
-   - Checks `isCGITimeout(fd)` → calls `handleCGITimeout()`.
-   - Checks `isTimeout(fd)` (client idle) → calls `handleClientDisconnected()` with `408`.
-   - Checks `isError(fd, revents)` → calls `handleClientDisconnected()` with `500`.
-   - Checks `isReadable(revents)` → calls `handleReadEvent()`.
-   - Checks `isWritable(revents)` → calls `handleWriteEvent()`.
+1. Calls `poll(_pollFds.data(), _pollFds.size(), POLL_TIMEOUT)` (5 second timeout).
+2. Delegates all fd iteration to `processEvents()`.
+3. Runs until an external shutdown signal is received.
 
 ---
 
-## Private Functions
+## Private Methods
 
-### `handleReadEvent(int fd, size_t& i)`
-**Purpose:** Dispatches readable fd events to the right sub-handler.
+### `processEvents()`
+**Purpose:** Iterates over `_pollFds` after each `poll()` call and routes each ready fd to the correct handler.
 
 **How it works:**
-- If `isServer(fd)`: it's a listening socket, call `handleNewClient(fd)`.
-- Else if the fd is in `_cgiFdToHandler`: it's a CGI output pipe, call `handleCGIRead(fd, i)`.
-- Otherwise: it's a regular client socket. Reads with `client->readFromSocket()`. If `bytes == 0`, the client disconnected cleanly. If `bytes < 0`, it's a socket error. If `bytes > 0`, passes the buffer to `RequestParser::parseRequest()` and checks the result:
-  - `P_INCOMPLETE`: returns and waits for more data.
-  - `P_ERROR`: sends a `400 Bad Request` response.
-  - `P_SUCCESS`: calls `handleRequestComplete()`.
+For each fd, in order:
+- `isCGITimeout(fd)` → `handleCGITimeout()`
+- `isClientTimeout(fd)` → `handleClientDisconnected()` with `408`
+- `isError(fd, revents)` → `handleClientDisconnected()` with `500`
+- `isReadable(revents)` → `handleReadEvent()`
+- `isWritable(revents)` → `handleWriteEvent()`
+
+---
+
+### `handleReadEvent(int fd, size_t& i)`
+**Purpose:** Dispatches readable fd events to the correct sub-handler.
+
+**How it works:**
+- If `isServer(fd)`: call `handleNewClient(fd)`.
+- Else if fd is in `_cgiFdToHandler`: call `handleCGIRead(fd, i)`.
+- Otherwise: call `handleClientRead(fd, i)`.
+
+---
+
+### `handleClientRead(int fd, size_t& i)`
+**Purpose:** Reads from a client socket and drives request parsing.
+
+**How it works:**
+1. Calls `client->readFromSocket()`.
+2. `0` → client disconnected cleanly → `handleClientDisconnected()`.
+3. `< 0` → socket error → `handleClientDisconnected()`.
+4. `> 0` → calls `checkRequestParsing()`.
+
+---
+
+### `checkRequestParsing(Client* client, size_t& i)` → `bool`
+**Purpose:** Passes buffered data to `RequestParser` and acts on the result.
+
+**Returns:** `true` if parsing is ongoing or complete, `false` on a fatal parse error.
+
+**How it works:**
+- `P_INCOMPLETE`: returns and waits for more data.
+- `P_ERROR`: sends `400 Bad Request`, returns `false`.
+- `P_SUCCESS`: calls `handleRequestComplete()`.
 
 ---
 
@@ -66,101 +98,138 @@ Iterates over `serverList`, inserts each server's fd into `_listeningFds`, and c
 **Purpose:** Dispatches writable fd events.
 
 **How it works:**
-- If `fd` is in `_cgiFdToHandler`: it's a CGI input pipe, call `handleCGIWrite()`.
-- Otherwise: it's a client socket. Calls `client->writeToSocket()`. If `bytes < 0`, it's an error → disconnect. If `hasNoPendingWrite()` is true, the response is fully sent → disconnect cleanly.
+- If fd is in `_cgiFdToHandler`: call `handleCGIWrite(fd, i)`.
+- Otherwise: call `client->writeToSocket()`. On error → disconnect. If `hasNoPendingWrite()` → disconnect cleanly.
 
 ---
 
 ### `handleNewClient(int serverFd)`
-**Purpose:** Accepts a new TCP connection from the listening socket and registers it with `poll()`.
+**Purpose:** Accepts a new TCP connection and registers it with `poll()`.
 
 **How it works:**
-1. Finds the `Server` object matching `serverFd`.
-2. Calls `server->accept()` to get the new client fd (already set to non-blocking by `Server::accept()`).
-3. Logs the connection with `Logger::clientConnected()`.
-4. Calls `addToPoll(clientFd, POLLIN)` to watch it for incoming data.
-5. Creates a new `Client` object and stores it in `_clientMap[clientFd]`.
+1. Finds the `Server` matching `serverFd`.
+2. Calls `server->accept()` → new non-blocking client fd.
+3. Calls `addToPoll(clientFd, POLLIN)`.
+4. Creates a `Client` and stores it in `_clientMap[clientFd]`.
 
 ---
 
-### `handleRequestComplete(int fd, size_t& i, const RouteConfig& route)`
-**Purpose:** Called when `RequestParser` reports a complete HTTP request. Dispatches to the correct HTTP method handler.
+### `handleRequestComplete(int fd, size_t i, const RouteConfig& routeConfig)`
+**Purpose:** Called when a full HTTP request is parsed. Dispatches to method handler and decides between static response and CGI.
 
 **How it works:**
-1. Gets the HTTP method from the parsed request.
-2. Dispatches to `handler.handleGET()`, `handler.handlePOST()`, or `handler.handleDELETE()`.
-3. For any unknown method: responds with `501 Not Implemented`.
-4. If the request is CGI (detected by `MethodHandler` setting `request.setIsCGI(true)`): calls `startCGI()`. Sets the client fd's events to `PAUSE` (0) while waiting for the CGI to finish.
-5. For static requests: builds the response immediately with `ResponseBuilder::build()`, sets the client fd's events to `POLLOUT`.
+1. Calls `dispatchMethod()` to run `GET`, `POST`, or `DELETE` logic.
+2. Calls `handleCGIIfNeeded()`. If true, CGI was launched — client fd is paused with event mask `PAUSE` (0) while waiting.
+3. For static requests: calls `ResponseBuilder::build()`, sets response on client, switches fd to `POLLOUT`.
+
+---
+
+### `dispatchMethod(Client* client, const RouteConfig& route)` → `Response`
+**Purpose:** Routes the request to the correct method handler based on the HTTP verb.
+
+Returns `501 Not Implemented` for unknown methods.
+
+---
+
+### `handleCGIIfNeeded(int fd, size_t i, const RouteConfig& route)` → `bool`
+**Purpose:** Checks if the dispatched request is a CGI request and, if so, launches it.
+
+**Returns:** `true` if CGI was started (caller should not build a static response), `false` otherwise.
 
 ---
 
 ### `startCGI(int clientFd, const RouteConfig& route)` → `bool`
-**Purpose:** Creates a `CGIHandler`, launches the CGI process, and registers the pipe fds with `poll()`.
+**Purpose:** Creates a `CGIHandler`, launches the CGI process, and registers pipe fds with `poll()`.
 
 **How it works:**
-1. Calls `resolveCGI()` to find the script's absolute filesystem path.
-2. Creates a `CGIHandler` with the request's method, query string, body, and headers.
-3. Calls `cgi->start()`. If this fails (404, 403, 500), sets the client's response to the error and returns `false`.
-4. On success: registers `cgi->getReadFd()` with `POLLIN` and (if POST) `cgi->getWriteFd()` with `POLLOUT`.
-5. Stores the CGI handler in `_cgiFdToHandler` and the client in `_cgiFdToClient`, keyed by both pipe fds.
-6. Records `_cgiStartTime[readFd] = time(NULL)`.
+1. Calls `resolveCGI()` for the script's absolute path.
+2. Creates a `CGIHandler` with method, query string, body, and headers.
+3. Calls `cgi->start()`. On failure (404/403/500), sets the error response on the client and returns `false`.
+4. On success: registers `cgi->getReadFd()` with `POLLIN`; if POST, registers `cgi->getWriteFd()` with `POLLOUT`.
+5. Stores handler and client in `_cgiFdToHandler` and `_cgiFdToClient`, records `_cgiStartTime[readFd]`.
+6. Calls `registerCGI()` to centralize map insertions.
+
+---
+
+### `registerCGI(int fd, CGIHandler* cgi)`
+**Purpose:** Inserts the CGI handler and associated client into all relevant maps for a given pipe fd. Extracted to avoid duplication between read and write fd registration.
 
 ---
 
 ### `handleCGIRead(int readFd, size_t& i)`
-**Purpose:** Called when the CGI script's output pipe is readable. Reads available output and, when done, builds the response.
+**Purpose:** Reads CGI stdout and, when the process is done, builds the response.
 
 **How it works:**
-1. Calls `cgi->readOutput()` to append new data to the handler's output buffer.
+1. Calls `cgi->readOutput()`.
 2. If `cgi->isDone()` or `cgi->isError()`:
-   - On error: sets a `500` response on the client.
-   - On success: calls `ResponseBuilder::buildCgiResponse(cgi->getOutput(), route)` and sets it on the client.
-   - Switches the client fd's events to `POLLOUT`.
-   - Cleans up: removes the read fd from `_pollFds`, deletes the `CGIHandler`, erases all related map entries.
+   - Error → sets `500` on client.
+   - Success → calls `ResponseBuilder::buildCgiResponse()` and sets response on client.
+   - Switches client fd to `POLLOUT`.
+   - Calls `cgiCleanup()`.
 
 ---
 
 ### `handleCGIWrite(int writeFd, size_t& i)`
-**Purpose:** Called when the CGI script's input pipe is writable. Feeds the POST body to the script.
+**Purpose:** Feeds the POST body to the CGI process stdin.
 
 **How it works:**
-1. If the CGI is in error or the body is fully written: removes the write fd from `_pollFds` and map entries.
-2. Otherwise: calls `cgi->writeBody()` to send the next chunk of the request body to the script's stdin.
+- If CGI is in error or body is fully written: calls `cleanupCGIWriteFd()`.
+- Otherwise: calls `cgi->writeBody()` to send the next chunk.
+
+---
+
+### `cleanupCGIWriteFd(int writeFd)`
+**Purpose:** Removes the write pipe fd from `_pollFds` and clears its map entries. Called when the stdin feed is complete or the CGI has already errored.
+
+---
+
+### `cgiCleanup(int fd, size_t& i)`
+**Purpose:** Full cleanup after a CGI completes or errors. Removes the read fd from `_pollFds`, deletes the `CGIHandler`, and erases all related map entries (`_cgiFdToHandler`, `_cgiFdToClient`, `_cgiStartTime`).
 
 ---
 
 ### `handleCGITimeout(int fd, size_t& i)`
-**Purpose:** Called when a CGI script has been running for more than `CGI_TIMEOUT` seconds (5s). Kills the process and returns `504 Gateway Timeout` to the client.
+**Purpose:** Kills a CGI process that has exceeded `CGI_TIMEOUT` (3 seconds) and returns `504 Gateway Timeout`.
 
 **How it works:**
-1. Logs the timeout.
-2. Sets the client's events to `POLLOUT`.
-3. Calls `cgi->cleanup()` (sends SIGKILL, waits for the child, closes pipes).
-4. Sets the client's response to a `504` error.
-5. Deletes the `CGIHandler` and removes all related map entries and poll fds.
+1. Sets client fd events to `POLLOUT`.
+2. Calls `cgi->cleanup()` (SIGKILL + waitpid + close pipes).
+3. Sets `504` response on client.
+4. Calls `cgiCleanup()`.
 
 ---
 
 ### `handleClientDisconnected(int fd, size_t& i, HttpStatus code)`
-**Purpose:** Cleans up and removes a client connection.
+**Purpose:** Tears down a client connection.
 
 **How it works:**
-Logs the disconnection, deletes the `Client` object, erases it from `_clientMap`, and removes its fd from `_pollFds` (via `removeFromPoll`).
+Logs the disconnection, deletes the `Client` from `_clientMap`, and calls `removeFromPoll()`.
 
 ---
 
 ### `getRoute(const Client* client)` → `RouteConfig`
-**Purpose:** A convenience helper that runs the full routing logic (match server block, then match location block) and returns a `RouteConfig` object for the given client's request. Used by multiple handlers to get route context.
+**Purpose:** Runs the full routing logic (match server block → match location block) for the client's request. Returns a `RouteConfig` used by handlers throughout the dispatch chain.
+
+---
+
+### `addToPoll(int fd, short event)`
+Appends a new `pollfd` entry to `_pollFds` with the given fd and event mask.
+
+### `removeFromPoll(size_t& i)`
+Removes the entry at index `i` from `_pollFds` via swap-and-pop. Decrements `i` so the caller's loop doesn't skip the swapped-in entry.
+
+### `changeEvent(int fd, short event)`
+Finds the `pollfd` for `fd` in `_pollFds` and updates its `events` mask. Used to switch between `POLLIN`, `POLLOUT`, and `PAUSE` (0).
 
 ---
 
 ### Utility Predicates
+
 | Function | Returns `true` when... |
 |---|---|
 | `isServer(fd)` | `fd` is in `_listeningFds` |
 | `isReadable(revents)` | `revents` has `POLLIN` or `POLLHUP` |
 | `isWritable(revents)` | `revents` has `POLLOUT` |
-| `isTimeout(fd)` | `fd` is a client and `client->isTimedOut()` |
-| `isCGITimeout(fd)` | `fd` is a CGI fd and has been running > `CGI_TIMEOUT` seconds |
-| `isError(fd, revents)` | `fd` is a client (not a CGI pipe or server) and `revents` has `POLLERR`/`POLLHUP` |
+| `isClientTimeout(fd)` | `fd` is a client and `client->isTimedOut()` returns true |
+| `isCGITimeout(fd)` | `fd` is a CGI read fd and has been running > `CGI_TIMEOUT` seconds |
+| `isError(fd, revents)` | `fd` is a client (not a CGI pipe or server) and `revents` has `POLLERR` or `POLLHUP` |

@@ -2,9 +2,9 @@
 
 ## Overview
 
-`Client` represents a single connected HTTP client. It owns the client socket's file descriptor and manages two buffers: one for accumulating incoming raw bytes (the request) and one for buffering the outgoing HTTP response. It also tracks the timestamp of the last activity for timeout detection.
+`Client` represents a single connected TCP client. It wraps the client socket fd, holds references to the `Server` that accepted it, and owns the read/write buffers for that connection. It also exposes a public `HTTPRequest` object that gets populated by `RequestParser` as data arrives.
 
-**Problem it solves:** A single HTTP request does not arrive in one `read()` call — it can come in multiple fragments. The `Client` accumulates all incoming data in `_requestBuffer` until the `RequestParser` reports that a full, complete HTTP message has arrived. Similarly, the full response may not fit in one `write()` call, so `_responseBuffer` holds whatever hasn't been sent yet.
+**Problem it solves:** The event loop needs to track per-connection state across multiple `poll()` iterations — partial request data, pending response data, idle timeout, the parsed request object, and which server config applies. `Client` is that state container. It never drives logic itself; it exposes data and simple I/O primitives that the event loop calls.
 
 ---
 
@@ -12,88 +12,91 @@
 
 | Member | Type | Purpose |
 |---|---|---|
-| `_fd` | `int` | The client socket file descriptor |
-| `_requestBuffer` | `string` | Accumulates raw bytes received from the client |
-| `_responseBuffer` | `string` | Holds the HTTP response waiting to be written to the socket |
-| `_lastActivity` | `time_t` | Timestamp of the last read or write, used for timeout detection |
-| `httpReq` | `HTTPRequest` | The parsed HTTP request object (public; filled by `RequestParser`) |
+| `_fd` | `int` | The accepted client socket file descriptor |
+| `_server` | `Server*` | Pointer to the `Server` that accepted this connection (provides config access) |
+| `_requestBuffer` | `std::string` | Raw bytes read from the socket, accumulated until a full request is parsed |
+| `_responseBuffer` | `std::string` | The full HTTP response, drained to the socket on write events |
+| `_lastActivity` | `time_t` | Timestamp of the last read/write activity, used for idle timeout detection |
+| `httpReq` | `HTTPRequest` | **Public.** The parsed HTTP request object. Written by `RequestParser`, read by method handlers and `EventLoop` |
+
+> `Client` is non-copyable. Copy constructor and assignment operator are private and unimplemented.
 
 ---
 
-## Public Functions
+## Constructor & Destructor
 
-### `Client(int fd)` — Constructor
-**Purpose:** Creates a client tied to a specific socket fd. Initializes the request buffer to empty and records the current time as the last activity.
+### `Client(int fd, Server* server)`
+Stores the fd and server pointer, initializes `_lastActivity` to `time(NULL)`. Does **not** take ownership of the `Server*` — it is not deleted on destruction.
+
+### `~Client()`
+Closes `_fd` via `close()`.
+
+---
+
+## Public Methods
+
+### `getFd()` → `int`
+Returns the client socket fd.
+
+---
+
+### `getServer()` → `const Server*`
+Returns the server that accepted this client. Used by the event loop to retrieve server config (host, port, server blocks) for routing.
 
 ---
 
 ### `readFromSocket()` → `ssize_t`
-**Purpose:** Reads available data from the client socket into `_requestBuffer`. Called by `EventLoop::handleReadEvent()` when `poll()` reports the client fd as readable (`POLLIN`).
+**Purpose:** Reads up to `BUFFER_SIZE` bytes from the socket into `_requestBuffer`.
 
-**Problem:** The kernel has data waiting, but we don't know how much. We must read it without blocking and accumulate it across multiple calls until the `RequestParser` reports a complete request.
+**Returns:**
+- `> 0`: bytes read successfully; data appended to `_requestBuffer`
+- `0`: client closed the connection cleanly (EOF)
+- `< 0`: socket error
 
-**How it works:**
-1. Calls `read(_fd, buffer, BUFFER_SIZE)` (non-blocking read of up to 4096 bytes).
-2. If `bytes > 0`: appends the data to `_requestBuffer`.
-3. Returns the raw byte count (the caller checks: `< 0` = error, `== 0` = disconnected, `> 0` = data received).
+The event loop checks the return value to decide whether to parse, disconnect, or wait.
 
 ---
 
 ### `writeToSocket()` → `ssize_t`
-**Purpose:** Writes pending response data from `_responseBuffer` to the client socket. Called by `EventLoop::handleWriteEvent()` when `poll()` reports the client fd as writable (`POLLOUT`).
+**Purpose:** Writes as much of `_responseBuffer` as the socket will accept in one call.
 
-**Problem:** A large response may not fit in one `write()` call. The kernel has a limited send buffer. We write what fits and track what's left.
+**Returns:**
+- `> 0`: bytes written; the written portion is removed from `_responseBuffer`
+- `< 0`: socket error
 
-**How it works:**
-1. Calls `write(_fd, _responseBuffer.c_str(), responseSize)`.
-2. If `bytes > 0`: calls `eraseConsumedData(bytes)` to remove the written bytes from the front of `_responseBuffer`.
-3. Returns the raw byte count (the caller checks: `< 0` = error, and `hasNoPendingWrite()` = fully sent).
-
----
-
-### `setResponse(const string& response)`
-**Purpose:** Loads the full HTTP response string into `_responseBuffer`, ready for `writeToSocket()` to send it out.
+The event loop calls this repeatedly on `POLLOUT` until `hasNoPendingWrite()` returns true.
 
 ---
 
-### `hasNoPendingWrite() const` → `bool`
-**Purpose:** Returns `true` when `_responseBuffer` is empty (the entire response has been sent to the kernel). The `EventLoop` uses this to know when to close the connection.
+### `hasNoPendingWrite()` → `bool`
+Returns `true` when `_responseBuffer` is empty — i.e., the full response has been flushed. The event loop uses this to know when to close or recycle the connection.
 
 ---
 
-### `isTimedOut() const` → `bool`
-**Purpose:** Returns `true` when the client has been inactive for more than `TIMEOUT` seconds (45 seconds, defined in `ServerConstants.hpp`). The `EventLoop` checks this every iteration to detect stale connections.
-
-**How it works:** Compares `time(NULL) - _lastActivity` against the `TIMEOUT` constant.
+### `isTimedOut()` → `bool`
+Returns `true` when `time(NULL) - _lastActivity > TIMEOUT` (45 seconds). The event loop checks this on every iteration to send a `408 Request Timeout` and close idle connections.
 
 ---
 
-### `isRequestCompleted() const` → `bool`
-**Purpose:** A quick preliminary check to see if the raw buffer contains the end-of-headers marker (`\r\n\r\n`). Returns `true` if it does, indicating that at minimum the headers have fully arrived.
-
-> **Note:** This is a quick heuristic. The definitive completion check is done by `RequestParser::parseRequest()`.
-
----
-
-### `updateLastActivity()`
-**Purpose:** Resets `_lastActivity` to the current time (`time(NULL)`). Called after processing a request to prevent the connection from being timed out while a response is being prepared.
+### `isRequestCompleted()` → `bool`
+Returns `true` when the HTTP request in `httpReq` is fully parsed and ready to dispatch. Delegates to `HTTPRequest`'s completion state.
 
 ---
 
 ### `eraseConsumedData(int bytes)`
-**Purpose:** Removes the first `bytes` characters from `_responseBuffer` (called internally by `writeToSocket()`). This slides the buffer forward, so the next `writeToSocket()` call sends the next chunk.
+Removes the first `bytes` characters from `_requestBuffer` after the parser has consumed them. Prevents double-parsing of already-processed data.
 
 ---
 
-### `getRequestBuffer()` → `string&`
-**Purpose:** Returns a reference to `_requestBuffer`. Used by `EventLoop` to pass the raw bytes to `RequestParser::parseRequest()`.
+### `updateLastActivity()`
+Sets `_lastActivity = time(NULL)`. Called by the event loop after any successful read or write to reset the idle timeout clock.
 
 ---
 
-### `getFd() const` → `int`
-**Purpose:** Returns the client's socket fd. Used by `EventLoop` to manage the `poll()` set and to log events.
+### `setResponse(const std::string& response)`
+Copies `response` into `_responseBuffer`. Called by the event loop once a response has been built (static or CGI), right before switching the fd's poll event to `POLLOUT`.
 
 ---
 
-### Destructor `~Client()`
-**Purpose:** Closes the socket file descriptor when the `Client` object is destroyed, ensuring no file descriptor leaks.
+### `getRequestBuffer()` → `std::string&`
+Returns a reference to the raw request accumulation buffer. Used by `RequestParser` to read and parse incoming data.
