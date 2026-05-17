@@ -21,11 +21,13 @@ CORE_PATH	:=	$(SRC_PATH)/core
 CGI_PATH	:=	$(SRC_PATH)/cgi
 CONFIG_PATH	:=	$(SRC_PATH)/config
 HTTP_PATH	:=	$(SRC_PATH)/http
+SIGNAL_PATH	:=	$(SRC_PATH)/signals
 LOGGER_PATH	:=	$(SRC_PATH)/logger
 
 # ------------ Sources ------------
 CORE	:=	$(CORE_PATH)/Client.cpp \
 			$(CORE_PATH)/EventLoop.cpp \
+			$(CORE_PATH)/ServerFactory.cpp \
 			$(CORE_PATH)/Server.cpp
 
 CGI		:=	$(CGI_PATH)/CGIHandler.cpp
@@ -33,7 +35,8 @@ CGI		:=	$(CGI_PATH)/CGIHandler.cpp
 CONFIG	:=	$(CONFIG_PATH)/Tokenizer.cpp \
 			$(CONFIG_PATH)/Parser.cpp \
 			$(CONFIG_PATH)/Parser_helper.cpp \
-			$(CONFIG_PATH)/Server_block.cpp
+			$(CONFIG_PATH)/Server_block.cpp \
+			$(CONFIG_PATH)/ConfigLoader.cpp
 
 HTTP	:=	$(HTTP_PATH)/HTTPRequest.cpp \
 			$(HTTP_PATH)/RequestParser.cpp \
@@ -44,9 +47,11 @@ HTTP	:=	$(HTTP_PATH)/HTTPRequest.cpp \
 			$(HTTP_PATH)/Router.cpp \
 			$(HTTP_PATH)/RouteConfig.cpp
 
+SIGNALS	:=	$(SIGNAL_PATH)/SignalHandler.cpp \
+
 LOGGER	:=	$(LOGGER_PATH)/Logger.cpp \
 
-SRC		:=	$(CORE) $(CGI) $(CONFIG) $(HTTP) $(LOGGER) main.cpp
+SRC		:=	$(CORE) $(CGI) $(CONFIG) $(HTTP) $(SIGNALS) $(LOGGER) main.cpp
 OBJS	:=	$(addprefix $(OBJ_PATH)/, $(SRC:.cpp=.o))
 DEPS	:=	$(OBJS:.o=.d)
 

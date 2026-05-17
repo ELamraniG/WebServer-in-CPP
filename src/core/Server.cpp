@@ -24,12 +24,12 @@ int	Server::accept() const
 	clientFd = ::accept(_fd, (struct sockaddr*)&clientAddr, &clientLen);
 	if (clientFd < 0)
 	{
-		std::cerr << "Error: accept failed." << std::endl;
+		Logger::error("accept failed.");
 		return (-1);
 	}
 	else if (fcntl(clientFd, F_SETFL, O_NONBLOCK) == -1)
 	{
-		std::cerr << "Error: fcntl failed." << std::endl;
+		Logger::error("fcntl failed.");
 		close(clientFd);
 		return (-1);
 	}
@@ -89,7 +89,7 @@ void	Server::bindSocket()
 
 	serverAddr = buildAddress();
 	if (bind(_fd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
-		throw std::runtime_error("Error: bind failed.");
+		throw std::runtime_error("bind failed on " + _serverBlock.host + ":" + _serverBlock.port);
 }
 
 void	Server::createSocket()
