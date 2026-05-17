@@ -17,8 +17,8 @@ class CGIHandler
 {
 	private:
 		CGIHandler();
-		CGIHandler(const CGIHandler& obj);
-		CGIHandler& operator=(const CGIHandler& obj);
+		CGIHandler(const CGIHandler& other);
+		CGIHandler& operator=(const CGIHandler& other);
 
 		int									_pipeIn[2];
 		int									_pipeOut[2];

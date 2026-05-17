@@ -13,6 +13,11 @@ int	Client::getFd() const
 	return (_fd);
 }
 
+const Server*	Client::getServer() const
+{
+	return (_server);
+}	
+
 bool	Client::hasNoPendingWrite() const
 {
 	return (_responseBuffer.size() == 0);
@@ -68,20 +73,21 @@ ssize_t	Client::writeToSocket()
 
 Client::Client() {}
 
-Client::Client(int fd) :
+Client::Client(int fd, Server* server) :
 	_fd(fd),
+	_server(server),
 	_requestBuffer(""),
 	_lastActivity(time(NULL))
 {}
 
-Client::Client(const Client& obj)
+Client::Client(const Client& other)
 {
-	(void)obj;
+	(void) other;
 }
 
-Client& Client::operator=(const Client& obj) 
+Client& Client::operator=(const Client& other) 
 {
-	(void)obj;
+	(void) other;
 	return (*this);
 }
 

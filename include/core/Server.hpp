@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../config/Server_block.hpp"
+#include "../core/SocketGuard.hpp"
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -12,11 +13,11 @@ class Server
 {
 	private:
 		Server();
-		Server(const Server& obj);
-		Server& operator=(const Server& obj);
+		Server(const Server& other);
+		Server& operator=(const Server& other);
 
-		int				_fd;
-		Server_block	_serverBlock;
+		SocketGuard		_socket;
+		Server_block	_config;
 
 		void				createSocket();
 		struct sockaddr_in	buildAddress();
@@ -29,6 +30,7 @@ class Server
 		~Server();
 		Server(const Server_block& serverBlock);
 
-		int	accept() const;
-		int	getFd() const;
+		int					accept() const;
+		int					getFd() const;
+		const Server_block&	getConfig() const;
 };

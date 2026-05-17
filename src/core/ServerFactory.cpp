@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <exception>
 
-std::vector<Server*>	createServers(const std::vector<Server_block>& serverBlocks)
+std::vector<Server*>	createServers(std::vector<Server_block>& serverBlocks)
 {
 	std::vector<Server*>	serverList;
 
@@ -17,6 +17,8 @@ std::vector<Server*>	createServers(const std::vector<Server_block>& serverBlocks
 		}
 		catch(std::exception& e)
 		{
+			serverBlocks.erase(serverBlocks.begin() + i);
+			i--;
 			Logger::error(e.what());
 		}
 	}

@@ -28,6 +28,7 @@ LOGGER_PATH	:=	$(SRC_PATH)/logger
 CORE	:=	$(CORE_PATH)/Client.cpp \
 			$(CORE_PATH)/EventLoop.cpp \
 			$(CORE_PATH)/ServerFactory.cpp \
+			$(CORE_PATH)/SocketGuard.cpp \
 			$(CORE_PATH)/Server.cpp
 
 CGI		:=	$(CGI_PATH)/CGIHandler.cpp
@@ -60,7 +61,7 @@ all: $(NAME)
 
 valgrind: $(NAME)
 	@printf "$(GRN)  Execute with VALGRIND$(RESET)\n"
-	@$(VAL) ./$(NAME)
+	@$(VAL) ./$(NAME) config/webserv.conf
 
 $(NAME): $(OBJS)
 	@printf "$(GRN)  Linking $(NAME)...$(RESET)\n"

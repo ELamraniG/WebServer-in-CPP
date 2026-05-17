@@ -5,9 +5,6 @@
 
 class Router {
 public:
-  static Server_block &match_server(const HTTPRequest &req,
-                                    std::vector<Server_block> &servers);
-
-  static location_block *match_location(const HTTPRequest &req,
-                                        Server_block &server);
+  static const location_block *match_location(const HTTPRequest &req,
+                                        const Server_block &server);
 };

@@ -20,7 +20,6 @@ class EventLoop
 	private:
 		std::vector<pollfd>			_pollFds;
 		std::vector<Server*>		_serverList;
-		std::vector<Server_block>	_serverBlocks;
 		std::set<int>				_listeningFds;
 		std::map<int, Client*>		_clientMap;
 		std::map<int, CGIHandler*>	_cgiFdToHandler;
@@ -28,8 +27,8 @@ class EventLoop
 		std::map<int, time_t>		_cgiStartTime;
 
 		EventLoop();
-		EventLoop(const EventLoop& obj);
-		EventLoop &operator=(const EventLoop& obj);
+		EventLoop(const EventLoop& other);
+		EventLoop &operator=(const EventLoop& other);
 
 		void		addToPoll(int fd, short event);
 		void		removeFromPoll(size_t& i);
@@ -61,7 +60,7 @@ class EventLoop
 		Response	dispatchMethod(Client* client, const RouteConfig& route);
 
 	public:
-		EventLoop(const std::vector<Server*>& servers, const std::vector<Server_block> serverBlocks);
+		EventLoop(const std::vector<Server*>& servers);
 		~EventLoop();
 
 		void	run();

@@ -5,5 +5,5 @@ class Server_block;
 
 #include <vector>
 
-std::vector<Server*>	createServers(const std::vector<Server_block>& serverBlocks);
+std::vector<Server*>	createServers(std::vector<Server_block>& serverBlocks);
 void					destroyServers(std::vector<Server*>& serverList);

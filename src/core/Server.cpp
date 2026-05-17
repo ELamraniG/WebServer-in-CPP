@@ -6,12 +6,18 @@
 #include <netinet/in.h>
 #include <stdexcept>
 #include <netdb.h>
+#include <unistd.h>
 
 extern Logger	logger;
 
 int	Server::getFd() const
 {
-	return (_fd);
+	return (_socket.fd);
+}
+
+const Server_block&	Server::getConfig() const
+{
+	return (_config);
 }
 
 int	Server::accept() const
@@ -21,7 +27,7 @@ int	Server::accept() const
 	socklen_t			clientLen;
 
 	clientLen = sizeof(clientAddr);
-	clientFd = ::accept(_fd, (struct sockaddr*)&clientAddr, &clientLen);
+	clientFd = ::accept(_socket.fd, (struct sockaddr*)&clientAddr, &clientLen);
 	if (clientFd < 0)
 	{
 		Logger::error("accept failed.");
@@ -38,9 +44,9 @@ int	Server::accept() const
 
 void	Server::startListening() const
 {
-	if (listen(_fd, SOMAXCONN) < 0)
+	if (listen(_socket.fd, SOMAXCONN) < 0)
 		throw std::runtime_error("Error: listen failed.");
-	logger.serverStart(_serverBlock.host, _serverBlock.port, _fd);
+	logger.serverStart(_config.host, _config.port, _socket.fd);
 }
 
 struct sockaddr_in	Server::resolveAddress(const char* host, const char* port)
@@ -76,11 +82,11 @@ struct sockaddr_in	Server::buildAddress()
 	int			port;
 	std::string	host;
 
-	port = std::atoi(_serverBlock.port.c_str());
-	host = _serverBlock.host;
+	port = std::atoi(_config.port.c_str());
+	host = _config.host;
 	if (host == "0.0.0.0")
 		return (buildAnyAddress(port));
-	return (resolveAddress(host.c_str(), _serverBlock.port.c_str()));
+	return (resolveAddress(host.c_str(), _config.port.c_str()));
 }
 
 void	Server::bindSocket()
@@ -88,8 +94,8 @@ void	Server::bindSocket()
 	struct sockaddr_in	serverAddr;
 
 	serverAddr = buildAddress();
-	if (bind(_fd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
-		throw std::runtime_error("bind failed on " + _serverBlock.host + ":" + _serverBlock.port);
+	if (bind(_socket.fd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0)
+		throw std::runtime_error("bind failed on " + _config.host + ":" + _config.port);
 }
 
 void	Server::createSocket()
@@ -97,38 +103,33 @@ void	Server::createSocket()
 	int	opt;
 
 	opt = 1;
-	_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_fd < 0)
+	_socket.fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_socket.fd < 0)
 		throw std::runtime_error("Error: socket failed.");
-	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1)
+	if (fcntl(_socket.fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("Error: fcntl failed.");
-	setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	setsockopt(_socket.fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 }
 
 Server::Server() {}
 
 Server::Server(const Server_block& serverBlock) :
-	_fd(-1),
-	_serverBlock(serverBlock)
+	_config(serverBlock)
 {
 	createSocket();
 	bindSocket();
 	startListening();
 }
 
-Server::Server(const Server& obj)
+Server::Server(const Server& other)
 {
-	(void)obj;
+	(void) other;
 }
 
-Server& Server::operator=(const Server& obj) 
+Server& Server::operator=(const Server& other) 
 {
-	(void)obj;
+	(void) other;
 	return (*this);
 }
 
-Server::~Server()
-{
-	if (_fd >= 0)
-		close(_fd);
-}
+Server::~Server() {}

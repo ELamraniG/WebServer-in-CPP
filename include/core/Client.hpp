@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../http/HTTPRequest.hpp"
+#include "../core/Server.hpp"
 
 #include <string>
 #include <sys/types.h>
@@ -13,21 +14,23 @@ class Client
 {
 	private:
 		Client();
-		Client(const Client& obj);
-		Client& operator=(const Client& obj);
+		Client(const Client& other);
+		Client& operator=(const Client& other);
 
 		int 		_fd;
+		Server*		_server;
 		std::string	_requestBuffer;
 		std::string	_responseBuffer;
 		time_t		_lastActivity;
 
 	public:
-		Client(int fd);
+		Client(int fd, Server* server);
 		~Client();
 
 		HTTPRequest	httpReq;
 
 		int				getFd() const;
+		const Server*	getServer() const;
 		ssize_t			readFromSocket();
 		ssize_t			writeToSocket();
 		bool			hasNoPendingWrite() const;

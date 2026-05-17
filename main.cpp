@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 		serverBlocks = parseConfig(configFile);
 		serverList = createServers(serverBlocks);
 
-		EventLoop	eventLoop(serverList, serverBlocks);
+		EventLoop	eventLoop(serverList);
 		eventLoop.run();
 
 		destroyServers(serverList);

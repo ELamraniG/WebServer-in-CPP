@@ -25,11 +25,11 @@ std::string	builderResponse(HttpStatus code, const RouteConfig& route)
 
 RouteConfig	EventLoop::getRoute(const Client* client)
 {
-	location_block*	locationBlock;
+	const location_block*	locationBlock;
 
-	Server_block& serverBlock = Router::match_server(client->httpReq, _serverBlocks);
-	locationBlock = Router::match_location(client->httpReq, serverBlock);
-	RouteConfig	route(serverBlock, locationBlock);
+	const Server_block& config = client->getServer()->getConfig();
+	locationBlock = Router::match_location(client->httpReq, config);
+	RouteConfig	route(config, locationBlock);
 	return (route);
 }
 
@@ -163,8 +163,9 @@ void	EventLoop::changeEvent(int fd, short event)
 
 void	EventLoop::handleNewClient(int serverFd)
 {
-	int		clientFd;
-	size_t	i;
+	int				clientFd;
+	size_t			i;
+	Server_block	config;
 
 	clientFd = -1;
 	for (i=0; i<_serverList.size(); i++)
@@ -177,9 +178,10 @@ void	EventLoop::handleNewClient(int serverFd)
 	}
 	if (clientFd != -1)
 	{
-		logger.clientConnected(clientFd, _serverBlocks[i].host, _serverBlocks[i].port);
+		config = _serverList[i]->getConfig();
+		logger.clientConnected(clientFd, config.host, config.port);
 		addToPoll(clientFd, POLLIN);
-		_clientMap[clientFd] = new Client(clientFd);
+		_clientMap[clientFd] = new Client(clientFd, _serverList[i]);
 	}
 }
 
@@ -420,9 +422,8 @@ void	EventLoop::run()
 
 EventLoop::EventLoop() {}
 
-EventLoop::EventLoop(const std::vector<Server*>& serverList, const std::vector<Server_block> serverBlocks) :
-	_serverList(serverList),
-	_serverBlocks(serverBlocks)
+EventLoop::EventLoop(const std::vector<Server*>& serverList) :
+	_serverList(serverList)
 {
 	int	fd;
 
@@ -434,14 +435,14 @@ EventLoop::EventLoop(const std::vector<Server*>& serverList, const std::vector<S
 	}
 }
 
-EventLoop::EventLoop(const EventLoop& obj)
+EventLoop::EventLoop(const EventLoop& other)
 {
-	(void)obj;
+	(void) other;
 }
 
-EventLoop& EventLoop::operator=(const EventLoop& obj) 
+EventLoop& EventLoop::operator=(const EventLoop& other) 
 {
-	(void)obj;
+	(void) other;
 	return (*this);
 }
 

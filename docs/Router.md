@@ -10,22 +10,6 @@
 
 ## Public Functions (all `static`)
 
-### `match_server(const HTTPRequest& req, vector<Server_block>& servers)` → `Server_block&`
-**Purpose:** Finds the best matching `Server_block` for the incoming request based on the `Host` header.
-
-**Problem:** Multiple `server` blocks may be defined, potentially for different virtual hosts or ports. The correct one must be selected using the `Host` header value from the request (standard virtual hosting).
-
-**How it works:**
-1. Extracts the `Host` header from the request. If absent, returns the first (default) server.
-2. Splits the `Host` header into `hostname` and `port` parts (separated by `:`).
-3. Iterates over all servers. For each server whose `port` matches:
-   - If `hostname` also matches `server.host`: immediately returns that server (exact match).
-   - Otherwise: remembers this as `port_match` (port-only match).
-4. If no exact match was found but a port match exists, returns that.
-5. Falls back to `servers[0]` (the default server) if no match at all.
-
----
-
 ### `match_location(const HTTPRequest& req, Server_block& server)` → `location_block*`
 **Purpose:** Finds the most specific `location_block` whose `path` prefix matches the request URI.
 
