@@ -1,5 +1,6 @@
 #pragma once
-#include "../config/Parser.hpp"
+#include "../config/location_block.hpp"
+#include "../config/Server_block.hpp"
 #include "HTTPRequest.hpp"
 
 
