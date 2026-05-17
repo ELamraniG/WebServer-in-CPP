@@ -106,10 +106,10 @@ void	Logger::staticFile(const std::string& method, const std::string& uri, HttpS
 void	Logger::cgiRun(int fd, const std::string& script)
 {
 	std::cout << badge(BG_MAGENTA(), "CGI")
-			  << C_MAGENTA() << "spawned" << C_RESET()
-			  << C_GRAY() << "  fd[" << fd << "]" << C_RESET()
-			  << "  " << C_WHITE() << script << C_RESET()
-			  << std::endl;
+				<< C_MAGENTA() << "spawned" << C_RESET()
+				<< C_GRAY() << "  fd[" << fd << "]" << C_RESET()
+				<< "  " << C_WHITE() << script << C_RESET()
+				<< std::endl;
 }
 
 void	Logger::cgiDone(int fd, const std::string& script, HttpStatus code)
@@ -152,13 +152,13 @@ void	Logger::error(const std::string& msg)
 void	Logger::fatal(const std::string& msg)
 {
 	std::cerr << badge(BG_BRIGHT_RED(), "FATAL")
-			<< C_BOLD() << C_BRIGHT_RED() << msg << C_RESET()
-			<< std::endl;
+				<< C_BOLD() << C_BRIGHT_RED() << msg << C_RESET()
+				<< std::endl;
 }
 
 void	Logger::info(const std::string& msg)
 {
 	std::cout << badge(BG_BLUE(), "INFO")
-			<< C_BLUE() << msg << C_RESET()
-			<< std::endl;
+				<< C_BLUE() << msg << C_RESET()
+				<< std::endl;
 }
