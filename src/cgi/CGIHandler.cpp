@@ -194,12 +194,21 @@ bool	CGIHandler::openPipe(int pipeFd[2])
 	return (true);
 }
 
+void	CGIHandler::saveOpenedFds()
+{
+	_openedFds[0] = _pipeIn[0];
+	_openedFds[1] = _pipeIn[1];
+	_openedFds[2] = _pipeOut[0];
+	_openedFds[3] = _pipeOut[1];
+}
+
 bool	CGIHandler::openPipes()
 {
 	if (!openPipe(_pipeOut))
 		return (false);
 	if (_method == "POST" && !openPipe(_pipeIn))
 		return (false);
+	saveOpenedFds();
 	return (true);
 }
 
@@ -262,14 +271,31 @@ void	CGIHandler::closePipe(int& pipe)
 	}
 }
 
+bool	CGIHandler::isOpenedPipe(int fd) const
+{
+	for (int i = 0; i < 4; ++i)
+	{
+		if (_openedFds[i] == fd)
+			return true;
+	}
+	return false;
+}
+
+void	CGIHandler::closeInheritedFds()
+{
+	for (int fd = 3; fd < 1024; fd++)
+	{
+		if (!isOpenedPipe(fd))
+			close(fd);
+	}
+}
+
 void	CGIHandler::execProgram(const std::vector<char*>& argv)
 {
 	const char*	bin;
 
-	if (!_interpreter.empty())
-		bin = _interpreter.c_str();
-	else
-		bin = _scriptPath.c_str();
+	bin = (_interpreter.empty() ? _scriptPath.c_str() : _interpreter.c_str());
+	closeInheritedFds();
 	execve(bin, argv.data(), _envp.data());
 	exit(1);
 }

@@ -22,6 +22,7 @@ class CGIHandler
 
 		int									_pipeIn[2];
 		int									_pipeOut[2];
+		int									_openedFds[4];
 		pid_t								_pid;
 		bool								_done;
 		bool								_error;
@@ -55,6 +56,9 @@ class CGIHandler
 		void				execProgram(const std::vector<char*>& argv);
 		void				runParent();
 		const std::string	getExtension();
+		bool				isOpenedPipe(int fd) const;
+		void				closeInheritedFds();
+		void				saveOpenedFds();
 
 	public:
 		CGIHandler(const std::string& path, const std::string& interpreter, const std::string& method,
