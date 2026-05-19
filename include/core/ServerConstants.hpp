@@ -1,5 +1,17 @@
 #pragma once
 
+#include <limits.h>
+
+#ifndef MAX_FDS
+#  ifdef OPEN_MAX
+#    define MAX_FDS OPEN_MAX
+#  elif defined(FD_SETSIZE)
+#    define MAX_FDS FD_SETSIZE
+#  else
+#    define MAX_FDS 256
+#  endif
+#endif
+
 const int	BUFFER_SIZE = 4096;
 const int	PAUSE = 0;
 const int	POLL_TIMEOUT = 5000;

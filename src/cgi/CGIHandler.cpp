@@ -276,14 +276,14 @@ bool	CGIHandler::isOpenedPipe(int fd) const
 	for (int i = 0; i < 4; ++i)
 	{
 		if (_openedFds[i] == fd)
-			return true;
+			return (true);
 	}
-	return false;
+	return (false);
 }
 
 void	CGIHandler::closeInheritedFds()
 {
-	for (int fd = 3; fd < 1024; fd++)
+	for (int fd = 3; fd < MAX_FDS; fd++)
 	{
 		if (!isOpenedPipe(fd))
 			close(fd);
